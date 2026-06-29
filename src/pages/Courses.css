@@ -1,0 +1,71 @@
+.courses-page { padding-top: 80px; }
+
+.courses-head {
+  padding: 56px 0 40px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-wrap { position: relative; max-width: 560px; margin-top: 28px; }
+.search-icon-left { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; }
+.search-field {
+  width: 100%; padding: 11px 40px 11px 40px;
+  background: var(--bg); border: 1px solid var(--border-2);
+  border-radius: var(--r-sm); font-size: 14px; font-family: var(--sans);
+  color: var(--text); outline: none; transition: var(--transition);
+}
+.search-field::placeholder { color: var(--text-3); }
+.search-field:focus { border-color: var(--text); }
+.search-clear {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-3); cursor: pointer;
+  display: flex; line-height: 1;
+}
+.search-clear:hover { color: var(--text); }
+
+/* FILTERS */
+.filters-bar {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 24px; align-items: center; flex-wrap: wrap;
+}
+.filter-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.filter-label-sm { font-size: 12px; color: var(--text-3); font-weight: 500; white-space: nowrap; }
+
+.filter-chip {
+  padding: 5px 12px; border-radius: 50px;
+  border: 1px solid var(--border); background: transparent;
+  font-size: 13px; font-weight: 400; color: var(--text-2);
+  cursor: pointer; transition: var(--transition);
+}
+.filter-chip:hover { border-color: var(--border-2); color: var(--text); }
+.filter-chip.active {
+  background: var(--text); color: var(--bg);
+  border-color: var(--text);
+}
+
+.filter-select {
+  padding: 5px 28px 5px 10px; border-radius: 50px;
+  border: 1px solid var(--border); background: var(--bg);
+  font-size: 13px; color: var(--text-2); cursor: pointer;
+  appearance: none; font-family: var(--sans);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  outline: none; transition: var(--transition);
+}
+.filter-select:focus, .filter-select:hover { border-color: var(--border-2); color: var(--text); }
+
+/* RESULTS */
+.results-section { padding: 40px 0 96px; }
+.results-meta {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 28px;
+  font-size: 13px; color: var(--text-3);
+}
+.results-count strong { color: var(--text); }
+
+.empty-state {
+  padding: 80px 0; text-align: center;
+}
+.empty-icon { font-size: 40px; margin-bottom: 16px; }
+.empty-state h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.empty-state p { color: var(--text-2); font-size: 14px; margin-bottom: 24px; }
