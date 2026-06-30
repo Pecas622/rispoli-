@@ -50,7 +50,7 @@ export default function AuthModal() {
 
         {isLogin && (
           <div style={{background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'10px 14px',marginBottom:20,fontSize:12,color:'var(--text-3)'}}>
-            Demo: <strong style={{color:'var(--text)'}}>admin@edutech.com</strong> / admin123 · <strong style={{color:'var(--text)'}}>juan@email.com</strong> / 123456
+            Demo: <strong style={{color:'var(--text)'}}>admin@gotravelacademy.com</strong> / admin123 · <strong style={{color:'var(--text)'}}>juan@email.com</strong> / 123456
           </div>
         )}
 

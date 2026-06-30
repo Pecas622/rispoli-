@@ -54,7 +54,7 @@ tr:hover td { background: var(--bg-2); }
 .action-btn.del:hover { color: var(--red); border-color: var(--red); background: var(--red-pale); }
 [data-theme="dark"] .action-btn.del:hover { background: rgba(185,28,28,0.15); }
 .action-btn.content:hover { color: var(--violet-mid); border-color: var(--violet-mid); background: var(--violet-pale); }
-[data-theme="dark"] .action-btn.content:hover { background: rgba(124,58,237,0.15); }
+[data-theme="dark"] .action-btn.content:hover { background: rgba(111,149,232,0.15); }
 
 /* MODAL */
 .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 24px; letter-spacing: -0.02em; }

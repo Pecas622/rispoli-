@@ -1,0 +1,123 @@
+.co-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+
+.co-modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  width: 100%; max-width: 420px;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.24);
+}
+
+/* Header */
+.co-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px; font-weight: 500;
+}
+.co-header-left { display: flex; align-items: center; gap: 7px; }
+.co-close {
+  background: rgba(255,255,255,0.15); border: none; color: #fff;
+  width: 26px; height: 26px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.15s;
+}
+.co-close:hover { background: rgba(255,255,255,0.28); }
+
+/* Course row */
+.co-course-info {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+}
+.co-course-img {
+  width: 50px; height: 50px; border-radius: 8px; object-fit: cover;
+  border: 1px solid var(--border); flex-shrink: 0;
+}
+.co-course-meta { flex: 1; min-width: 0; }
+.co-course-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-course-sub { font-size: 11px; color: var(--text-3); }
+.co-course-price { font-size: 17px; font-weight: 800; letter-spacing: -0.03em; white-space: nowrap; flex-shrink: 0; }
+
+/* Form */
+.co-form { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 13px; }
+
+.co-test-hint {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 12px; border-radius: var(--r-sm);
+  background: var(--violet-pale); color: var(--violet-mid);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; border: 1px solid transparent;
+  transition: opacity 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.co-test-hint:hover { opacity: 0.85; border-color: var(--violet-mid); }
+
+.co-field { display: flex; flex-direction: column; gap: 5px; }
+.co-field label { font-size: 12px; font-weight: 500; color: var(--text-3); }
+
+.co-input-wrap {
+  display: flex; align-items: center;
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--bg); transition: border-color 0.15s;
+  overflow: hidden;
+}
+.co-input-wrap.error { border-color: var(--red); }
+.co-input-wrap:focus-within { border-color: var(--violet-mid); box-shadow: 0 0 0 3px rgba(111,149,232,0.15); }
+.co-input-icon { margin-left: 12px; color: var(--text-3); flex-shrink: 0; }
+.co-input {
+  flex: 1; border: none; background: transparent;
+  padding: 10px 12px; font-size: 14px; font-family: var(--sans);
+  color: var(--text); outline: none;
+}
+
+.co-input-plain {
+  width: 100%; box-sizing: border-box;
+  border: 1px solid var(--border-2); border-radius: var(--r-sm);
+  background: var(--bg); padding: 10px 12px;
+  font-size: 14px; font-family: var(--sans);
+  color: var(--text); outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.co-input-plain:focus { border-color: var(--violet-mid); box-shadow: 0 0 0 3px rgba(111,149,232,0.15); }
+.co-input-plain.error { border-color: var(--red); }
+
+.co-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.co-err { font-size: 11px; color: var(--red); margin-top: 2px; }
+
+.co-pay-btn { width: 100%; justify-content: center; padding: 13px; font-size: 15px; font-weight: 600; }
+
+/* States */
+.co-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 52px 20px; gap: 12px; text-align: center; min-height: 220px;
+}
+.co-state-title { font-size: 18px; font-weight: 700; }
+.co-state-sub { font-size: 13px; color: var(--text-3); }
+
+.co-spinner {
+  width: 42px; height: 42px;
+  border: 3px solid var(--border-2);
+  border-top-color: var(--violet-mid);
+  border-radius: 50%;
+  animation: co-spin 0.75s linear infinite;
+}
+@keyframes co-spin { to { transform: rotate(360deg); } }
+
+/* Footer */
+.co-footer {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--text-3);
+  background: var(--bg-2);
+}

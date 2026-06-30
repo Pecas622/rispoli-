@@ -9,6 +9,7 @@ export default function Admin() {
   const { user, showToast } = useApp();
   const navigate = useNavigate();
   if (!user) return <Navigate to="/" />;
+  if (user.role === 'instructor') return <Navigate to="/instructor" />;
   if (user.role !== 'admin') return <Navigate to="/dashboard" />;
 
   const [courses, setCourses] = useState(initialCourses);

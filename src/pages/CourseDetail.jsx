@@ -1,5 +1,5 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, Minus } from 'lucide-react';
 import { courses } from '../data/courses';
 import { useApp } from '../context/AppContext';
@@ -10,9 +10,16 @@ const levelBadge = { 'Principiante':'badge-green','Intermedio':'badge-amber','Av
 export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, enrollCourse, isEnrolled, setAuthModal } = useApp();
+  const [searchParams] = useSearchParams();
+  const { user, enrollCourse, isEnrolled, setAuthModal, showToast } = useApp();
   const [openModule, setOpenModule] = useState(0);
   const [enrolling, setEnrolling] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('payment') === 'cancelled') {
+      showToast('Pago cancelado. Podés intentarlo de nuevo cuando quieras.', 'error');
+    }
+  }, []);
 
   const course = courses.find(c => c.id === Number(id));
   if (!course) return (
@@ -108,7 +115,7 @@ export default function CourseDetail() {
                   <p className="enroll-includes-title">Incluye</p>
                   {course.includes.map(item => (
                     <div key={item} className="include-item">
-                      <CheckCircle size={13} style={{color:'var(--teal)',flexShrink:0}} />
+                      <CheckCircle size={13} style={{color:'var(--violet-mid)',flexShrink:0}} />
                       {item}
                     </div>
                   ))}

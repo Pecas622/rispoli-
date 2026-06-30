@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  role          Role     @default(STUDENT)
+  avatar        String?
+  emailVerified Boolean  @default(false) @map("email_verified")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  enrollments Enrollment[]
+  progress    LessonProgress[]
+
+  @@map("users")
+}
+
+model VerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email])
+  @@map("verification_codes")
+}
+
+model Course {
+  id            String   @id @default(cuid())
+  title         String
+  subtitle      String?
+  description   String?  @db.Text
+  category      String
+  level         String
+  modality      String   @default("Online")
+  duration      String?
+  hours         Int?
+  price         Float
+  originalPrice Float?   @map("original_price")
+  rating        Float    @default(0)
+  reviews       Int      @default(0)
+  students      Int      @default(0)
+  image         String?
+  featured      Boolean  @default(false)
+  stripePriceId String?  @map("stripe_price_id")
+  published     Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  modules     Module[]
+  enrollments Enrollment[]
+
+  @@map("courses")
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String   @map("course_id")
+  title       String
+  description String?
+  order       Int
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@map("modules")
+}
+
+model Lesson {
+  id          String   @id @default(cuid())
+  moduleId    String   @map("module_id")
+  title       String
+  description String?  @db.Text
+  duration    String?
+  videoType   String?  @map("video_type")
+  videoUrl    String?  @map("video_url")
+  isPreview   Boolean  @default(false) @map("is_preview")
+  order       Int
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  module    Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  resources Resource[]
+  progress  LessonProgress[]
+
+  @@map("lessons")
+}
+
+model Resource {
+  id       String  @id @default(cuid())
+  lessonId String  @map("lesson_id")
+  name     String
+  type     String
+  size     String?
+  url      String?
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("resources")
+}
+
+model Enrollment {
+  id              String    @id @default(cuid())
+  userId          String    @map("user_id")
+  courseId        String    @map("course_id")
+  stripeSessionId String?   @map("stripe_session_id")
+  paidAt          DateTime? @map("paid_at")
+  amount          Float?
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model LessonProgress {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  lessonId    String   @map("lesson_id")
+  completedAt DateTime @default(now()) @map("completed_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("lesson_progress")
+}

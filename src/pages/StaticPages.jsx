@@ -20,7 +20,7 @@ const logos = ['Google','Meta','Amazon','Mercado Libre','Globant','Rappi','Despe
 export function Empresas() {
   const { setAuthModal } = useApp();
   return (
-    <PageShell label="Soluciones corporativas" title="EduTech para empresas" lead="Potenciá el talento de tu equipo con programas de capacitación a medida, diseñados junto a líderes de la industria.">
+    <PageShell label="Soluciones corporativas" title="GO Travel Academy para empresas" lead="Potenciá el talento de tu equipo con programas de capacitación a medida, diseñados junto a líderes de la industria.">
       <div className="grid-4" style={{marginBottom:64}}>
         {[
           { icon:'🎯', title:'Hasta 500+ personas', desc:'Planes para equipos de cualquier tamaño con gestión centralizada.' },
@@ -53,7 +53,7 @@ export function Nosotros() {
     <PageShell label="Nuestra historia" title="Transformando carreras desde 2018" lead="Nacimos con una misión: democratizar el acceso a la educación tecnológica en América Latina.">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:60,alignItems:'start',marginBottom:64}}>
         <div>
-          <p style={{color:'var(--text-2)',lineHeight:1.9,fontSize:15,marginBottom:18}}>EduTech nació en Buenos Aires con la convicción de que el talento está distribuido de manera equitativa, pero la oportunidad no. Nos propusimos cambiar eso.</p>
+          <p style={{color:'var(--text-2)',lineHeight:1.9,fontSize:15,marginBottom:18}}>GO Travel Academy nació en Buenos Aires con la convicción de que el talento está distribuido de manera equitativa, pero la oportunidad no. Nos propusimos cambiar eso.</p>
           <p style={{color:'var(--text-2)',lineHeight:1.9,fontSize:15}}>Hoy somos la plataforma de educación tech líder en LATAM, con más de 150.000 estudiantes activos, 200+ cursos y alianzas con las empresas más importantes del ecosistema digital.</p>
         </div>
         <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600&q=80" alt="Equipo" style={{width:'100%',height:320,objectFit:'cover',borderRadius:'var(--r-lg)',border:'1px solid var(--border)'}} />

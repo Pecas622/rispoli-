@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Moon, LogOut, LayoutDashboard, ChevronDown } from 'lucide-react';
+import { Menu, X, Sun, Moon, LogOut, LayoutDashboard, ChevronDown, Plane } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './Navbar.css';
 
 const navLinks = [
   { label: 'Inicio', to: '/' },
   { label: 'Cursos', to: '/cursos' },
-  { label: 'Empresas', to: '/empresas' },
+  { label: 'Mi Aprendizaje', to: '/dashboard' },
+  { label: 'Certificaciones', to: '/certificaciones' },
   { label: 'Nosotros', to: '/nosotros' },
-  { label: 'Blog', to: '/blog' },
   { label: 'Contacto', to: '/contacto' },
 ];
 
@@ -32,8 +32,10 @@ export default function Navbar() {
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="container navbar-inner">
         <Link to="/" className="navbar-logo">
-          <div className="logo-dot" />
-          EduTech
+          <div className="logo-icon-wrap">
+            <Plane size={14} strokeWidth={2.5} />
+          </div>
+          <span className="logo-text">GO Travel Academy</span>
         </Link>
 
         <div className={`navbar-links ${open ? 'open' : ''}`}>
@@ -52,7 +54,7 @@ export default function Navbar() {
             ) : (
               <>
                 <button onClick={() => setAuthModal('login')} className="btn btn-outline">Iniciar sesión</button>
-                <button onClick={() => setAuthModal('register')} className="btn btn-primary">Inscribirse</button>
+                <button onClick={() => setAuthModal('register')} className="btn btn-primary">Comenzar ahora</button>
               </>
             )}
           </div>
@@ -88,7 +90,7 @@ export default function Navbar() {
           ) : (
             <div className="auth-btns">
               <button onClick={() => setAuthModal('login')} className="btn btn-ghost btn-sm">Iniciar sesión</button>
-              <button onClick={() => setAuthModal('register')} className="btn btn-primary btn-sm">Inscribirse</button>
+              <button onClick={() => setAuthModal('register')} className="btn btn-primary btn-sm">Comenzar ahora</button>
             </div>
           )}
 

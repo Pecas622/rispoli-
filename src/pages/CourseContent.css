@@ -163,7 +163,7 @@
 }
 
 [data-theme="dark"] .module-badge {
-  background: rgba(91,33,182,0.22);
+  background: rgba(111,149,232,0.18);
   color: var(--violet-light);
 }
 
@@ -262,7 +262,7 @@
   background: var(--violet-pale) !important;
 }
 [data-theme="dark"] .cc-add-lesson-btn:hover {
-  background: rgba(124,58,237,0.15) !important;
+  background: rgba(111,149,232,0.15) !important;
 }
 
 /* ── Lesson card ───────────────────────────────────────── */
@@ -492,7 +492,7 @@
   color: var(--violet-mid);
   background: var(--violet-pale);
 }
-[data-theme="dark"] .ur-add-btn:hover { background: rgba(124,58,237,0.15); }
+[data-theme="dark"] .ur-add-btn:hover { background: rgba(111,149,232,0.15); }
 
 .ur-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
 

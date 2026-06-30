@@ -1,57 +1,73 @@
 import { Link } from 'react-router-dom';
-import { Star, Clock, Users, BookOpen, ArrowRight } from 'lucide-react';
+import { Star, Clock, Users, BookOpen } from 'lucide-react';
 import './CourseCard.css';
 
-const levelBadge = {
-  'Principiante': 'badge-green',
-  'Intermedio':   'badge-amber',
-  'Avanzado':     'badge-red',
+const levelColor = {
+  'Principiante': { bg: '#DCFCE7', color: '#16A34A' },
+  'Intermedio':   { bg: '#FEF9C3', color: '#CA8A04' },
+  'Avanzado':     { bg: '#FEE2E2', color: '#DC2626' },
 };
 
 export default function CourseCard({ course }) {
   const discount = Math.round((1 - course.price / course.originalPrice) * 100);
+  const lvl = levelColor[course.level] || { bg: 'var(--bg-2)', color: 'var(--text-2)' };
+
   return (
-    <article className="course-card card card-elevated">
-      <div className="course-img-wrap">
-        <img src={course.image} alt={course.title} className="course-img" loading="lazy" />
-        <span className="course-cat-tag">{course.category}</span>
-        {discount > 0 && <span className="course-discount">-{discount}%</span>}
+    <article className="course-card">
+      {/* Image */}
+      <div className="cc-image-wrap">
+        <img src={course.image} alt={course.title} className="cc-image" loading="lazy" />
+        <span className="cc-cat-badge">{course.category}</span>
+        {discount > 0 && <span className="cc-discount-badge">-{discount}%</span>}
       </div>
 
-      <div className="course-body">
-        <div className="course-badges">
-          <span className={`badge ${levelBadge[course.level] || 'badge-default'}`}>{course.level}</span>
-          <span className="badge badge-default">{course.modality}</span>
+      {/* Body */}
+      <div className="cc-body">
+        {/* Level pill */}
+        <div className="cc-level-row">
+          <span className="cc-level-pill" style={{ background: lvl.bg, color: lvl.color }}>
+            {course.level}
+          </span>
+          <span className="cc-modality">{course.modality}</span>
         </div>
 
-        <h3 className="course-title">{course.title}</h3>
-        <p className="course-sub">{course.subtitle}</p>
+        {/* Title */}
+        <h3 className="cc-title">{course.title}</h3>
 
-        <div className="course-tags">
-          {course.tags.slice(0, 3).map(t => <span key={t} className="tag">{t}</span>)}
+        {/* Instructor */}
+        <div className="cc-instructor">
+          <img
+            src={course.instructor?.avatar}
+            alt={course.instructor?.name}
+            className="cc-instructor-avatar"
+          />
+          <span className="cc-instructor-name">{course.instructor?.name}</span>
         </div>
 
-        <div className="course-meta">
-          <span className="meta-item"><Clock size={12} /> {course.duration}</span>
-          <span className="meta-item"><BookOpen size={12} /> {course.hours}h</span>
-          <span className="meta-item"><Users size={12} /> {course.students.toLocaleString()}</span>
-        </div>
-
-        <div className="course-rating">
+        {/* Rating */}
+        <div className="cc-rating">
           <Star size={12} fill="#F59E0B" color="#F59E0B" />
           <strong>{course.rating}</strong>
-          <span>({course.reviews.toLocaleString()})</span>
+          <span className="cc-rating-count">({course.reviews.toLocaleString()} reseñas)</span>
         </div>
 
-        <div className="course-footer">
-          <div className="course-price">
-            <span className="price-now">${course.price.toLocaleString()}</span>
-            {discount > 0 && <span className="price-was">${course.originalPrice.toLocaleString()}</span>}
-          </div>
-          <Link to={`/cursos/${course.id}`} className="btn btn-primary btn-sm">
-            Ver más <ArrowRight size={13} />
-          </Link>
+        {/* Meta */}
+        <div className="cc-meta">
+          <span className="cc-meta-item"><Clock size={11} /> {course.duration}</span>
+          <span className="cc-meta-item"><BookOpen size={11} /> {course.hours}h</span>
+          <span className="cc-meta-item"><Users size={11} /> {course.students.toLocaleString()}</span>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="cc-footer">
+        <div className="cc-price">
+          <span className="cc-price-now">${course.price.toLocaleString()}</span>
+          {discount > 0 && <span className="cc-price-was">${course.originalPrice.toLocaleString()}</span>}
+        </div>
+        <Link to={`/cursos/${course.id}`} className="cc-cta-btn">
+          Ver curso
+        </Link>
       </div>
     </article>
   );

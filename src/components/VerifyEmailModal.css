@@ -1,0 +1,155 @@
+.vem-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.vem-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 36px 32px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+}
+
+.vem-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-2);
+  transition: all 0.15s;
+}
+.vem-close:hover { background: var(--surface-2); color: var(--text-1); }
+
+.vem-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--violet-pale);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: var(--violet);
+}
+
+.vem-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 0 0 10px;
+}
+
+.vem-subtitle {
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.6;
+  margin: 0 0 28px;
+}
+.vem-subtitle strong { color: var(--text-1); }
+
+/* ── Dígitos ── */
+.vem-inputs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.vem-digit {
+  width: 48px;
+  height: 56px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  font-family: var(--mono, 'Courier New', monospace);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+.vem-digit:focus {
+  border-color: var(--violet-mid);
+  box-shadow: 0 0 0 3px rgba(111, 149, 232, 0.2);
+}
+.vem-digit--error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.vem-error {
+  font-size: 13px;
+  color: #ef4444;
+  margin: 4px 0 16px;
+  min-height: 18px;
+}
+
+.vem-btn {
+  width: 100%;
+  margin-top: 8px;
+  justify-content: center;
+  padding: 13px;
+  font-size: 15px;
+}
+
+/* ── Reenvío ── */
+.vem-resend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.vem-resend-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--violet);
+  padding: 0;
+  transition: opacity 0.15s;
+}
+.vem-resend-btn:disabled { opacity: 0.5; cursor: default; color: var(--text-2); }
+.vem-resend-btn:not(:disabled):hover { opacity: 0.75; }
+
+.vem-note {
+  font-size: 12px;
+  color: var(--text-3);
+  margin: 14px 0 0;
+}
+
+/* Dark mode */
+[data-theme="dark"] .vem-digit {
+  background: rgba(255,255,255,0.05);
+}
+[data-theme="dark"] .vem-icon {
+  background: rgba(111, 149, 232, 0.15);
+}
