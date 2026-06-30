@@ -14,7 +14,6 @@ const MOCK_USERS = [
 ];
 
 export function AppProvider({ children }) {
-  const [theme,              setTheme]             = useState(() => localStorage.getItem('theme') || 'dark');
   const [user,               setUser]              = useState(() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } });
   const [users,              setUsers]             = useState(MOCK_USERS);
   const [toast,              setToast]             = useState(null);
@@ -22,11 +21,6 @@ export function AppProvider({ children }) {
   const [pendingVerification, setPendingVerification] = useState(null); // { email }
   const [checkoutModal,      setCheckoutModal]     = useState(null); // { courseId } — mock checkout
   const [courseContent,      setCourseContent]     = useState(initialCourseContent);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
 
   useEffect(() => {
     if (user) localStorage.setItem('user', JSON.stringify(user));
@@ -37,7 +31,6 @@ export function AppProvider({ children }) {
     if (toast) { const t = setTimeout(() => setToast(null), 3000); return () => clearTimeout(t); }
   }, [toast]);
 
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
   const showToast   = (message, type = 'success') => setToast({ message, type });
 
   // ── Auth ─────────────────────────────────────────────────
@@ -265,7 +258,6 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      theme, toggleTheme,
       user, login, register, logout,
       verifyEmail, resendVerificationCode,
       pendingVerification, setPendingVerification,

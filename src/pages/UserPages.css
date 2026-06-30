@@ -1,0 +1,185 @@
+/* ── PAGE SHELL ──────────────────────────────────────────── */
+.up-page { padding-top: 80px; min-height: 100vh; background: var(--bg-2); }
+
+.up-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  padding: 40px 0 32px;
+}
+
+.up-header-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--text-3);
+  margin-bottom: 20px; text-decoration: none;
+  background: none; border: none; cursor: pointer;
+  transition: color 0.15s;
+}
+.up-header-back:hover { color: var(--text); }
+
+.up-header-title-row {
+  display: flex; align-items: center; gap: 12px;
+}
+
+.up-header-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--violet-pale); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.up-header-label {
+  font-size: 11px; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;
+}
+
+.up-header-h1 {
+  font-size: 22px; font-weight: 800; letter-spacing: -0.03em;
+  color: var(--text); margin: 0;
+}
+
+.up-content { padding: 40px 0 96px; }
+
+/* ── EMPTY STATE ─────────────────────────────────────────── */
+.up-empty {
+  padding: 64px 40px; text-align: center;
+  border: 1.5px dashed var(--border-2);
+  border-radius: 16px;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center;
+  max-width: 480px; margin: 0 auto;
+}
+
+.up-empty-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--violet-pale); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+}
+
+.up-empty h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+.up-empty p  { font-size: 14px; color: var(--text-2); line-height: 1.6; margin-bottom: 24px; }
+
+/* ── CERTIFICATES ────────────────────────────────────────── */
+.cert-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* ── DOWNLOADS ───────────────────────────────────────────── */
+.downloads-list {
+  display: flex; flex-direction: column; gap: 10px; max-width: 720px;
+}
+
+.download-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  transition: box-shadow 0.2s;
+}
+.download-row:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+
+.download-icon {
+  width: 40px; height: 40px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.download-info { flex: 1; min-width: 0; }
+.download-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.download-meta { font-size: 12px; color: var(--text-3); }
+
+.download-type {
+  font-size: 10px; font-weight: 700;
+  padding: 1px 6px; border-radius: 4px;
+  margin-right: 6px;
+}
+
+/* ── PERFIL ──────────────────────────────────────────────── */
+.perfil-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 32px;
+  align-items: start;
+  max-width: 900px;
+}
+
+.perfil-avatar-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+.perfil-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.perfil-name { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.perfil-role { font-size: 12px; color: var(--text-3); margin-bottom: 20px; }
+
+.perfil-stat-row {
+  display: flex; justify-content: space-between;
+  font-size: 13px; padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.perfil-stat-row:first-of-type { padding-top: 16px; }
+.perfil-stat-label { color: var(--text-3); }
+.perfil-stat-val   { font-weight: 600; color: var(--text); }
+
+.perfil-form-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.perfil-form-title {
+  font-size: 16px; font-weight: 700; margin-bottom: 24px; color: var(--text);
+}
+
+.perfil-form { display: flex; flex-direction: column; gap: 16px; }
+
+.perfil-field label {
+  display: block; font-size: 12px; font-weight: 500;
+  color: var(--text-3); margin-bottom: 6px;
+}
+
+.perfil-field-note { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+.perfil-section-title {
+  font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text);
+  padding-top: 20px; border-top: 1px solid var(--border);
+}
+
+.perfil-pwd-fields { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .up-content { padding: 28px 0 80px; }
+  .up-header { padding: 28px 0 24px; }
+  .up-header-h1 { font-size: 18px; }
+
+  .perfil-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .perfil-avatar-card { padding: 20px; }
+
+  .cert-grid { grid-template-columns: 1fr; }
+  .downloads-list { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .up-empty { padding: 40px 20px; }
+  .download-row { padding: 12px 14px; gap: 10px; }
+  .download-icon { width: 34px; height: 34px; }
+  .perfil-form-card { padding: 20px; }
+}

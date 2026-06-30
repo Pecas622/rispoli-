@@ -278,6 +278,21 @@ export default function Dashboard() {
         )}
 
       </main>
+
+      {/* ── Mobile bottom nav ── */}
+      <nav className="dash-mobile-nav">
+        {sidebarLinks.map(({ label, icon: Icon, to }) => (
+          <Link
+            key={to + label}
+            to={to}
+            className={`dmn-item ${activeNav === to ? 'active' : ''}`}
+            onClick={() => setActiveNav(to)}
+          >
+            <Icon size={20} />
+            {label}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

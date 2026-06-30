@@ -9,6 +9,7 @@
 .back-link {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 13px; color: var(--text-3);
+  background: none; border: none;
   margin-bottom: 32px; transition: var(--transition);
 }
 .back-link:hover { color: var(--text); }
@@ -39,7 +40,7 @@
 .instructor-mini-name { font-size: 13px; font-weight: 600; }
 .instructor-mini-role { font-size: 12px; color: var(--text-3); }
 
-/* ENROLL CARD */
+/* ── ENROLL CARD (no inscripto) ────────────────────────────────────────────── */
 .enroll-card {
   position: sticky; top: 80px;
   border-radius: var(--r-lg); overflow: hidden;
@@ -61,16 +62,11 @@
 .enroll-price { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
 .enroll-price-now { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }
 .enroll-price-was { font-size: 14px; text-decoration: line-through; color: var(--text-3); }
-.enroll-urgency { font-size: 12px; color: var(--red); font-weight: 500; margin-bottom: 16px; }
-
-.enrolled-pill {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 11px; border-radius: var(--r-sm);
-  background: var(--green-pale); color: var(--green);
-  font-size: 14px; font-weight: 600; margin-bottom: 10px;
+.enroll-discount {
+  font-size: 12px; font-weight: 700; color: var(--green);
+  background: var(--green-pale); padding: 2px 6px; border-radius: 4px;
 }
-[data-theme="dark"] .enrolled-pill { background: rgba(6,95,70,0.2); color: #34D399; }
-
+.enroll-urgency { font-size: 12px; color: var(--red); font-weight: 500; margin-bottom: 4px; }
 .enroll-includes { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
 .enroll-includes-title { font-size: 12px; font-weight: 600; color: var(--text-3); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
 .include-item {
@@ -78,18 +74,105 @@
   font-size: 13px; color: var(--text-2); margin-bottom: 7px;
 }
 
-/* CONTENT */
+/* ── PROGRESS CARD (inscripto) ─────────────────────────────────────────────── */
+.progress-card {
+  position: sticky; top: 80px;
+  border-radius: var(--r-lg); overflow: hidden;
+}
+
+.pc-thumb { position: relative; }
+.pc-thumb img { width: 100%; height: 160px; object-fit: cover; display: block; }
+.pc-thumb-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(6,4,63,0.7) 0%, transparent 60%);
+  display: flex; align-items: flex-end; padding: 14px;
+}
+.pc-pct-badge {
+  background: rgba(255,255,255,0.95);
+  color: var(--accent);
+  font-size: 15px; font-weight: 800;
+  padding: 4px 10px; border-radius: 20px;
+  letter-spacing: -0.02em;
+}
+
+.pc-body { padding: 20px; }
+
+.pc-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.pc-label { font-size: 12px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; }
+.pc-pct-text { font-size: 16px; font-weight: 800; color: var(--accent); }
+
+.pc-bar { height: 8px !important; border-radius: 4px !important; margin-bottom: 10px; }
+
+.pc-counts {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--text-3); margin-bottom: 18px;
+}
+.pc-counts strong { color: var(--text); }
+
+.pc-next-label {
+  font-size: 11px; font-weight: 600; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px;
+}
+.pc-next-lesson {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  line-height: 1.4; margin-bottom: 4px;
+  padding: 10px 12px;
+  background: var(--violet-pale); border-radius: var(--r-sm);
+  border-left: 3px solid var(--violet-mid);
+}
+
+.pc-stats {
+  display: flex; gap: 16px; margin-top: 18px;
+  padding-top: 16px; border-top: 1px solid var(--border);
+}
+.pc-stat {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--text-3);
+}
+
+/* Completado */
+.pc-complete { text-align: center; padding: 8px 0; }
+.pc-complete-icon {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--amber-pale);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+}
+.pc-complete-title { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.pc-complete-sub { font-size: 13px; color: var(--text-3); margin-bottom: 4px; }
+
+/* ── CONTENT ────────────────────────────────────────────────────────────────── */
 .detail-content { padding: 56px 0 96px; }
 .detail-cols { display: grid; grid-template-columns: 1fr 360px; gap: 60px; }
 .detail-section { margin-bottom: 48px; }
 .detail-section-title { font-size: 18px; font-weight: 700; margin-bottom: 18px; letter-spacing: -0.02em; }
 
-/* MODULE */
+/* Progress summary bar encima del programa */
+.prog-summary-bar {
+  padding: 14px 16px;
+  background: var(--violet-pale);
+  border-radius: var(--r);
+  margin-bottom: 16px;
+  border: 1px solid rgba(111,149,232,0.25);
+}
+.psb-text {
+  display: flex; justify-content: space-between;
+  font-size: 13px; color: var(--text-2); margin-bottom: 8px;
+}
+.psb-pct { font-weight: 700; color: var(--accent); }
+
+/* ── MÓDULOS ────────────────────────────────────────────────────────────────── */
 .module-row {
   border: 1px solid var(--border); border-radius: var(--r);
-  margin-bottom: 8px; cursor: pointer; transition: var(--transition); overflow: hidden;
+  margin-bottom: 8px; cursor: pointer; transition: border-color 0.18s; overflow: hidden;
 }
 .module-row:hover { border-color: var(--border-2); }
+.module-row.mod-done  { border-color: rgba(22,163,74,0.3); background: rgba(22,163,74,0.02); }
+.module-row.mod-active { border-color: rgba(111,149,232,0.4); background: rgba(111,149,232,0.03); }
+
 .module-header {
   display: flex; align-items: center; gap: 14px;
   padding: 14px 18px;
@@ -99,19 +182,53 @@
   background: var(--bg-3); border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700; color: var(--text-3); flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
 }
+.module-num.num-done   { background: var(--green-pale);   color: var(--green);      border-color: rgba(22,163,74,0.3); }
+.module-num.num-active { background: var(--violet-pale);  color: var(--violet-mid); border-color: rgba(111,149,232,0.35); }
+
 .module-label { font-size: 11px; color: var(--text-3); font-weight: 500; margin-bottom: 1px; }
-.module-name { font-size: 14px; font-weight: 600; }
-.module-chevron { margin-left: auto; color: var(--text-3); transition: transform 0.2s; flex-shrink: 0; }
+.module-name  { font-size: 14px; font-weight: 600; }
+
+.module-chevron { color: var(--text-3); transition: transform 0.2s; flex-shrink: 0; }
 .module-chevron.open { transform: rotate(180deg); }
-.module-topics { padding: 0 18px 14px 60px; }
+
+.mod-status-pill {
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 20px;
+  background: var(--bg-3); color: var(--text-3);
+  white-space: nowrap;
+}
+.mod-done  .mod-status-pill { background: var(--green-pale);  color: var(--green); }
+.mod-active .mod-status-pill { background: var(--violet-pale); color: var(--violet-mid); }
+
+/* ── TOPICS ─────────────────────────────────────────────────────────────────── */
+.module-topics { padding: 0 18px 12px 18px; }
+
 .topic-row {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 0; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: var(--r-sm);
   font-size: 13px; color: var(--text-2);
+  transition: background 0.15s;
+}
+.topic-row:hover { background: var(--bg-2); }
+.topic-row.topic-done    { color: var(--text-3); }
+.topic-row.topic-current { background: var(--violet-pale); color: var(--text); font-weight: 600; }
+
+.topic-icon { display: flex; flex-shrink: 0; }
+.topic-name { flex: 1; line-height: 1.4; }
+
+.topic-done-badge {
+  font-size: 11px; font-weight: 700; color: var(--green);
+  background: var(--green-pale); padding: 1px 7px; border-radius: 20px; flex-shrink: 0;
+}
+.topic-current-badge {
+  font-size: 10px; font-weight: 700; color: var(--violet-mid);
+  background: white; border: 1px solid var(--violet-mid);
+  padding: 1px 7px; border-radius: 20px; flex-shrink: 0;
 }
 
-/* INSTRUCTOR */
+/* ── INSTRUCTOR ─────────────────────────────────────────────────────────────── */
 .instructor-block {
   display: flex; align-items: flex-start; gap: 18px;
   padding: 22px; border: 1px solid var(--border); border-radius: var(--r);
@@ -119,9 +236,9 @@
 .instructor-block img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
 .instructor-name { font-size: 17px; font-weight: 700; margin-bottom: 3px; }
 .instructor-role { font-size: 13px; color: var(--text-3); margin-bottom: 10px; }
-.instructor-bio { font-size: 14px; color: var(--text-2); line-height: 1.7; }
+.instructor-bio  { font-size: 14px; color: var(--text-2); line-height: 1.7; }
 
-/* REQUIREMENTS */
+/* ── REQUISITOS ─────────────────────────────────────────────────────────────── */
 .req-item {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 10px 0; border-bottom: 1px solid var(--border);
@@ -130,8 +247,29 @@
 .req-item:first-child { border-top: 1px solid var(--border); }
 .req-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-2); flex-shrink: 0; margin-top: 6px; }
 
+/* ── RESPONSIVE ─────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .detail-layout { grid-template-columns: 1fr 320px; gap: 40px; }
+}
+
 @media (max-width: 900px) {
-  .detail-layout { grid-template-columns: 1fr; }
-  .enroll-card { position: static; }
+  .detail-head { padding: 36px 0; }
+  .detail-layout { grid-template-columns: 1fr; gap: 32px; }
+  .enroll-card, .progress-card { position: static; }
   .detail-cols { grid-template-columns: 1fr; }
+  .detail-title { font-size: 26px; }
+}
+
+@media (max-width: 640px) {
+  .detail-head { padding: 28px 0; }
+  .back-link { margin-bottom: 20px; }
+  .detail-badges { margin-bottom: 12px; }
+  .detail-desc { font-size: 14px; }
+  .detail-meta-row { gap: 10px; }
+  .detail-content { padding: 36px 0 64px; }
+  .instructor-block { flex-direction: column; gap: 12px; }
+  .instructor-block img { width: 48px; height: 48px; }
+  .module-topics { padding: 0 12px 12px; }
+  .enroll-body { padding: 16px; }
+  .pc-body { padding: 16px; }
 }

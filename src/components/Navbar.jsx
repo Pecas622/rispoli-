@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Sun, Moon, LogOut, LayoutDashboard, ChevronDown, Plane } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, ChevronDown, Plane } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './Navbar.css';
 
@@ -14,7 +14,7 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const { theme, toggleTheme, user, logout, setAuthModal } = useApp();
+  const { user, logout, setAuthModal } = useApp();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
@@ -61,10 +61,6 @@ export default function Navbar() {
         </div>
 
         <div className="navbar-actions">
-          <button className="icon-btn" onClick={toggleTheme} title="Cambiar tema">
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-          </button>
-
           {user ? (
             <div className="user-menu-wrap">
               <button className="user-trigger" onClick={() => setUserMenu(!userMenu)}>

@@ -146,10 +146,3 @@
   margin: 14px 0 0;
 }
 
-/* Dark mode */
-[data-theme="dark"] .vem-digit {
-  background: rgba(255,255,255,0.05);
-}
-[data-theme="dark"] .vem-icon {
-  background: rgba(111, 149, 232, 0.15);
-}
