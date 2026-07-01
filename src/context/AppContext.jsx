@@ -21,6 +21,14 @@ export function AppProvider({ children }) {
   const [pendingVerification, setPendingVerification] = useState(null); // { email }
   const [checkoutModal,      setCheckoutModal]     = useState(null); // { courseId } — mock checkout
   const [courseContent,      setCourseContent]     = useState(initialCourseContent);
+  const [region,             setRegion]            = useState(() => localStorage.getItem('region') || null);
+  const [showRegionModal,    setShowRegionModal]   = useState(() => !localStorage.getItem('region'));
+
+  const selectRegion = (code) => {
+    localStorage.setItem('region', code);
+    setRegion(code);
+    setShowRegionModal(false);
+  };
 
   useEffect(() => {
     if (user) localStorage.setItem('user', JSON.stringify(user));
@@ -140,8 +148,9 @@ export function AppProvider({ children }) {
 
     if (USE_REAL_API) {
       try {
-        const { url } = await paymentsApi.checkout(courseId);
-        window.location.href = url; // Redirect to Stripe Checkout
+        const fn = region === 'WORLD' ? paymentsApi.checkout : paymentsApi.checkoutMercadoPago;
+        const { url } = await fn(courseId);
+        window.location.href = url;
       } catch (err) {
         showToast(err.message || 'Error al procesar el pago', 'error');
       }
@@ -265,6 +274,7 @@ export function AppProvider({ children }) {
       enrollCourse, isEnrolled,
       toast, showToast,
       authModal, setAuthModal,
+      region, selectRegion, showRegionModal, setShowRegionModal,
       getCourseContent,
       addModule, updateModule, deleteModule, reorderModules,
       addLesson, updateLesson, deleteLesson, reorderLessons,

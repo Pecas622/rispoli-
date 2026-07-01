@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Lock, X, CreditCard, Shield, CheckCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { courses } from '../data/courses';
+import { getRegionPrice, formatPrice } from '../utils/pricing';
 import './CheckoutModal.css';
 
 function formatCardNumber(v) {
@@ -13,7 +14,7 @@ function formatExpiry(v) {
 }
 
 export default function CheckoutModal() {
-  const { checkoutModal, setCheckoutModal, confirmMockEnroll } = useApp();
+  const { checkoutModal, setCheckoutModal, confirmMockEnroll, region } = useApp();
   const [step, setStep] = useState('form'); // 'form' | 'processing' | 'success'
   const [card, setCard] = useState({ number: '', expiry: '', cvv: '', name: '' });
   const [errors, setErrors] = useState({});
@@ -30,6 +31,9 @@ export default function CheckoutModal() {
 
   const course = courses.find(c => c.id === checkoutModal.courseId);
   if (!course) return null;
+
+  const { current: coursePrice, original: courseOriginal } = getRegionPrice(course, region);
+  const discount = courseOriginal > 0 ? Math.round((1 - coursePrice / courseOriginal) * 100) : 0;
 
   const validate = () => {
     const e = {};
@@ -64,10 +68,6 @@ export default function CheckoutModal() {
   const useTestCard = () =>
     setCard({ number: '4242 4242 4242 4242', expiry: '12/28', cvv: '123', name: 'Usuario Prueba' });
 
-  const discount = course.originalPrice
-    ? Math.round((1 - course.price / course.originalPrice) * 100)
-    : 0;
-
   return (
     <div className="co-overlay" onClick={e => e.target === e.currentTarget && step === 'form' && setCheckoutModal(null)}>
       <div className="co-modal">
@@ -91,10 +91,10 @@ export default function CheckoutModal() {
             <p className="co-course-sub">Acceso de por vida · {course.hours}h de contenido</p>
           </div>
           <div>
-            <div className="co-course-price">${course.price.toLocaleString()}</div>
+            <div className="co-course-price">{formatPrice(coursePrice, region)}</div>
             {discount > 0 && (
               <div style={{ fontSize: 11, color: 'var(--text-3)', textDecoration: 'line-through', textAlign: 'right' }}>
-                ${course.originalPrice.toLocaleString()}
+                {formatPrice(courseOriginal, region)}
               </div>
             )}
           </div>
@@ -168,7 +168,7 @@ export default function CheckoutModal() {
             </div>
 
             <button type="submit" className="btn btn-primary co-pay-btn">
-              Pagar ${course.price.toLocaleString()}
+              Pagar {formatPrice(coursePrice, region)}
             </button>
           </form>
         )}

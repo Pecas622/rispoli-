@@ -176,7 +176,7 @@ export function Descargas() {
 
 // ── Perfil ────────────────────────────────────────────────────────────────────
 export function Perfil() {
-  const { user, showToast } = useApp();
+  const { user, showToast, region, selectRegion } = useApp();
   if (!user) return <Navigate to="/" />;
 
   const [name, setName] = useState(user.name);
@@ -248,6 +248,27 @@ export function Perfil() {
               </button>
             </div>
           </form>
+
+          <div className="perfil-prefs-section">
+            <h2 className="perfil-form-title">Preferencias</h2>
+            <div className="perfil-field">
+              <label>Región y moneda</label>
+              <div className="perfil-region-options">
+                <button
+                  className={`perfil-region-btn ${!region || region === 'AR' ? 'active' : ''}`}
+                  onClick={() => { selectRegion('AR'); showToast('Región actualizada: Argentina'); }}
+                >
+                  🇦🇷 Argentina · ARS
+                </button>
+                <button
+                  className={`perfil-region-btn ${region === 'WORLD' ? 'active' : ''}`}
+                  onClick={() => { selectRegion('WORLD'); showToast('Region updated: International'); }}
+                >
+                  🌍 Resto del mundo · USD
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
       </div>

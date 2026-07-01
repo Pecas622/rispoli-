@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut, LayoutDashboard, ChevronDown, Plane } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './Navbar.css';
 
@@ -32,10 +32,8 @@ export default function Navbar() {
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="container navbar-inner">
         <Link to="/" className="navbar-logo">
-          <div className="logo-icon-wrap">
-            <Plane size={14} strokeWidth={2.5} />
-          </div>
-          <span className="logo-text">GO Travel Academy</span>
+          <img src="/logo.jpg" alt="GO Travel Academy" className="navbar-logo-img" />
+          <span className="logo-text"> Travel Academy</span>
         </Link>
 
         <div className={`navbar-links ${open ? 'open' : ''}`}>

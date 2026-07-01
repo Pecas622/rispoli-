@@ -26,12 +26,10 @@
   text-decoration: none;
 }
 
-.logo-icon-wrap {
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px;
-  background: var(--accent);
+.navbar-logo-img {
+  width: 32px; height: 32px;
   border-radius: 8px;
-  color: white;
+  object-fit: cover;
   flex-shrink: 0;
 }
 

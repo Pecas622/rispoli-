@@ -1,0 +1,67 @@
+.rm-overlay {
+  position: fixed; inset: 0; z-index: 250;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+
+.rm-modal {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  width: 100%; max-width: 400px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+}
+
+.rm-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--violet-pale); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.rm-title {
+  font-size: 22px; font-weight: 800; letter-spacing: -0.03em;
+  color: var(--text); margin-bottom: 8px;
+}
+
+.rm-sub {
+  font-size: 14px; color: var(--text-2); line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.rm-options {
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.rm-option {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; border-radius: var(--r);
+  border: 1.5px solid var(--border);
+  background: var(--bg); cursor: pointer;
+  text-align: left; width: 100%;
+  transition: border-color 0.18s, background 0.18s;
+  font-family: var(--sans);
+}
+.rm-option:hover {
+  border-color: var(--accent);
+  background: var(--violet-pale);
+}
+
+.rm-flag { font-size: 28px; line-height: 1; flex-shrink: 0; }
+
+.rm-option-text { display: flex; flex-direction: column; }
+
+.rm-option-label {
+  font-size: 15px; font-weight: 600; color: var(--text);
+}
+.rm-option-detail {
+  font-size: 12px; color: var(--text-3); margin-top: 2px;
+}
+
+@media (max-width: 480px) {
+  .rm-modal { padding: 28px 20px; }
+  .rm-title { font-size: 18px; }
+}

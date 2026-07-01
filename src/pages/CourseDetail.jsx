@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, Award, Lock } from 'lucide-react';
 import { courses } from '../data/courses';
 import { useApp } from '../context/AppContext';
+import { getRegionPrice, formatPrice, getCheckoutLabel } from '../utils/pricing';
 import './CourseDetail.css';
 
 const levelBadge = { 'Principiante':'badge-green','Intermedio':'badge-amber','Avanzado':'badge-red' };
@@ -14,7 +15,7 @@ export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, enrollCourse, isEnrolled, setAuthModal, showToast } = useApp();
+  const { user, enrollCourse, isEnrolled, setAuthModal, showToast, region } = useApp();
   const [openModule, setOpenModule] = useState(0);
   const [enrolling, setEnrolling] = useState(false);
 
@@ -33,7 +34,9 @@ export default function CourseDetail() {
   );
 
   const enrolled = isEnrolled(course.id);
-  const discount  = Math.round((1 - course.price / course.originalPrice) * 100);
+  const { current: coursePrice, original: courseOriginal } = getRegionPrice(course, region);
+  const discount  = courseOriginal > 0 ? Math.round((1 - coursePrice / courseOriginal) * 100) : 0;
+  const checkoutLabel = getCheckoutLabel(region);
 
   // ── Cálculo de progreso ─────────────────────────────────────────────────────
   const prog        = enrolled ? (MOCK_PROGRESS[course.id] ?? 0) : 0;
@@ -118,8 +121,8 @@ export default function CourseDetail() {
                 </div>
                 <div className="enroll-body">
                   <div className="enroll-price">
-                    <span className="enroll-price-now">${course.price.toLocaleString()}</span>
-                    {discount > 0 && <span className="enroll-price-was">${course.originalPrice.toLocaleString()}</span>}
+                    <span className="enroll-price-now">{formatPrice(coursePrice, region)}</span>
+                    {discount > 0 && <span className="enroll-price-was">{formatPrice(courseOriginal, region)}</span>}
                     {discount > 0 && <span className="enroll-discount">-{discount}%</span>}
                   </div>
                   {discount > 0 && <p className="enroll-urgency">Oferta finaliza en 2 días</p>}
@@ -130,7 +133,7 @@ export default function CourseDetail() {
                     style={{width:'100%',justifyContent:'center',padding:'13px',marginTop:16}}
                     disabled={enrolling}
                   >
-                    {enrolling ? <><div className="spinner" /> Procesando...</> : 'Inscribirme ahora'}
+                    {enrolling ? <><div className="spinner" /> Procesando...</> : checkoutLabel}
                   </button>
 
                   <p style={{textAlign:'center',fontSize:12,color:'var(--text-3)',marginTop:10}}>

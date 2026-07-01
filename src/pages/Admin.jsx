@@ -16,7 +16,7 @@ export default function Admin() {
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-  const [form, setForm] = useState({ title:'', category:'Programación', level:'Principiante', price:'', duration:'', description:'' });
+  const [form, setForm] = useState({ title:'', category:'Programación', level:'Principiante', priceARS:'', priceUSD:'', duration:'', description:'' });
 
   const filtered = courses.filter(c =>
     c.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -24,20 +24,22 @@ export default function Admin() {
   );
 
   const openCreate = () => {
-    setForm({ title:'', category:'Programación', level:'Principiante', price:'', duration:'', description:'' });
+    setForm({ title:'', category:'Programación', level:'Principiante', priceARS:'', priceUSD:'', duration:'', description:'' });
     setModal('create');
   };
   const openEdit = c => {
-    setForm({ title:c.title, category:c.category, level:c.level, price:c.price, duration:c.duration, description:c.description });
+    setForm({ title:c.title, category:c.category, level:c.level, priceARS:c.priceARS ?? c.price ?? '', priceUSD:c.priceUSD ?? '', duration:c.duration, description:c.description });
     setModal(c);
   };
   const handleSave = () => {
-    if (!form.title || !form.price) { showToast('Completá los campos requeridos', 'error'); return; }
+    if (!form.title || !form.priceARS) { showToast('Completá los campos requeridos', 'error'); return; }
+    const ars = Number(form.priceARS);
+    const usd = Number(form.priceUSD) || 0;
     if (modal === 'create') {
-      setCourses(p => [{ ...form, id:Date.now(), price:Number(form.price), originalPrice:Number(form.price)*1.3, rating:5, reviews:0, students:0, hours:40, modality:'Online', image:'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80', color:'#7C3AED', tags:[], syllabus:[], requirements:[], includes:[], featured:false, instructor:{ name:'Por definir', role:'', avatar:'', bio:'' }, subtitle:form.description.slice(0,60) }, ...p]);
+      setCourses(p => [{ ...form, id:Date.now(), price:ars, originalPrice:Math.round(ars*1.3), priceARS:ars, originalPriceARS:Math.round(ars*1.3), priceUSD:usd, originalPriceUSD:Math.round(usd*1.3), rating:5, reviews:0, students:0, hours:40, modality:'Online', image:'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80', color:'#7C3AED', tags:[], syllabus:[], requirements:[], includes:[], featured:false, instructor:{ name:'Por definir', role:'', avatar:'', bio:'' }, subtitle:form.description.slice(0,60) }, ...p]);
       showToast('Curso creado');
     } else {
-      setCourses(p => p.map(c => c.id === modal.id ? { ...c, ...form, price:Number(form.price) } : c));
+      setCourses(p => p.map(c => c.id === modal.id ? { ...c, ...form, price:ars, priceARS:ars, priceUSD:usd } : c));
       showToast('Curso actualizado');
     }
     setModal(null);
@@ -136,13 +138,17 @@ export default function Admin() {
               </div>
               <div className="form-row">
                 <div className="form-field">
-                  <label>Precio (ARS) *</label>
-                  <input className="input" type="number" placeholder="89900" value={form.price} onChange={set('price')} />
+                  <label>Precio ARS *</label>
+                  <input className="input" type="number" placeholder="89900" value={form.priceARS} onChange={set('priceARS')} />
                 </div>
                 <div className="form-field">
-                  <label>Duración</label>
-                  <input className="input" placeholder="4 meses" value={form.duration} onChange={set('duration')} />
+                  <label>Precio USD</label>
+                  <input className="input" type="number" placeholder="89" value={form.priceUSD} onChange={set('priceUSD')} />
                 </div>
+              </div>
+              <div className="form-field">
+                <label>Duración</label>
+                <input className="input" placeholder="4 meses" value={form.duration} onChange={set('duration')} />
               </div>
               <div className="form-row">
                 <div className="form-field">

@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Star, Clock, Users, BookOpen } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { getRegionPrice, formatPrice } from '../utils/pricing';
 import './CourseCard.css';
 
 const levelColor = {
@@ -9,7 +11,9 @@ const levelColor = {
 };
 
 export default function CourseCard({ course }) {
-  const discount = Math.round((1 - course.price / course.originalPrice) * 100);
+  const { region } = useApp();
+  const { current, original } = getRegionPrice(course, region);
+  const discount = original > 0 ? Math.round((1 - current / original) * 100) : 0;
   const lvl = levelColor[course.level] || { bg: 'var(--bg-2)', color: 'var(--text-2)' };
 
   return (
@@ -62,8 +66,8 @@ export default function CourseCard({ course }) {
       {/* Footer */}
       <div className="cc-footer">
         <div className="cc-price">
-          <span className="cc-price-now">${course.price.toLocaleString()}</span>
-          {discount > 0 && <span className="cc-price-was">${course.originalPrice.toLocaleString()}</span>}
+          <span className="cc-price-now">{formatPrice(current, region)}</span>
+          {discount > 0 && <span className="cc-price-was">{formatPrice(original, region)}</span>}
         </div>
         <Link to={`/cursos/${course.id}`} className="cc-cta-btn">
           Ver curso

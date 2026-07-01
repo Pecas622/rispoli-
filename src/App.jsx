@@ -6,6 +6,7 @@ import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
 import CheckoutModal from './components/CheckoutModal';
+import RegionModal from './components/RegionModal';
 import Toast from './components/Toast';
 import Home from './pages/Home';
 import Courses from './pages/Courses';
@@ -59,6 +60,7 @@ function Layout() {
       <AuthModal />
       <VerifyEmailModal />
       <CheckoutModal />
+      <RegionModal />
       <Toast />
     </>
   );

@@ -83,6 +83,7 @@ export const progressApi = {
 
 // ── Payments ──────────────────────────────────────────────
 export const paymentsApi = {
-  checkout: (courseId) => api.post(`/payments/checkout/${courseId}`, {}),
-  history:  ()         => api.get('/payments/history'),
+  checkout:            (courseId) => api.post(`/payments/checkout/${courseId}`, {}),
+  checkoutMercadoPago: (courseId) => api.post(`/payments/mercadopago/${courseId}`, {}),
+  history:             ()         => api.get('/payments/history'),
 };
