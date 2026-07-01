@@ -332,7 +332,41 @@
 }
 
 /* ── Lesson modal (wider) ──────────────────────────────── */
-.lesson-modal { max-width: 620px !important; }
+.lesson-modal { max-width: 660px !important; }
+
+/* ── Content type selector ─────────────────────────────── */
+.lm-type-selector {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+
+.lm-type-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--r-sm);
+  border: 1.5px solid var(--border);
+  background: var(--bg-2); color: var(--text-2);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: var(--sans); transition: var(--transition);
+}
+.lm-type-btn:hover { border-color: var(--border-2); color: var(--text); }
+.lm-type-btn.active {
+  border-color: var(--accent);
+  background: var(--violet-pale);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Text content tab ──────────────────────────────────── */
+.lm-content-area {
+  min-height: 260px;
+  resize: vertical;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.lm-text-hint {
+  font-size: 12px; color: var(--text-3); line-height: 1.5;
+}
 
 .lesson-modal-tabs {
   display: flex;
@@ -463,6 +497,24 @@
   font-size: 13px;
 }
 
+.vs-url-hint { font-size: 12px; color: var(--text-3); }
+
+.vs-tip {
+  display: flex; align-items: flex-start; gap: 7px;
+  padding: 10px 14px;
+  background: var(--violet-pale);
+  border-radius: var(--r-sm);
+  font-size: 12px; color: var(--text-2); line-height: 1.5;
+}
+.vs-tip svg { flex-shrink: 0; margin-top: 1px; color: var(--accent); }
+
+.vs-uploaded { display: flex; flex-direction: column; gap: 10px; }
+
+.vs-file-info {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.vs-file-size { font-size: 12px; color: var(--text-3); }
+
 /* ── Upload resources ──────────────────────────────────── */
 .upload-resources { display: flex; flex-direction: column; gap: 12px; }
 
@@ -562,8 +614,24 @@
   margin: 20px 28px;
   border-radius: var(--r-lg);
   overflow: hidden;
+  position: relative;
+  -webkit-user-select: none;
+  user-select: none;
 }
-.lp-video-wrap iframe { width: 100%; height: 100%; border: none; }
+.lp-video-wrap iframe  { width: 100%; height: 100%; border: none; }
+.lp-native-video       { width: 100%; height: 100%; object-fit: contain; }
+
+/* Capa transparente que bloquea arrastrar/guardar el iframe */
+.lp-video-guard {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+
+.lp-text-content {
+  font-size: 15px; color: var(--text-2); line-height: 1.8;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.lp-text-content p { margin: 0; }
 
 .lp-section { padding: 0 28px; margin-bottom: 22px; }
 .lp-section-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }

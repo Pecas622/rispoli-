@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut, LayoutDashboard, ChevronDown } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, ChevronDown, Globe, Check } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './Navbar.css';
+
+const REGION_OPTIONS = [
+  { code: 'AR',    flag: '🇦🇷', label: 'Argentina',    sub: 'ARS · Mercado Pago' },
+  { code: 'WORLD', flag: '🌍', label: 'Internacional', sub: 'USD · Stripe'        },
+];
 
 const navLinks = [
   { label: 'Inicio', to: '/' },
@@ -14,11 +19,22 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const { user, logout, setAuthModal } = useApp();
+  const { user, logout, setAuthModal, region, selectRegion } = useApp();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
+  const [regionMenu, setRegionMenu] = useState(false);
+  const regionRef = useRef(null);
   const location = useLocation();
+
+  useEffect(() => {
+    if (!regionMenu) return;
+    const handler = (e) => {
+      if (regionRef.current && !regionRef.current.contains(e.target)) setRegionMenu(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [regionMenu]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -26,7 +42,7 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => { setOpen(false); setUserMenu(false); }, [location]);
+  useEffect(() => { setOpen(false); setUserMenu(false); setRegionMenu(false); }, [location]);
 
   return (
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
@@ -87,6 +103,43 @@ export default function Navbar() {
               <button onClick={() => setAuthModal('register')} className="btn btn-primary btn-sm">Comenzar ahora</button>
             </div>
           )}
+
+          {/* Region selector */}
+          <div className="region-menu-wrap" ref={regionRef}>
+            <button
+              className="region-trigger"
+              onClick={() => setRegionMenu(!regionMenu)}
+              title="Cambiar región / moneda"
+            >
+              <span className="region-trigger-flag">
+                {region === 'WORLD' ? '🌍' : '🇦🇷'}
+              </span>
+              <Globe size={11} className="region-trigger-icon" />
+            </button>
+
+            {regionMenu && (
+              <div className="region-dropdown">
+                <div className="region-dropdown-label">Región y moneda</div>
+                {REGION_OPTIONS.map(opt => {
+                  const active = (region || 'AR') === opt.code;
+                  return (
+                    <button
+                      key={opt.code}
+                      className={`region-option ${active ? 'active' : ''}`}
+                      onClick={() => { selectRegion(opt.code); setRegionMenu(false); }}
+                    >
+                      <span className="region-opt-flag">{opt.flag}</span>
+                      <span className="region-opt-text">
+                        <span className="region-opt-label">{opt.label}</span>
+                        <span className="region-opt-sub">{opt.sub}</span>
+                      </span>
+                      {active && <Check size={13} className="region-check" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           <button className="icon-btn mobile-menu-btn" onClick={() => setOpen(!open)}>
             {open ? <X size={18} /> : <Menu size={18} />}

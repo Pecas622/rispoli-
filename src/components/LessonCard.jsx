@@ -1,13 +1,20 @@
-import { Edit2, Trash2, Eye, Clock, CirclePlay, Video, Upload, FileText } from 'lucide-react';
+import { Edit2, Trash2, Eye, Clock, CirclePlay, Video, Upload, FileText, AlignLeft, Layers, Link2 } from 'lucide-react';
 
-const VIDEO_LABELS = { youtube: 'YouTube', vimeo: 'Vimeo', upload: 'Archivo' };
-const VIDEO_ICONS  = { youtube: CirclePlay, vimeo: Video, upload: Upload };
+const VIDEO_LABELS = { youtube: 'YouTube', vimeo: 'Vimeo', upload: 'Archivo', url: 'URL' };
+const VIDEO_ICONS  = { youtube: CirclePlay, vimeo: Video, upload: Upload, url: Link2 };
+
+const CONTENT_TYPE_BADGE = {
+  video: null,
+  text:  { label: 'Texto',          bg: 'var(--teal-pale)',   color: 'var(--teal)'       },
+  both:  { label: 'Video + Texto',  bg: 'var(--amber-pale)',  color: 'var(--amber)'      },
+};
 
 export default function LessonCard({
   lesson, index, totalLessons,
   onEdit, onDelete, onMoveUp, onMoveDown, onPreview,
 }) {
-  const VideoIcon = VIDEO_ICONS[lesson.video?.type];
+  const VideoIcon  = VIDEO_ICONS[lesson.video?.type];
+  const typeBadge  = CONTENT_TYPE_BADGE[lesson.contentType];
 
   return (
     <div className="lesson-card">
@@ -21,6 +28,11 @@ export default function LessonCard({
                 Vista previa
               </span>
             )}
+            {typeBadge && (
+              <span className="badge" style={{ fontSize: 10, padding: '2px 7px', background: typeBadge.bg, color: typeBadge.color }}>
+                {typeBadge.label}
+              </span>
+            )}
           </div>
           <div className="lesson-meta">
             {lesson.duration && (
@@ -28,9 +40,16 @@ export default function LessonCard({
                 <Clock size={11} /> {lesson.duration}
               </span>
             )}
-            {VideoIcon && lesson.video?.type !== 'none' && (
+            {VideoIcon && lesson.video?.type !== 'none' &&
+             (lesson.contentType === 'video' || lesson.contentType === 'both' || !lesson.contentType) && (
               <span className="lesson-meta-item">
                 <VideoIcon size={11} /> {VIDEO_LABELS[lesson.video.type]}
+              </span>
+            )}
+            {lesson.content?.trim() &&
+             (lesson.contentType === 'text' || lesson.contentType === 'both') && (
+              <span className="lesson-meta-item">
+                <AlignLeft size={11} /> Texto
               </span>
             )}
             {lesson.resources?.length > 0 && (

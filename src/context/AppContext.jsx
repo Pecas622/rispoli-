@@ -22,13 +22,29 @@ export function AppProvider({ children }) {
   const [checkoutModal,      setCheckoutModal]     = useState(null); // { courseId } — mock checkout
   const [courseContent,      setCourseContent]     = useState(initialCourseContent);
   const [region,             setRegion]            = useState(() => localStorage.getItem('region') || null);
-  const [showRegionModal,    setShowRegionModal]   = useState(() => !localStorage.getItem('region'));
+  const [showRegionModal,    setShowRegionModal]   = useState(false);
 
-  const selectRegion = (code) => {
+  const selectRegion = (code, silent = false) => {
     localStorage.setItem('region', code);
     setRegion(code);
     setShowRegionModal(false);
+    if (!silent) {
+      const label = code === 'AR' ? '🇦🇷 Argentina · ARS' : '🌍 Internacional · USD';
+      setToast({ message: `Región: ${label}`, type: 'success' });
+    }
   };
+
+  // Auto-detección de región por IP (solo la primera vez)
+  useEffect(() => {
+    if (localStorage.getItem('region')) return;
+    fetch('https://ipapi.co/json/')
+      .then(r => r.json())
+      .then(data => {
+        const code = data.country_code === 'AR' ? 'AR' : 'WORLD';
+        selectRegion(code, false);
+      })
+      .catch(() => selectRegion('AR', true));
+  }, []);
 
   useEffect(() => {
     if (user) localStorage.setItem('user', JSON.stringify(user));
