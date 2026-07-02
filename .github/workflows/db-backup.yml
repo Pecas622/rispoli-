@@ -1,0 +1,28 @@
+name: Database backup
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # todas las noches a las 03:00 ART (06:00 UTC)
+  workflow_dispatch: {}     # permite correrlo manualmente desde la pestaña Actions
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          mkdir -p backup
+          timestamp=$(date -u +'%Y-%m-%dT%H-%M-%SZ')
+          pg_dump "$DATABASE_URL" --no-owner --format=custom --file="backup/db-$timestamp.dump"
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup/*.dump
+          retention-days: 30
