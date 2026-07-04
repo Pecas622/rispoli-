@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authApi, paymentsApi, enrollmentsApi, usersApi } from '../services/api';
+import { authApi, enrollmentsApi, usersApi } from '../services/api';
 
 const AppContext = createContext();
 
@@ -15,6 +15,7 @@ export function AppProvider({ children }) {
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
   const [region,             setRegion]            = useState(() => localStorage.getItem('region') || null);
   const [showRegionModal,    setShowRegionModal]   = useState(false);
+  const [checkoutModal,      setCheckoutModal]     = useState(null); // curso en checkout demo, o null
 
   const selectRegion = (code, silent = false) => {
     localStorage.setItem('region', code);
@@ -217,17 +218,13 @@ export function AppProvider({ children }) {
 
   const enrolledCourseIds = enrollments.map(e => e.courseId);
 
-  const enrollCourse = async (courseId) => {
+  // La pasarela de pago real (Stripe/Mercado Pago) todavía no está conectada
+  // con credenciales productivas — por ahora esto abre un checkout de demo
+  // que no procesa ningún cargo real ni otorga inscripción.
+  const enrollCourse = (course) => {
     if (!user) { setAuthModal('login'); return; }
-    if (enrolledCourseIds.includes(courseId)) { showToast('Ya estás inscripto en este curso', 'info'); return; }
-
-    try {
-      const fn = region === 'WORLD' ? paymentsApi.checkout : paymentsApi.checkoutMercadoPago;
-      const { url } = await fn(courseId);
-      window.location.href = url;
-    } catch (err) {
-      showToast(err.message || 'Error al procesar el pago', 'error');
-    }
+    if (enrolledCourseIds.includes(course.id)) { showToast('Ya estás inscripto en este curso', 'info'); return; }
+    setCheckoutModal(course);
   };
 
   const isEnrolled = (courseId) => enrolledCourseIds.includes(courseId);
@@ -242,6 +239,7 @@ export function AppProvider({ children }) {
       enrollments, enrollmentsLoading, refreshEnrollments,
       toast, showToast,
       authModal, setAuthModal,
+      checkoutModal, setCheckoutModal,
       region, selectRegion, showRegionModal, setShowRegionModal,
     }}>
       {children}

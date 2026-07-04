@@ -169,45 +169,37 @@ router.post(
         return res.status(400).json({ message: 'Ya estás inscripto en este curso' });
       }
 
-      // ── Descomentar tras instalar 'mercadopago' ───────────────────────────
-      //
-      // const { getMPClient, Preference } = await import('../lib/mercadopago');
-      // const preference = new Preference(getMPClient());
-      //
-      // const response = await preference.create({
-      //   body: {
-      //     items: [{
-      //       id:         course.id,
-      //       title:      course.title,
-      //       quantity:   1,
-      //       unit_price: course.price,   // precio en ARS
-      //       currency_id: 'ARS',
-      //     }],
-      //     payer: {
-      //       // Se puede pre-completar con datos del usuario si los tenemos
-      //     },
-      //     metadata: {
-      //       userId:   req.user!.userId,
-      //       courseId: course.id,
-      //     },
-      //     back_urls: {
-      //       success: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${course.id}`,
-      //       failure: `${process.env.FRONTEND_URL}/cursos/${course.id}?payment=failed`,
-      //       pending: `${process.env.FRONTEND_URL}/dashboard?payment=pending`,
-      //     },
-      //     auto_return:      'approved',
-      //     notification_url: `${process.env.BACKEND_URL}/api/payments/mercadopago/webhook`,
-      //     statement_descriptor: 'GO TRAVEL ACADEMY',
-      //   },
-      // });
-      //
-      // res.json({ url: response.init_point });
-      // ──────────────────────────────────────────────────────────────────────
+      const { getMPClient, Preference } = await import('../lib/mercadopago');
+      const preference = new Preference(getMPClient());
 
-      res.status(503).json({
-        message: 'Mercado Pago: instalá el SDK y agregá las credenciales al .env para activar.',
-        code: 'MP_NOT_CONNECTED',
+      const response = await preference.create({
+        body: {
+          items: [{
+            id:         course.id,
+            title:      course.title,
+            quantity:   1,
+            unit_price: course.price,   // precio en ARS
+            currency_id: 'ARS',
+          }],
+          payer: {
+            // Se puede pre-completar con datos del usuario si los tenemos
+          },
+          metadata: {
+            userId:   req.user!.userId,
+            courseId: course.id,
+          },
+          back_urls: {
+            success: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${course.id}`,
+            failure: `${process.env.FRONTEND_URL}/cursos/${course.id}?payment=failed`,
+            pending: `${process.env.FRONTEND_URL}/dashboard?payment=pending`,
+          },
+          auto_return:      'approved',
+          notification_url: `${process.env.BACKEND_URL}/api/payments/mercadopago/webhook`,
+          statement_descriptor: 'GO TRAVEL ACADEMY',
+        },
       });
+
+      res.json({ url: response.init_point });
     } catch (err) {
       next(err);
     }
@@ -224,38 +216,34 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
     const { type, data } = req.body as { type: string; data: { id: string } };
 
     if (type === 'payment') {
-      // ── Descomentar tras instalar 'mercadopago' ─────────────────────────
-      //
-      // const { getMPClient, Payment } = await import('../lib/mercadopago');
-      // const paymentApi = new Payment(getMPClient());
-      // const payment = await paymentApi.get({ id: Number(data.id) });
-      //
-      // if (payment.status === 'approved' && payment.metadata) {
-      //   const { user_id: userId, course_id: courseId } = payment.metadata;
-      //   const amount = payment.transaction_amount ?? 0;
-      //
-      //   await prisma.enrollment.upsert({
-      //     where:  { userId_courseId: { userId, courseId } },
-      //     update: { paidAt: new Date(), mpPaymentId: data.id, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
-      //     create: { userId, courseId, mpPaymentId: data.id, paidAt: new Date(), amount, paymentProvider: 'mercadopago', currency: 'ARS' },
-      //   });
-      //
-      //   await prisma.course.update({
-      //     where: { id: courseId },
-      //     data:  { students: { increment: 1 } },
-      //   });
-      //
-      //   const [user, course] = await Promise.all([
-      //     prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
-      //     prisma.course.findUnique({ where: { id: courseId }, select: { title: true, price: true } }),
-      //   ]);
-      //   if (user && course) {
-      //     const invoiceNumber = `INV-MP-${Date.now().toString(36).toUpperCase()}`;
-      //     sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
-      //   }
-      // }
-      //
-      // ────────────────────────────────────────────────────────────────────
+      const { getMPClient, Payment } = await import('../lib/mercadopago');
+      const paymentApi = new Payment(getMPClient());
+      const payment = await paymentApi.get({ id: Number(data.id) });
+
+      if (payment.status === 'approved' && payment.metadata) {
+        const { user_id: userId, course_id: courseId } = payment.metadata;
+        const amount = payment.transaction_amount ?? 0;
+
+        await prisma.enrollment.upsert({
+          where:  { userId_courseId: { userId, courseId } },
+          update: { paidAt: new Date(), mpPaymentId: data.id, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
+          create: { userId, courseId, mpPaymentId: data.id, paidAt: new Date(), amount, paymentProvider: 'mercadopago', currency: 'ARS' },
+        });
+
+        await prisma.course.update({
+          where: { id: courseId },
+          data:  { students: { increment: 1 } },
+        });
+
+        const [user, course] = await Promise.all([
+          prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
+          prisma.course.findUnique({ where: { id: courseId }, select: { title: true, price: true } }),
+        ]);
+        if (user && course) {
+          const invoiceNumber = `INV-MP-${Date.now().toString(36).toUpperCase()}`;
+          sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
+        }
+      }
 
       console.log('[MP Webhook] Payment notification received:', data.id);
     }

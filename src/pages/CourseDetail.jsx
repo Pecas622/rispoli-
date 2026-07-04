@@ -90,7 +90,7 @@ export default function CourseDetail() {
     if (!user) { setAuthModal('register'); return; }
     setEnrolling(true);
     await new Promise(r => setTimeout(r, 700));
-    enrollCourse(course.id);
+    enrollCourse(course);
     setEnrolling(false);
   };
 

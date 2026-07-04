@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
+import CheckoutModal from './components/CheckoutModal';
 import Toast from './components/Toast';
 import Home from './pages/Home';
 import Courses from './pages/Courses';
@@ -59,6 +60,7 @@ function Layout() {
       <Footer />
       <AuthModal />
       <VerifyEmailModal />
+      <CheckoutModal />
       <Toast />
     </>
   );
