@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Plus } from 'lucide-react';
+import { ArrowRight, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { courses as mockCourses, testimonials, stats, faqs } from '../data/courses';
 import { coursesApi } from '../services/api';
 import CourseCard from '../components/CourseCard';
@@ -48,107 +48,134 @@ export default function Home() {
 
   const featured = courses.filter(c => c.featured).slice(0, 4);
 
+  // Carrusel de cursos: 2 actuales (Agente + GDS Amadeus) + 1 próximamente. Central + laterales, bucle infinito.
+  const carouselCourses = [1, 2].map(id => courses.find(c => c.id === id)).filter(Boolean);
+  const slides = [
+    ...carouselCourses.map(c => ({ ...c, kind: 'course' })),
+    {
+      kind: 'soon',
+      id: 'soon',
+      category: 'Próximamente',
+      title: 'IA aplicada al turismo',
+      subtitle: 'Automatizá tu agencia y vendé más usando inteligencia artificial.',
+      image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&q=80',
+    },
+  ];
+  const n = slides.length;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const nextSlide = () => setActiveIndex(i => (i + 1) % n);
+  const prevSlide = () => setActiveIndex(i => (i - 1 + n) % n);
+  const slidePos = (i) => {
+    const r = ((i - activeIndex) % n + n) % n;
+    if (r === 0) return 'is-center';
+    if (r === 1) return 'is-right';
+    if (r === n - 1) return 'is-left';
+    return 'is-hidden';
+  };
+
   return (
     <div>
 
       {/* ── HERO ────────────────────────────────────────── */}
       <section className="hero">
-        <div className="container hero-grid">
+        {/* Fondo: nubes en bucle continuo + ala fija camuflada */}
+        <div className="hero-clouds" aria-hidden="true" />
+        <div className="hero-wing" aria-hidden="true" />
 
-          {/* Left: text */}
-          <div className="hero-left">
-            <div className="hero-eyebrow">
-              <span>✈️</span>
-              La plataforma N°1 para agentes de viajes
-            </div>
+        <div className="container hero-inner">
+          <div className="hero-eyebrow">
+            <span>✈️</span>
+            La plataforma N°1 para agentes de viajes
+          </div>
 
-            <h1 className="hero-title">
-              Dominá el turismo.<br />
-              <span className="hero-title-accent">Transformá tu carrera.</span>
-            </h1>
+          <h1 className="hero-title">
+            Convertite en <span className="hero-title-accent">agente de viajes</span> con clases online en vivo
+          </h1>
 
-            <p className="hero-desc">
-              Formación profesional para agentes de viajes. Cursos con certificado IATA,
-              práctica en sistemas GDS y mentores activos en la industria.
-            </p>
+          <p className="hero-desc">
+            Clases en vivo con expertos de la industria, práctica real en sistemas GDS
+            y certificación IATA que te acompaña para crecer profesionalmente.
+          </p>
 
-            <div className="hero-cta">
-              <button onClick={() => setAuthModal('register')} className="btn btn-primary btn-lg">
-                Comenzar gratis <ArrowRight size={16} />
+          {/* Carrusel de cursos, justo debajo del texto secundario */}
+          <div className="hc-block">
+            <div className="hc-carousel">
+              <button className="hc-arrow hc-arrow-prev" onClick={prevSlide} aria-label="Anterior">
+                <ChevronLeft size={22} />
               </button>
-              <Link to="/cursos" className="btn btn-outline btn-lg">
-                Ver cursos
-              </Link>
-            </div>
 
-            <div className="hero-trust">
-              <div className="avatars">
-                {AVATAR_IDS.map(p => (
-                  <img key={p} src={`https://images.unsplash.com/${p}?w=40&q=80`} alt="" className="avatar-sm" />
+              <div className="hc-stage">
+                {slides.map((s, i) => (
+                  <article
+                    className={`hc-card ${slidePos(i)} ${s.kind === 'soon' ? 'hc-card-soon' : ''}`}
+                    key={s.id}
+                    onClick={() => { if (slidePos(i) !== 'is-center') setActiveIndex(i); }}
+                  >
+                    <div className="hc-card-media">
+                      <img src={s.image} alt={s.title} />
+                      <span className={`hc-badge ${s.kind === 'soon' ? 'hc-badge-soon' : ''}`}>{s.category}</span>
+                    </div>
+                    <div className="hc-card-body">
+                      <h3 className="hc-card-title">{s.title}</h3>
+                      <p className="hc-card-sub">{s.subtitle}</p>
+                      {s.kind === 'course' ? (
+                        <>
+                          <div className="hc-card-meta">
+                            <span>{s.level}</span><span>·</span><span>{s.duration}</span>
+                          </div>
+                          <div className="hc-card-foot">
+                            <span className="hc-price">${(s.priceARS ?? s.price).toLocaleString('es-AR')}</span>
+                            <Link to="/cursos" className="hc-card-btn">Ver curso</Link>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="hc-card-meta"><span>Muy pronto</span></div>
+                          <div className="hc-card-foot">
+                            <span className="hc-soon-note">Lanzamiento próximo</span>
+                            <button className="hc-card-btn hc-card-btn-ghost" onClick={(e) => { e.stopPropagation(); setAuthModal('register'); }}>Avisame</button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </article>
                 ))}
               </div>
-              <span>Más de 12.000 agentes certificados</span>
+
+              <button className="hc-arrow hc-arrow-next" onClick={nextSlide} aria-label="Siguiente">
+                <ChevronRight size={22} />
+              </button>
+            </div>
+
+            <div className="hc-dots">
+              {slides.map((s, i) => (
+                <button
+                  key={s.id}
+                  className={`hc-dot ${activeIndex === i ? 'active' : ''}`}
+                  onClick={() => setActiveIndex(i)}
+                  aria-label={`Ir al curso ${i + 1}`}
+                />
+              ))}
             </div>
           </div>
 
-          {/* Right: visual mockup */}
-          <div className="hero-right">
-            <div className="hero-mockup">
-              {/* Browser chrome */}
-              <div className="mockup-chrome">
-                <span className="chrome-dot" style={{ background: '#FF5F56' }} />
-                <span className="chrome-dot" style={{ background: '#FFBD2E' }} />
-                <span className="chrome-dot" style={{ background: '#27C93F' }} />
-                <div className="chrome-bar">go-travel-academy.com/cursos</div>
-              </div>
+          <div className="hero-cta">
+            <button onClick={() => setAuthModal('register')} className="btn btn-lg hero-cta-btn">
+              Inscribirme ahora <ArrowRight size={18} />
+            </button>
+          </div>
 
-              {/* Course preview card */}
-              <div className="mockup-body">
-                <div className="mockup-course">
-                  <img
-                    src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&q=80"
-                    alt="Course"
-                    className="mockup-course-img"
-                  />
-                  <div className="mockup-course-info">
-                    <span className="mockup-badge">Formación</span>
-                    <div className="mockup-course-title">Agente de Viajes Profesional</div>
-                    <div className="mockup-course-sub">María Eugenia Torres · IATA</div>
-                    <div className="mockup-progress-label">
-                      <span>Progreso</span>
-                      <span className="mockup-pct">68%</span>
-                    </div>
-                    <div className="mockup-progress-track">
-                      <div className="mockup-progress-fill" style={{ width: '68%' }} />
-                    </div>
-                  </div>
-                </div>
+          <div className="hero-freebie">
+            <span>🔥</span> Probá tu primera clase gratis
+          </div>
 
-                {/* Mini stat badges */}
-                <div className="mockup-stats">
-                  <div className="mockup-stat">
-                    <div className="mockup-stat-val">4</div>
-                    <div className="mockup-stat-lbl">Cursos activos</div>
-                  </div>
-                  <div className="mockup-stat">
-                    <div className="mockup-stat-val">2</div>
-                    <div className="mockup-stat-lbl">Certificados</div>
-                  </div>
-                  <div className="mockup-stat">
-                    <div className="mockup-stat-val">86h</div>
-                    <div className="mockup-stat-lbl">Horas</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating pills */}
-              <div className="mockup-pill pill-top">
-                🎓 ¡Certificado obtenido!
-              </div>
-              <div className="mockup-pill pill-bottom">
-                ✈️ 98% satisfacción
-              </div>
+          <div className="hero-trust">
+            <div className="avatars">
+              {AVATAR_IDS.map(p => (
+                <img key={p} src={`https://images.unsplash.com/${p}?w=40&q=80`} alt="" className="avatar-sm" />
+              ))}
             </div>
+            <span>Más de 12.000 agentes certificados</span>
           </div>
         </div>
       </section>
