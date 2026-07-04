@@ -64,7 +64,7 @@ export default function Home() {
 
             <div className="hero-cta">
               <button onClick={() => setAuthModal('register')} className="btn btn-primary btn-lg">
-                Comenzar gratis <ArrowRight size={16} />
+                Comenzá gratis <ArrowRight size={16} />
               </button>
               <Link to="/cursos" className="btn btn-outline btn-lg">
                 Ver cursos
