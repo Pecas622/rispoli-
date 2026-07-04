@@ -8,6 +8,7 @@
     "postinstall": "prisma generate",
     "build": "tsc",
     "start": "node dist/index.js",
+    "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
