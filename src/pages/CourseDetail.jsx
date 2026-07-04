@@ -1,21 +1,24 @@
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, Award, Lock } from 'lucide-react';
-import { courses } from '../data/courses';
+import { courses as mockCourses } from '../data/courses';
+import { coursesApi, progressApi } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice, getCheckoutLabel } from '../utils/pricing';
 import './CourseDetail.css';
 
+const USE_API = import.meta.env.VITE_USE_API === 'true';
 const levelBadge = { 'Principiante':'badge-green','Intermedio':'badge-amber','Avanzado':'badge-red' };
-
-// Progreso simulado por courseId (igual que en Dashboard)
-const MOCK_PROGRESS = { 1: 68, 2: 35, 3: 100, 4: 12, 5: 0, 6: 55 };
+const EMPTY_PROGRESS = { percent: 0, completed: 0, total: 0, completedLessonIds: [] };
+const MOCK_PROGRESS = { 1: 68, 2: 35, 3: 100, 4: 12, 5: 0, 6: 55 }; // solo para el fallback sin backend
 
 export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, enrollCourse, isEnrolled, setAuthModal, showToast, region } = useApp();
+  const [course, setCourse] = useState(undefined); // undefined = cargando, null = no encontrado
+  const [progress, setProgress] = useState(EMPTY_PROGRESS);
   const [openModule, setOpenModule] = useState(0);
   const [enrolling, setEnrolling] = useState(false);
 
@@ -25,7 +28,24 @@ export default function CourseDetail() {
     }
   }, []);
 
-  const course = courses.find(c => c.id === Number(id));
+  useEffect(() => {
+    if (!USE_API) {
+      setCourse(mockCourses.find(c => c.id === Number(id)) ?? null);
+      return;
+    }
+    coursesApi.get(id)
+      .then(res => setCourse(res.course))
+      .catch(() => setCourse(null));
+  }, [id]);
+
+  const enrolled = course ? isEnrolled(course.id) : false;
+
+  useEffect(() => {
+    if (!USE_API || !enrolled || !course) return;
+    progressApi.getCourse(course.id).then(setProgress).catch(() => {});
+  }, [enrolled, course?.id]);
+
+  if (course === undefined) return <div style={{padding:'160px 0',textAlign:'center'}}><div className="spinner" style={{margin:'0 auto'}} /></div>;
   if (!course) return (
     <div style={{padding:'160px 0',textAlign:'center'}}>
       <h2>Curso no encontrado</h2>
@@ -33,21 +53,34 @@ export default function CourseDetail() {
     </div>
   );
 
-  const enrolled = isEnrolled(course.id);
   const { current: coursePrice, original: courseOriginal } = getRegionPrice(course, region);
   const discount  = courseOriginal > 0 ? Math.round((1 - coursePrice / courseOriginal) * 100) : 0;
   const checkoutLabel = getCheckoutLabel(region);
 
+  const instructor = {
+    name:   course.instructorName   ?? course.instructor?.name   ?? 'Por definir',
+    role:   course.instructorRole   ?? course.instructor?.role   ?? '',
+    avatar: course.instructorAvatar ?? course.instructor?.avatar ?? '',
+    bio:    course.instructorBio    ?? course.instructor?.bio    ?? '',
+  };
+  const requirements = course.requirements ?? [];
+  const includes     = course.includes ?? [];
+
+  // ── Temario: real (módulos/clases) si viene de la API, mock si no ───────────
+  const syllabus = course.modules
+    ? course.modules.map((m, i) => ({ week: `Módulo ${i + 1}`, title: m.title, topics: (m.lessons ?? []).map(l => l.title) }))
+    : (course.syllabus ?? []);
+
   // ── Cálculo de progreso ─────────────────────────────────────────────────────
-  const prog        = enrolled ? (MOCK_PROGRESS[course.id] ?? 0) : 0;
-  const allTopics   = course.syllabus.flatMap(m => m.topics);
-  const totalTopics = allTopics.length;
-  const completedCount = Math.round(totalTopics * prog / 100);
+  const allTopics   = syllabus.flatMap(m => m.topics);
+  const totalTopics = USE_API ? (progress.total || allTopics.length) : allTopics.length;
+  const prog        = enrolled ? (USE_API ? progress.percent : (MOCK_PROGRESS[course.id] ?? 0)) : 0;
+  const completedCount = USE_API ? progress.completed : Math.round(totalTopics * prog / 100);
   const nextTopic   = prog < 100 ? allTopics[completedCount] : null;
 
   // Pre-calcular índices por módulo
   let runningIdx = 0;
-  const modulesWithIdx = course.syllabus.map(mod => {
+  const modulesWithIdx = syllabus.map(mod => {
     const startIdx = runningIdx;
     runningIdx += mod.topics.length;
     return { ...mod, startIdx, endIdx: runningIdx };
@@ -60,6 +93,8 @@ export default function CourseDetail() {
     enrollCourse(course.id);
     setEnrolling(false);
   };
+
+  const handleContinue = () => showToast('El visor de clases estará disponible próximamente', 'info');
 
   return (
     <div className="course-detail">
@@ -92,10 +127,10 @@ export default function CourseDetail() {
               </div>
 
               <div className="instructor-mini">
-                <img src={course.instructor.avatar} alt={course.instructor.name} />
+                <img src={instructor.avatar} alt={instructor.name} />
                 <div>
-                  <div className="instructor-mini-name">{course.instructor.name}</div>
-                  <div className="instructor-mini-role">{course.instructor.role}</div>
+                  <div className="instructor-mini-name">{instructor.name}</div>
+                  <div className="instructor-mini-role">{instructor.role}</div>
                 </div>
               </div>
             </div>
@@ -108,6 +143,7 @@ export default function CourseDetail() {
                 completedCount={completedCount}
                 totalTopics={totalTopics}
                 nextTopic={nextTopic}
+                onContinue={handleContinue}
               />
             ) : (
               <div className="enroll-card card card-elevated">
@@ -142,7 +178,7 @@ export default function CourseDetail() {
 
                   <div className="enroll-includes">
                     <p className="enroll-includes-title">Incluye</p>
-                    {course.includes.map(item => (
+                    {includes.map(item => (
                       <div key={item} className="include-item">
                         <CheckCircle size={13} style={{color:'var(--violet-mid)',flexShrink:0}} />
                         {item}
@@ -237,11 +273,11 @@ export default function CourseDetail() {
               <div className="detail-section">
                 <h2 className="detail-section-title">Tu instructor</h2>
                 <div className="instructor-block">
-                  <img src={course.instructor.avatar} alt={course.instructor.name} />
+                  <img src={instructor.avatar} alt={instructor.name} />
                   <div>
-                    <div className="instructor-name">{course.instructor.name}</div>
-                    <div className="instructor-role">{course.instructor.role}</div>
-                    <p className="instructor-bio">{course.instructor.bio}</p>
+                    <div className="instructor-name">{instructor.name}</div>
+                    <div className="instructor-role">{instructor.role}</div>
+                    <p className="instructor-bio">{instructor.bio}</p>
                   </div>
                 </div>
               </div>
@@ -249,7 +285,7 @@ export default function CourseDetail() {
               {/* ── Requisitos ── */}
               <div className="detail-section">
                 <h2 className="detail-section-title">Requisitos</h2>
-                {course.requirements.map(r => (
+                {requirements.map(r => (
                   <div key={r} className="req-item">
                     <div className="req-dot" />
                     {r}
@@ -267,7 +303,7 @@ export default function CourseDetail() {
 }
 
 // ── Tarjeta de progreso (sidebar cuando el alumno está inscripto) ─────────────
-function ProgressCard({ course, prog, completedCount, totalTopics, nextTopic }) {
+function ProgressCard({ course, prog, completedCount, totalTopics, nextTopic, onContinue }) {
   const remaining = totalTopics - completedCount;
   const isComplete = prog === 100;
 
@@ -318,17 +354,17 @@ function ProgressCard({ course, prog, completedCount, totalTopics, nextTopic }) 
               <>
                 <div className="pc-next-label">Empezá con</div>
                 <div className="pc-next-lesson">{nextTopic}</div>
-                <Link to={`/cursos/${course.id}/contenido`} className="btn btn-primary" style={{width:'100%',justifyContent:'center',marginTop:16}}>
+                <button onClick={onContinue} className="btn btn-primary" style={{width:'100%',justifyContent:'center',marginTop:16}}>
                   <Play size={14} fill="white" color="white" /> Comenzar curso
-                </Link>
+                </button>
               </>
             ) : (
               <>
                 <div className="pc-next-label">Siguiente clase</div>
                 <div className="pc-next-lesson">{nextTopic}</div>
-                <Link to={`/cursos/${course.id}/contenido`} className="btn btn-primary" style={{width:'100%',justifyContent:'center',marginTop:16}}>
+                <button onClick={onContinue} className="btn btn-primary" style={{width:'100%',justifyContent:'center',marginTop:16}}>
                   <Play size={14} fill="white" color="white" /> Continuar
-                </Link>
+                </button>
               </>
             )}
 

@@ -270,6 +270,59 @@ export async function sendPurchaseConfirmationEmail(
   });
 }
 
+// ── Código de acceso (login 2FA) ─────────────────────────────────────────────
+export async function sendLoginCodeEmail(email: string, code: string) {
+  await send({
+    from:    FROM,
+    to:      email,
+    subject: `${code} — Código de acceso GO Travel Academy`,
+    html: `
+<!DOCTYPE html><html lang="es">
+<body style="margin:0;padding:0;background:#f8fafc;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+  <tr><td align="center">
+    <table width="520" cellpadding="0" cellspacing="0"
+      style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
+      <tr>
+        <td style="background:#06043F;padding:28px 40px;">
+          <h1 style="margin:0;color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.03em;">GO Travel Academy</h1>
+          <p style="margin:4px 0 0;color:#8CB0F4;font-size:12px;">Verificación de identidad</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:40px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:15px;font-weight:600;color:#1e293b;">Tu código de acceso</p>
+          <p style="margin:0 0 24px;font-size:13px;color:#64748b;">Ingresá este código para completar el inicio de sesión.</p>
+          <div style="margin:0 auto 24px;display:inline-block;background:#f8fafc;border:1px solid #e2e8f0;
+               border-radius:12px;padding:22px 40px;">
+            <span style="font-size:40px;font-weight:800;letter-spacing:10px;color:#06043F;
+                  font-family:'Courier New',monospace;">${code}</span>
+          </div>
+          <p style="margin:0 0 8px;font-size:13px;color:#94a3b8;">
+            Expira en <strong>10 minutos</strong>. No lo compartas con nadie.
+          </p>
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 20px;margin-top:20px;text-align:left;">
+            <p style="margin:0;font-size:12px;color:#b91c1c;">
+              🔒 <strong>Aviso de seguridad:</strong> Si no intentaste iniciar sesión en GO Travel Academy,
+              alguien puede tener tu contraseña. Te recomendamos cambiarla de inmediato.
+            </p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px 40px;border-top:1px solid #e2e8f0;background:#f8fafc;">
+          <p style="margin:0;color:#94a3b8;font-size:12px;">
+            © 2026 GO Travel Academy · No respondas este email.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+  });
+}
+
 // ── Reset de contraseña ──────────────────────────────────────────────────────
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   await send({

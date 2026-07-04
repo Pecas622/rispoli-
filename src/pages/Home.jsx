@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Plus } from 'lucide-react';
-import { courses, testimonials, stats, faqs } from '../data/courses';
+import { courses as mockCourses, testimonials, stats, faqs } from '../data/courses';
+import { coursesApi } from '../services/api';
 import CourseCard from '../components/CourseCard';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import './Home.css';
+
+const USE_API = import.meta.env.VITE_USE_API === 'true';
 
 const statIcons = { users: '👤', book: '📚', building: '🏢', 'trending-up': '📈' };
 
@@ -36,6 +39,13 @@ const AVATAR_IDS = [
 export default function Home() {
   const { setAuthModal } = useApp();
   const [openFaq, setOpenFaq] = useState(null);
+  const [courses, setCourses] = useState(USE_API ? [] : mockCourses);
+
+  useEffect(() => {
+    if (!USE_API) return;
+    coursesApi.list().then(res => setCourses(res.courses)).catch(() => setCourses([]));
+  }, []);
+
   const featured = courses.filter(c => c.featured).slice(0, 4);
 
   return (

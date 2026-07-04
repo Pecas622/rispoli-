@@ -12,8 +12,8 @@ const REGION_OPTIONS = [
 const navLinks = [
   { label: 'Inicio', to: '/' },
   { label: 'Cursos', to: '/cursos' },
-  { label: 'Mi Aprendizaje', to: '/dashboard' },
-  { label: 'Certificaciones', to: '/certificaciones' },
+  { label: 'Mi Aprendizaje', to: '/dashboard', protected: true },
+  { label: 'Certificaciones', to: '/certificaciones', protected: true },
   { label: 'Nosotros', to: '/nosotros' },
   { label: 'Contacto', to: '/contacto' },
 ];
@@ -54,10 +54,21 @@ export default function Navbar() {
 
         <div className={`navbar-links ${open ? 'open' : ''}`}>
           {navLinks.map(link => (
-            <Link key={link.to} to={link.to}
-              className={`nav-link ${location.pathname === link.to ? 'active' : ''}`}>
-              {link.label}
-            </Link>
+            link.protected && !user ? (
+              <button
+                key={link.to}
+                type="button"
+                className="nav-link nav-link-btn"
+                onClick={() => setAuthModal('login')}
+              >
+                {link.label}
+              </button>
+            ) : (
+              <Link key={link.to} to={link.to}
+                className={`nav-link ${location.pathname === link.to ? 'active' : ''}`}>
+                {link.label}
+              </Link>
+            )
           ))}
           <div className="navbar-mobile-actions">
             {user ? (

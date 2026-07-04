@@ -13,7 +13,7 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
         course: {
           include: {
             modules: {
-              include: { lessons: { select: { id: true } } },
+              include: { lessons: { select: { id: true, title: true, resources: true } } },
             },
           },
         },
@@ -49,10 +49,12 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
   }
 });
 
-// GET /api/enrollments — admin: all enrollments
-router.get('/', authenticate, requireAdmin, async (_req: Request, res: Response, next: NextFunction) => {
+// GET /api/enrollments — admin: all enrollments (opcionalmente filtradas por usuario)
+router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const { userId } = req.query as Record<string, string>;
     const enrollments = await prisma.enrollment.findMany({
+      where: { ...(userId && { userId }) },
       include: {
         user:   { select: { id: true, name: true, email: true } },
         course: { select: { id: true, title: true, price: true } },

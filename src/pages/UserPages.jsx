@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { Award, Download, User, BookOpen, CheckCircle, ArrowLeft, FileText, ExternalLink, Clock } from 'lucide-react';
+import { Award, Download, User, BookOpen, CheckCircle, ArrowLeft, FileText, ExternalLink, Loader } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { courses as mockCourses } from '../data/courses';
 import './UserPages.css';
-
-const MOCK_PROGRESS = { 1: 68, 2: 35, 3: 100, 4: 12, 5: 0, 6: 55 };
 
 function PageShell({ icon: Icon, label, title, children }) {
   return (
@@ -42,18 +39,26 @@ function EmptyState({ icon: Icon, title, desc, action }) {
   );
 }
 
+function LoadingBlock() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+      <Loader size={26} style={{ animation: 'spin 1s linear infinite', color: 'var(--violet-mid)' }} />
+    </div>
+  );
+}
+
 // ── Certificaciones ───────────────────────────────────────────────────────────
 export function Certificaciones() {
-  const { user } = useApp();
+  const { user, enrollments, enrollmentsLoading, showToast } = useApp();
   if (!user) return <Navigate to="/" />;
 
-  const completed = mockCourses.filter(c =>
-    user.enrolledCourses?.includes(c.id) && MOCK_PROGRESS[c.id] === 100
-  );
+  const completed = enrollments.filter(e => e.progressPercent === 100);
 
   return (
     <PageShell icon={Award} label="Mis logros" title="Certificados">
-      {completed.length === 0 ? (
+      {enrollmentsLoading ? (
+        <LoadingBlock />
+      ) : completed.length === 0 ? (
         <EmptyState
           icon={Award}
           title="Todavía no tenés certificados"
@@ -62,8 +67,8 @@ export function Certificaciones() {
         />
       ) : (
         <div className="cert-grid">
-          {completed.map(course => (
-            <CertCard key={course.id} course={course} user={user} />
+          {completed.map(e => (
+            <CertCard key={e.courseId} course={e.course} user={user} showToast={showToast} />
           ))}
         </div>
       )}
@@ -71,8 +76,8 @@ export function Certificaciones() {
   );
 }
 
-function CertCard({ course, user }) {
-  const certNum = `GTA-${new Date().getFullYear()}-${String(course.id).padStart(4, '0')}`;
+function CertCard({ course, user, showToast }) {
+  const certNum = `GTA-${new Date().getFullYear()}-${String(course.id).slice(-4).toUpperCase()}`;
   const date = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
 
   return (
@@ -102,11 +107,11 @@ function CertCard({ course, user }) {
 
       <div style={{ padding: '14px 20px', display: 'flex', gap: 8 }}>
         <button className="btn btn-primary btn-sm" style={{ flex: 1, justifyContent: 'center' }}
-          onClick={() => alert('PDF disponible cuando el backend esté activo.')}>
+          onClick={() => showToast('Descarga de PDF disponible próximamente', 'info')}>
           <Download size={13} /> Descargar PDF
         </button>
         <button className="btn btn-outline btn-sm"
-          onClick={() => alert('Compartir disponible cuando el backend esté activo.')}>
+          onClick={() => showToast('Compartir disponible próximamente', 'info')}>
           <ExternalLink size={13} />
         </button>
       </div>
@@ -115,39 +120,36 @@ function CertCard({ course, user }) {
 }
 
 // ── Descargas ─────────────────────────────────────────────────────────────────
-const DOWNLOADS = [
-  { id: 1, courseId: 1, name: 'Guía del Agente de Viajes IATA', type: 'PDF', size: '2.4 MB' },
-  { id: 2, courseId: 1, name: 'Plantilla de Cotización de Paquetes', type: 'XLSX', size: '840 KB' },
-  { id: 3, courseId: 2, name: 'Comandos Amadeus — Cheat Sheet', type: 'PDF', size: '1.1 MB' },
-  { id: 4, courseId: 2, name: 'Glosario GDS — Amadeus y Sabre', type: 'PDF', size: '560 KB' },
-  { id: 5, courseId: 3, name: 'Guía de Proveedores de Lujo 2026', type: 'PDF', size: '3.2 MB' },
-  { id: 6, courseId: 4, name: 'Kit de Templates para Redes Sociales', type: 'ZIP', size: '18 MB' },
-  { id: 7, courseId: 4, name: 'Calendario Editorial Turístico', type: 'XLSX', size: '670 KB' },
-];
-
 const TYPE_COLORS = { PDF: '#EF4444', XLSX: '#22C55E', ZIP: '#F59E0B' };
 
 export function Descargas() {
-  const { user } = useApp();
+  const { user, enrollments, enrollmentsLoading } = useApp();
   if (!user) return <Navigate to="/" />;
 
-  const enrolled = user.enrolledCourses || [];
-  const available = DOWNLOADS.filter(d => enrolled.includes(d.courseId));
+  const available = enrollments.flatMap(e =>
+    (e.course?.modules ?? []).flatMap(m =>
+      (m.lessons ?? []).flatMap(l =>
+        (l.resources ?? []).map(r => ({ ...r, courseTitle: e.course.title }))
+      )
+    )
+  );
 
   return (
     <PageShell icon={Download} label="Recursos" title="Mis descargas">
-      {available.length === 0 ? (
+      {enrollmentsLoading ? (
+        <LoadingBlock />
+      ) : available.length === 0 ? (
         <EmptyState
           icon={Download}
           title="No tenés recursos disponibles"
-          desc="Al inscribirte en un curso, los materiales descargables aparecerán aquí."
+          desc="Los materiales descargables de tus cursos aparecerán acá cuando el instructor los suba."
           action={<Link to="/cursos" className="btn btn-primary">Ver cursos <BookOpen size={14} /></Link>}
         />
       ) : (
         <div className="downloads-list">
           {available.map(file => {
-            const course = mockCourses.find(c => c.id === file.courseId);
-            const color = TYPE_COLORS[file.type];
+            const type = (file.type || '').toUpperCase();
+            const color = TYPE_COLORS[type] ?? '#6F95E8';
             return (
               <div key={file.id} className="download-row">
                 <div className="download-icon" style={{ background: `${color}18` }}>
@@ -156,15 +158,14 @@ export function Descargas() {
                 <div className="download-info">
                   <div className="download-name">{file.name}</div>
                   <div className="download-meta">
-                    <span className="download-type" style={{ background: `${color}18`, color }}>{file.type}</span>
-                    {file.size} · {course?.title}
+                    <span className="download-type" style={{ background: `${color}18`, color }}>{type || 'Archivo'}</span>
+                    {file.size ? `${file.size} · ` : ''}{file.courseTitle}
                   </div>
                 </div>
-                <button className="btn btn-outline btn-sm"
-                  onClick={() => alert('Descarga disponible cuando el backend esté activo.')}>
+                <a className="btn btn-outline btn-sm" href={file.url || '#'} target="_blank" rel="noreferrer">
                   <Download size={13} />
                   <span className="hide-xs">Descargar</span>
-                </button>
+                </a>
               </div>
             );
           })}
@@ -176,22 +177,33 @@ export function Descargas() {
 
 // ── Perfil ────────────────────────────────────────────────────────────────────
 export function Perfil() {
-  const { user, showToast, region, selectRegion } = useApp();
+  const { user, showToast, region, selectRegion, enrollments, updateProfile, changePassword } = useApp();
   if (!user) return <Navigate to="/" />;
 
   const [name, setName] = useState(user.name);
   const [saving, setSaving] = useState(false);
 
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [changingPwd, setChangingPwd] = useState(false);
+
   const handleSave = async e => {
     e.preventDefault();
     setSaving(true);
-    await new Promise(r => setTimeout(r, 900));
+    await updateProfile({ name });
     setSaving(false);
-    showToast('Perfil actualizado');
   };
 
-  const enrolled  = (user.enrolledCourses || []).length;
-  const completed = (user.enrolledCourses || []).filter(id => MOCK_PROGRESS[id] === 100).length;
+  const handleChangePassword = async () => {
+    if (newPassword.length < 8) { showToast('La nueva contraseña debe tener al menos 8 caracteres', 'error'); return; }
+    setChangingPwd(true);
+    const result = await changePassword(currentPassword, newPassword);
+    setChangingPwd(false);
+    if (result.success) { setCurrentPassword(''); setNewPassword(''); }
+  };
+
+  const enrolled  = enrollments.length;
+  const completed = enrollments.filter(e => e.progressPercent === 100).length;
 
   return (
     <PageShell icon={User} label="Mi cuenta" title="Perfil">
@@ -227,27 +239,34 @@ export function Perfil() {
               <input className="input" type="email" value={user.email} disabled style={{ opacity: 0.65, cursor: 'not-allowed' }} />
               <p className="perfil-field-note">El email no puede modificarse desde aquí.</p>
             </div>
-
-            <div>
-              <h3 className="perfil-section-title">Cambiar contraseña</h3>
-              <div className="perfil-pwd-fields">
-                <div className="perfil-field">
-                  <label>Contraseña actual</label>
-                  <input className="input" type="password" placeholder="••••••••" />
-                </div>
-                <div className="perfil-field">
-                  <label>Nueva contraseña</label>
-                  <input className="input" type="password" placeholder="••••••••" />
-                </div>
-              </div>
-            </div>
-
             <div>
               <button type="submit" className="btn btn-primary" disabled={saving}>
                 {saving ? 'Guardando...' : 'Guardar cambios'}
               </button>
             </div>
           </form>
+
+          <div className="perfil-prefs-section">
+            <h3 className="perfil-section-title">Cambiar contraseña</h3>
+            <div className="perfil-pwd-fields">
+              <div className="perfil-field">
+                <label>Contraseña actual</label>
+                <input className="input" type="password" placeholder="••••••••" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} />
+              </div>
+              <div className="perfil-field">
+                <label>Nueva contraseña</label>
+                <input className="input" type="password" placeholder="••••••••" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-outline"
+              disabled={changingPwd || !currentPassword || !newPassword}
+              onClick={handleChangePassword}
+            >
+              {changingPwd ? 'Actualizando...' : 'Actualizar contraseña'}
+            </button>
+          </div>
 
           <div className="perfil-prefs-section">
             <h2 className="perfil-form-title">Preferencias</h2>

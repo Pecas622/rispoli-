@@ -3,14 +3,20 @@ import { X, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function AuthModal() {
-  const { authModal, setAuthModal, login, register } = useApp();
+  const { authModal, setAuthModal, login, register, forgotPassword } = useApp();
   const [form, setForm] = useState({ name:'', email:'', password:'' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   if (!authModal) return null;
   const isLogin = authModal === 'login';
+
+  const close = () => { setAuthModal(null); setForgotMode(false); setForgotSent(false); setForgotEmail(''); };
 
   const validate = () => {
     const e = {};
@@ -18,7 +24,7 @@ export default function AuthModal() {
     if (!form.email.trim()) e.email = 'Requerido';
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Email inválido';
     if (!form.password) e.password = 'Requerido';
-    else if (form.password.length < 6) e.password = 'Mínimo 6 caracteres';
+    else if (!isLogin && form.password.length < 8) e.password = 'Mínimo 8 caracteres';
     return e;
   };
 
@@ -27,19 +33,62 @@ export default function AuthModal() {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 500));
-    const ok = isLogin ? login(form.email, form.password) : register(form.name, form.email, form.password);
-    if (!ok) setLoading(false);
+    await (isLogin ? login(form.email, form.password) : register(form.name, form.email, form.password));
+    setLoading(false);
+  };
+
+  const handleForgotSubmit = async e => {
+    e.preventDefault();
+    if (!forgotEmail.trim() || !/\S+@\S+\.\S+/.test(forgotEmail)) return;
+    setForgotLoading(true);
+    await forgotPassword(forgotEmail);
+    setForgotLoading(false);
+    setForgotSent(true);
   };
 
   const set = k => e => { setForm(p=>({...p,[k]:e.target.value})); setErrors(p=>({...p,[k]:''})); };
 
   const FieldErr = ({k}) => errors[k] ? <span style={{fontSize:12,color:'var(--red)',marginTop:3,display:'block'}}>{errors[k]}</span> : null;
 
+  if (forgotMode) {
+    return (
+      <div className="modal-overlay" onClick={e => e.target===e.currentTarget && close()}>
+        <div className="modal">
+          <button className="modal-close-btn" style={{position:'absolute',top:14,right:14,width:28,height:28,borderRadius:6,background:'var(--bg-2)',border:'1px solid var(--border)',color:'var(--text-3)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}} onClick={close}><X size={14}/></button>
+
+          <h2 style={{fontSize:20,fontWeight:700,marginBottom:6,letterSpacing:'-0.02em'}}>Recuperar contraseña</h2>
+          <p style={{fontSize:14,color:'var(--text-3)',marginBottom:24}}>
+            {forgotSent
+              ? 'Si el email existe en nuestro sistema, te enviamos instrucciones para restablecer tu contraseña.'
+              : 'Ingresá tu email y te enviamos un enlace para restablecerla.'}
+          </p>
+
+          {!forgotSent && (
+            <form onSubmit={handleForgotSubmit} style={{display:'flex',flexDirection:'column',gap:14}}>
+              <div>
+                <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>Email</label>
+                <input className="input" type="email" placeholder="tu@email.com" value={forgotEmail} onChange={e=>setForgotEmail(e.target.value)} />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{width:'100%',justifyContent:'center',padding:'12px',marginTop:4}} disabled={forgotLoading}>
+                {forgotLoading ? <><div className="spinner"/>Enviando...</> : 'Enviar instrucciones'}
+              </button>
+            </form>
+          )}
+
+          <p style={{textAlign:'center',marginTop:18,fontSize:13,color:'var(--text-3)'}}>
+            <button onClick={()=>{ setForgotMode(false); setForgotSent(false); setForgotEmail(''); }} style={{background:'none',border:'none',color:'var(--text)',fontWeight:600,cursor:'pointer',fontSize:13}}>
+              Volver a iniciar sesión
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="modal-overlay" onClick={e => e.target===e.currentTarget && setAuthModal(null)}>
+    <div className="modal-overlay" onClick={e => e.target===e.currentTarget && close()}>
       <div className="modal">
-        <button className="modal-close-btn" style={{position:'absolute',top:14,right:14,width:28,height:28,borderRadius:6,background:'var(--bg-2)',border:'1px solid var(--border)',color:'var(--text-3)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}} onClick={()=>setAuthModal(null)}><X size={14}/></button>
+        <button className="modal-close-btn" style={{position:'absolute',top:14,right:14,width:28,height:28,borderRadius:6,background:'var(--bg-2)',border:'1px solid var(--border)',color:'var(--text-3)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}} onClick={close}><X size={14}/></button>
 
         <h2 style={{fontSize:20,fontWeight:700,marginBottom:6,letterSpacing:'-0.02em'}}>
           {isLogin ? 'Iniciar sesión' : 'Crear cuenta'}
@@ -47,12 +96,6 @@ export default function AuthModal() {
         <p style={{fontSize:14,color:'var(--text-3)',marginBottom:24}}>
           {isLogin ? 'Continuá aprendiendo donde lo dejaste' : 'Únete a más de 150.000 estudiantes'}
         </p>
-
-        {isLogin && (
-          <div style={{background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'10px 14px',marginBottom:20,fontSize:12,color:'var(--text-3)'}}>
-            Demo: <strong style={{color:'var(--text)'}}>admin@gotravelacademy.com</strong> / admin123 · <strong style={{color:'var(--text)'}}>juan@email.com</strong> / 123456
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:14}}>
           {!isLogin && (
@@ -76,6 +119,11 @@ export default function AuthModal() {
               </button>
             </div>
             <FieldErr k="password" />
+            {isLogin && (
+              <button type="button" onClick={()=>setForgotMode(true)} style={{background:'none',border:'none',color:'var(--text-3)',cursor:'pointer',fontSize:12,marginTop:8,padding:0}}>
+                ¿Olvidaste tu contraseña?
+              </button>
+            )}
           </div>
           <button type="submit" className="btn btn-primary" style={{width:'100%',justifyContent:'center',padding:'12px',marginTop:4}} disabled={loading}>
             {loading ? <><div className="spinner"/>Procesando...</> : isLogin ? 'Iniciar sesión' : 'Crear cuenta gratis'}

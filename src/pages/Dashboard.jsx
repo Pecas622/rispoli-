@@ -5,13 +5,8 @@ import {
   Home, Download, User, LogOut,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { enrollmentsApi } from '../services/api';
-import { courses as mockCourses } from '../data/courses';
+import { coursesApi } from '../services/api';
 import './Dashboard.css';
-
-const USE_API = import.meta.env.VITE_USE_API === 'true';
-
-const MOCK_PROGRESS = { 1: 68, 2: 35, 3: 100, 4: 12, 5: 0, 6: 55 };
 
 const sidebarLinks = [
   { label: 'Inicio',        icon: Home,     to: '/' },
@@ -22,11 +17,10 @@ const sidebarLinks = [
 ];
 
 export default function Dashboard() {
-  const { user, logout } = useApp();
-  const [enrollments, setEnrollments]   = useState(null);
-  const [loading, setLoading]           = useState(USE_API);
+  const { user, logout, enrollments, enrollmentsLoading } = useApp();
   const [activeNav, setActiveNav]       = useState('/dashboard');
   const [searchParams, setSearchParams] = useSearchParams();
+  const [allCourses, setAllCourses]     = useState([]);
 
   const paymentStatus = searchParams.get('payment');
   const paidCourseId  = searchParams.get('course');
@@ -44,17 +38,13 @@ export default function Dashboard() {
   }, [paymentStatus]);
 
   useEffect(() => {
-    if (!USE_API || !user) return;
-    enrollmentsApi.mine()
-      .then(data => setEnrollments(data.enrollments))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [user]);
+    coursesApi.list().then(res => setAllCourses(res.courses)).catch(() => setAllCourses([]));
+  }, []);
 
   if (!user) return <Navigate to="/" />;
   if (user.role === 'admin') return <Navigate to="/admin" />;
 
-  if (loading) {
+  if (enrollmentsLoading) {
     return (
       <div className="dashboard">
         <div className="dash-main" style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
@@ -64,27 +54,16 @@ export default function Dashboard() {
     );
   }
 
-  // ── Datos según modo ────────────────────────────────────
-  let enrolled, completed, totalHours;
+  // ── Datos ────────────────────────────────────────────────
+  const enrolled    = enrollments;
+  const completed   = enrolled.filter(e => e.progressPercent === 100).length;
+  const totalHours  = enrolled.reduce((a, e) => {
+    const hrs = parseFloat(e.course?.hours) || 0;
+    return a + Math.round(hrs * (e.progressPercent || 0) / 100);
+  }, 0);
 
-  if (USE_API && enrollments) {
-    enrolled   = enrollments;
-    completed  = enrolled.filter(e => e.progressPercent === 100).length;
-    totalHours = enrolled.reduce((a, e) => {
-      const hrs = parseFloat(e.course?.hours) || 0;
-      return a + Math.round(hrs * (e.progressPercent || 0) / 100);
-    }, 0);
-  } else {
-    const mockEnrolled = mockCourses.filter(c => user.enrolledCourses?.includes(c.id));
-    enrolled   = mockEnrolled.map(c => ({
-      course:          c,
-      progressPercent: MOCK_PROGRESS[c.id] || 0,
-    }));
-    completed  = enrolled.filter(e => e.progressPercent === 100).length;
-    totalHours = enrolled.reduce((a, e) => a + Math.round((e.course.hours || 0) * (e.progressPercent || 0) / 100), 0);
-  }
-
-  const recommended = mockCourses.filter(c => !user.enrolledCourses?.includes(c.id)).slice(0, 3);
+  const enrolledIds = enrolled.map(e => e.courseId);
+  const recommended = allCourses.filter(c => !enrolledIds.includes(c.id)).slice(0, 3);
 
   return (
     <div className="dashboard">
@@ -194,7 +173,7 @@ export default function Dashboard() {
             {enrolled.map(enrollment => {
               const course = enrollment.course;
               const prog   = enrollment.progressPercent || 0;
-              const id     = USE_API ? enrollment.courseId : course.id;
+              const id     = enrollment.courseId;
 
               return (
                 <div key={id} className="dash-course-card">
@@ -209,13 +188,9 @@ export default function Dashboard() {
                   </div>
                   <div className="dash-course-body">
                     <div className="dash-course-title">{course.title}</div>
-                    {USE_API ? (
-                      <div className="dash-course-meta">
-                        {enrollment.completedLessons} / {enrollment.totalLessons} clases completadas
-                      </div>
-                    ) : (
-                      <div className="dash-course-meta">{course.instructor?.name}</div>
-                    )}
+                    <div className="dash-course-meta">
+                      {enrollment.completedLessons} / {enrollment.totalLessons} clases completadas
+                    </div>
 
                     <div className="dash-progress-row">
                       <div className="progress-bar">
@@ -237,9 +212,9 @@ export default function Dashboard() {
                         {prog === 0 ? 'Comenzar' : prog === 100 ? 'Repasar' : 'Continuar'}
                       </Link>
                       {prog === 100 && (
-                        <button className="btn btn-outline btn-sm" title="Ver certificado">
+                        <Link to="/certificaciones" className="btn btn-outline btn-sm" title="Ver certificado">
                           <Award size={13} />
-                        </button>
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -265,9 +240,9 @@ export default function Dashboard() {
                   <div className="dash-rec-body">
                     <span className="dash-rec-cat">{c.category}</span>
                     <div className="dash-rec-title">{c.title}</div>
-                    <div className="dash-rec-meta">{c.instructor?.name} · {c.duration}</div>
+                    <div className="dash-rec-meta">{c.instructorName ?? c.instructor?.name} · {c.duration}</div>
                     <div className="dash-rec-footer">
-                      <span className="dash-rec-price">${c.price.toLocaleString()}</span>
+                      <span className="dash-rec-price">${(c.price ?? 0).toLocaleString()}</span>
                       <Link to={`/cursos/${c.id}`} className="btn btn-outline btn-sm">Ver curso</Link>
                     </div>
                   </div>

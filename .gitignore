@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Variables de entorno — NUNCA subir al repositorio
+.env
+.env.local
+.env.*.local
+backend/.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 
 import { authRouter }        from './routes/auth.routes';
 import { usersRouter }       from './routes/users.routes';
@@ -22,10 +24,34 @@ app.use(cors({
   credentials: true,
 }));
 
+// Rate limiting: protección ante ataques de fuerza bruta
+const authLimiter = rateLimit({
+  windowMs:        15 * 60 * 1000, // 15 minutos
+  max:             10,              // máx 10 intentos por IP
+  standardHeaders: true,
+  legacyHeaders:   false,
+  message: { message: 'Demasiados intentos. Esperá 15 minutos e intentá de nuevo.' },
+});
+const otpLimiter = rateLimit({
+  windowMs:        15 * 60 * 1000,
+  max:             5,               // OTP es más sensible: máx 5 intentos
+  standardHeaders: true,
+  legacyHeaders:   false,
+  message: { message: 'Demasiados intentos de verificación. Esperá 15 minutos.' },
+});
+const passwordResetLimiter = rateLimit({
+  windowMs:        15 * 60 * 1000,
+  max:             5,
+  standardHeaders: true,
+  legacyHeaders:   false,
+  message: { message: 'Demasiados intentos. Esperá 15 minutos e intentá de nuevo.' },
+});
+
 // ── Stripe webhook needs raw body BEFORE express.json() ───
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
 // ── General middleware ─────────────────────────────────────
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== 'test') {
@@ -38,6 +64,15 @@ app.get('/health', (_req, res) => {
 });
 
 // ── API routes ─────────────────────────────────────────────
+// Aplicar rate limits a los endpoints de autenticación
+app.use('/api/auth/login',          authLimiter);
+app.use('/api/auth/register',       authLimiter);
+app.use('/api/auth/verify-email',   otpLimiter);
+app.use('/api/auth/verify-login',   otpLimiter);
+app.use('/api/auth/resend-code',    otpLimiter);
+app.use('/api/auth/forgot-password', passwordResetLimiter);
+app.use('/api/auth/change-password', passwordResetLimiter);
+
 app.use('/api/auth',        authRouter);
 app.use('/api/users',       usersRouter);
 app.use('/api/courses',     coursesRouter);

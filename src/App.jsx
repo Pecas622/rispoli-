@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import './index.css';
 import { AppProvider } from './context/AppContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
-import CheckoutModal from './components/CheckoutModal';
 import Toast from './components/Toast';
 import Home from './pages/Home';
 import Courses from './pages/Courses';
@@ -14,9 +14,9 @@ import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 import Instructor from './pages/Instructor';
 import CourseContent from './pages/CourseContent';
+import ResetPassword from './pages/ResetPassword';
 import { Empresas, Nosotros, Blog, Contacto } from './pages/StaticPages';
 import { Certificaciones, Descargas, Perfil } from './pages/UserPages';
-import './index.css';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -38,6 +38,7 @@ function Layout() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/instructor" element={<Instructor />} />
           <Route path="/admin/courses/:id/content" element={<CourseContent />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/certificaciones" element={<Certificaciones />} />
           <Route path="/descargas" element={<Descargas />} />
           <Route path="/perfil" element={<Perfil />} />
@@ -58,7 +59,6 @@ function Layout() {
       <Footer />
       <AuthModal />
       <VerifyEmailModal />
-      <CheckoutModal />
       <Toast />
     </>
   );

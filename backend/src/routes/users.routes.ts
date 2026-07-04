@@ -6,25 +6,44 @@ import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 const router = Router();
 
 const updateSchema = z.object({
-  name:   z.string().min(2).optional(),
-  avatar: z.string().url().optional(),
-  role:   z.enum(['ADMIN', 'INSTRUCTOR', 'STUDENT']).optional(),
+  name:      z.string().min(2).optional(),
+  avatar:    z.string().url().optional(),
+  role:      z.enum(['ADMIN', 'INSTRUCTOR', 'STUDENT']).optional(),
+  isBlocked: z.boolean().optional(),
 });
 
 const USER_SELECT = {
   id: true, name: true, email: true,
-  role: true, avatar: true, createdAt: true,
+  role: true, avatar: true, isBlocked: true, createdAt: true,
   _count: { select: { enrollments: true } },
 } as const;
 
-// GET /api/users — admin only
-router.get('/', authenticate, requireAdmin, async (_req: Request, res: Response, next: NextFunction) => {
+// GET /api/users — admin only (con paginación y búsqueda)
+router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const users = await prisma.user.findMany({
-      select: USER_SELECT,
-      orderBy: { createdAt: 'desc' },
-    });
-    res.json({ users });
+    const { search } = req.query as Record<string, string>;
+    const page  = Math.max(1, Number(req.query.page)  || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+
+    const where = search
+      ? { OR: [
+          { name:  { contains: search, mode: 'insensitive' as const } },
+          { email: { contains: search, mode: 'insensitive' as const } },
+        ] }
+      : {};
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: USER_SELECT,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    res.json({ users, total, page, totalPages: Math.max(1, Math.ceil(total / limit)) });
   } catch (err) {
     next(err);
   }

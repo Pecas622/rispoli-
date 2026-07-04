@@ -16,11 +16,12 @@ declare global {
 
 export function authenticate(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
+  const token = header?.startsWith('Bearer ') ? header.split(' ')[1] : req.cookies?.access_token;
+
+  if (!token) {
     return res.status(401).json({ message: 'Token de autenticación requerido' });
   }
 
-  const token = header.split(' ')[1];
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET!) as TokenPayload;
     req.user = payload;
@@ -28,6 +29,20 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   } catch {
     return res.status(401).json({ message: 'Token inválido o expirado' });
   }
+}
+
+export function optionalAuth(req: Request, res: Response, next: NextFunction) {
+  const header = req.headers.authorization;
+  const token = header?.startsWith('Bearer ') ? header.split(' ')[1] : req.cookies?.access_token;
+
+  if (token) {
+    try {
+      req.user = jwt.verify(token, process.env.JWT_SECRET!) as TokenPayload;
+    } catch {
+      // token inválido/expirado: seguir como anónimo, sin rechazar
+    }
+  }
+  next();
 }
 
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {

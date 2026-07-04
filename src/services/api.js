@@ -1,16 +1,9 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
-function getToken() {
-  return localStorage.getItem('access_token');
-}
-
 async function request(endpoint, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...options.headers };
 
-  const token = getToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  const res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
+  const res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers, credentials: 'include' });
 
   // 204 No Content
   if (res.status === 204) return null;
@@ -18,8 +11,9 @@ async function request(endpoint, options = {}) {
   const data = await res.json();
   if (!res.ok) {
     const err = new Error(data.message || `Error ${res.status}`);
-    err.code   = data.code;
-    err.email  = data.email;
+    err.code    = data.code;
+    err.email   = data.email;
+    err.devCode = data.devCode;
     throw err;
   }
   return data;
@@ -34,11 +28,16 @@ export const api = {
 
 // ── Auth ──────────────────────────────────────────────────
 export const authApi = {
-  register:    (name, email, password) => api.post('/auth/register', { name, email, password }),
-  login:       (email, password)       => api.post('/auth/login', { email, password }),
-  verifyEmail: (email, code)           => api.post('/auth/verify-email', { email, code }),
-  resendCode:  (email)                 => api.post('/auth/resend-code', { email }),
-  me:          ()                      => api.get('/auth/me'),
+  register:       (name, email, password) => api.post('/auth/register', { name, email, password }),
+  login:          (email, password)       => api.post('/auth/login', { email, password }),
+  verifyEmail:    (email, code)           => api.post('/auth/verify-email', { email, code }),
+  verifyLogin:    (email, code)           => api.post('/auth/verify-login', { email, code }),
+  resendCode:     (email)                 => api.post('/auth/resend-code', { email }),
+  me:             ()                      => api.get('/auth/me'),
+  logout:         ()                      => api.post('/auth/logout', {}),
+  forgotPassword: (email)                 => api.post('/auth/forgot-password', { email }),
+  resetPassword:  (token, password)       => api.post('/auth/reset-password', { token, password }),
+  changePassword: (currentPassword, newPassword) => api.post('/auth/change-password', { currentPassword, newPassword }),
 };
 
 // ── Courses ───────────────────────────────────────────────
@@ -72,6 +71,21 @@ export const lessonsApi = {
 // ── Enrollments ───────────────────────────────────────────
 export const enrollmentsApi = {
   mine: () => api.get('/enrollments/me'),
+  all:  (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return api.get(`/enrollments${qs ? `?${qs}` : ''}`);
+  },
+  free: (courseId, userId) => api.post(`/enrollments/${courseId}/free`, { userId }),
+};
+
+// ── Users (admin) ──────────────────────────────────────────
+export const usersApi = {
+  list:   (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return api.get(`/users${qs ? `?${qs}` : ''}`);
+  },
+  update: (id, data) => api.patch(`/users/${id}`, data),
+  remove: (id)        => api.delete(`/users/${id}`),
 };
 
 // ── Progress ──────────────────────────────────────────────
@@ -86,4 +100,8 @@ export const paymentsApi = {
   checkout:            (courseId) => api.post(`/payments/checkout/${courseId}`, {}),
   checkoutMercadoPago: (courseId) => api.post(`/payments/mercadopago/${courseId}`, {}),
   history:             ()         => api.get('/payments/history'),
+  adminList: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return api.get(`/payments${qs ? `?${qs}` : ''}`);
+  },
 };

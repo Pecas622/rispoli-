@@ -54,6 +54,7 @@
 }
 .nav-link:hover { color: var(--text); background: var(--bg-2); }
 .nav-link.active { color: var(--accent); font-weight: 600; }
+.nav-link-btn { background: none; border: none; font-family: inherit; cursor: pointer; text-align: left; }
 
 /* Actions area */
 .navbar-actions {

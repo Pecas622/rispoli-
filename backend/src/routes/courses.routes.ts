@@ -1,34 +1,44 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
-import { authenticate, requireAdmin } from '../middleware/auth.middleware';
+import { authenticate, requireAdmin, optionalAuth } from '../middleware/auth.middleware';
 
 const router = Router();
 
 const courseSchema = z.object({
-  title:         z.string().min(3),
-  subtitle:      z.string().optional(),
-  description:   z.string().optional(),
-  category:      z.string(),
-  level:         z.string(),
-  modality:      z.string().optional(),
-  duration:      z.string().optional(),
-  hours:         z.number().int().positive().optional(),
-  price:         z.number().positive(),
-  originalPrice: z.number().positive().optional(),
-  image:         z.string().url().optional(),
-  featured:      z.boolean().optional(),
-  published:     z.boolean().optional(),
+  title:            z.string().min(3),
+  subtitle:         z.string().optional(),
+  description:      z.string().optional(),
+  category:         z.string(),
+  level:            z.string(),
+  modality:         z.string().optional(),
+  duration:         z.string().optional(),
+  hours:            z.number().int().positive().optional(),
+  price:            z.number().positive(),                         // ARS
+  originalPrice:    z.number().positive().optional(),             // ARS original
+  priceUSD:         z.number().positive().optional(),             // USD
+  originalPriceUSD: z.number().positive().optional(),             // USD original
+  image:            z.string().url().optional(),
+  featured:         z.boolean().optional(),
+  published:        z.boolean().optional(),
+  tags:             z.array(z.string()).optional(),
+  requirements:     z.array(z.string()).optional(),
+  includes:         z.array(z.string()).optional(),
+  instructorName:   z.string().optional(),
+  instructorRole:   z.string().optional(),
+  instructorAvatar: z.string().url().optional(),
+  instructorBio:    z.string().optional(),
 });
 
-// GET /api/courses — public
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+// GET /api/courses — public (admin ve también los no publicados)
+router.get('/', optionalAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { category, level, search } = req.query as Record<string, string>;
+    const isAdmin = req.user?.role === 'ADMIN';
 
     const courses = await prisma.course.findMany({
       where: {
-        published: true,
+        ...(!isAdmin && { published: true }),
         ...(category && category !== 'Todos' && { category }),
         ...(level    && level    !== 'Todos' && { level    }),
         ...(search   && {

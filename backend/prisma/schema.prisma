@@ -21,11 +21,13 @@ model User {
   role          Role     @default(STUDENT)
   avatar        String?
   emailVerified Boolean  @default(false) @map("email_verified")
+  isBlocked     Boolean  @default(false) @map("is_blocked")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   enrollments Enrollment[]
   progress    LessonProgress[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
@@ -41,6 +43,19 @@ model VerificationCode {
   @@map("verification_codes")
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
 model Course {
   id            String   @id @default(cuid())
   title         String
@@ -51,8 +66,10 @@ model Course {
   modality      String   @default("Online")
   duration      String?
   hours         Int?
-  price         Float
-  originalPrice Float?   @map("original_price")
+  price            Float                     // ARS — precio en pesos argentinos
+  originalPrice    Float?   @map("original_price")
+  priceUSD         Float?   @map("price_usd")
+  originalPriceUSD Float?   @map("original_price_usd")
   rating        Float    @default(0)
   reviews       Int      @default(0)
   students      Int      @default(0)
@@ -60,6 +77,13 @@ model Course {
   featured      Boolean  @default(false)
   stripePriceId String?  @map("stripe_price_id")
   published     Boolean  @default(true)
+  tags             String[]
+  requirements     String[]
+  includes         String[]
+  instructorName   String?  @map("instructor_name")
+  instructorRole   String?  @map("instructor_role")
+  instructorAvatar String?  @map("instructor_avatar")
+  instructorBio    String?  @map("instructor_bio") @db.Text
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -90,8 +114,10 @@ model Lesson {
   title       String
   description String?  @db.Text
   duration    String?
-  videoType   String?  @map("video_type")
+  videoType   String?  @map("video_type")   // youtube | vimeo | upload | url | none
   videoUrl    String?  @map("video_url")
+  contentType String?  @map("content_type") // video | text | both
+  content     String?  @db.Text             // contenido de texto de la clase
   isPreview   Boolean  @default(false) @map("is_preview")
   order       Int
   createdAt   DateTime @default(now()) @map("created_at")
@@ -122,8 +148,11 @@ model Enrollment {
   userId          String    @map("user_id")
   courseId        String    @map("course_id")
   stripeSessionId String?   @map("stripe_session_id")
+  mpPaymentId     String?   @map("mp_payment_id")
+  paymentProvider String?   @map("payment_provider") // stripe | mercadopago | free
   paidAt          DateTime? @map("paid_at")
   amount          Float?
+  currency        String?   @default("ARS")
   createdAt       DateTime  @default(now()) @map("created_at")
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

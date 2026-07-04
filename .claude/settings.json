@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command 'Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '\\\\''*tsx watch*'\\\\'' -or $_.Name -eq '\\\\''node.exe'\\\\'' } | Select-Object ProcessId, Name, CommandLine')",
+      "Bash(powershell -Command \"Stop-Process -Id 17464,9320,11072 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(node test2.js)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

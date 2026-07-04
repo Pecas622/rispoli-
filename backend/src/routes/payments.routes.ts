@@ -1,23 +1,36 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import express from 'express';
 import { getStripe, isStripeReady } from '../lib/stripe';
+import { isMercadoPagoReady } from '../lib/mercadopago';
 import { prisma } from '../lib/prisma';
 import { sendPurchaseConfirmationEmail } from '../lib/email';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Guard: devuelve 503 claro si Stripe no está configurado todavía
+// ── Guards ────────────────────────────────────────────────────────────────────
+
 function requireStripe(_req: Request, res: Response, next: NextFunction) {
   if (!isStripeReady()) {
     return res.status(503).json({
-      message: 'El sistema de pagos aún no está configurado. Contactá al administrador.',
-      code:    'STRIPE_NOT_CONFIGURED',
+      message: 'El sistema de pagos (Stripe) aún no está configurado. Agregá STRIPE_SECRET_KEY al .env.',
+      code: 'STRIPE_NOT_CONFIGURED',
     });
   }
   next();
 }
 
+function requireMercadoPago(_req: Request, res: Response, next: NextFunction) {
+  if (!isMercadoPagoReady()) {
+    return res.status(503).json({
+      message: 'Mercado Pago aún no está configurado. Agregá MP_ACCESS_TOKEN al .env.',
+      code: 'MP_NOT_CONFIGURED',
+    });
+  }
+  next();
+}
+
+// ── Stripe — checkout internacional (USD) ─────────────────────────────────────
 // POST /api/payments/checkout/:courseId
 router.post(
   '/checkout/:courseId',
@@ -36,25 +49,31 @@ router.post(
         return res.status(400).json({ message: 'Ya estás inscripto en este curso' });
       }
 
+      // Usar priceUSD para Stripe (pagos internacionales)
+      const unitAmount = course.priceUSD != null
+        ? Math.round(course.priceUSD * 100)
+        : Math.round(course.price * 100);
+
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         mode:   'payment',
-        locale: 'es',
+        locale: 'auto',
         line_items: [{
           price_data: {
-            currency:     process.env.STRIPE_CURRENCY ?? 'ars',
+            currency:     'usd',
             product_data: {
               name:        course.title,
               description: course.subtitle ?? undefined,
               images:      course.image ? [course.image] : [],
             },
-            unit_amount: Math.round(course.price * 100),
+            unit_amount: unitAmount,
           },
           quantity: 1,
         }],
         metadata: {
           userId:   req.user!.userId,
           courseId: course.id,
+          provider: 'stripe',
         },
         success_url: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${course.id}`,
         cancel_url:  `${process.env.FRONTEND_URL}/cursos/${course.id}?payment=cancelled`,
@@ -67,8 +86,9 @@ router.post(
   },
 );
 
-// POST /api/payments/webhook  — Stripe llama a este endpoint tras cada pago
-// IMPORTANTE: necesita raw body (se configura en app.ts antes de express.json)
+// ── Stripe — webhook ──────────────────────────────────────────────────────────
+// POST /api/payments/webhook
+// IMPORTANTE: necesita raw body — se configura en app.ts antes de express.json()
 router.post(
   '/webhook',
   express.raw({ type: 'application/json' }),
@@ -88,7 +108,7 @@ router.post(
         process.env.STRIPE_WEBHOOK_SECRET!,
       );
     } catch (err: any) {
-      console.error('[Webhook] Firma inválida:', err.message);
+      console.error('[Stripe Webhook] Firma inválida:', err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
@@ -100,8 +120,8 @@ router.post(
       try {
         await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
-          update: { paidAt: new Date(), stripeSessionId: session.id, amount },
-          create: { userId, courseId, stripeSessionId: session.id, paidAt: new Date(), amount },
+          update: { paidAt: new Date(), stripeSessionId: session.id, amount, paymentProvider: 'stripe', currency: 'USD' },
+          create: { userId, courseId, stripeSessionId: session.id, paidAt: new Date(), amount, paymentProvider: 'stripe', currency: 'USD' },
         });
 
         await prisma.course.update({
@@ -118,7 +138,7 @@ router.post(
           sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
         }
       } catch (err) {
-        console.error('[Webhook] Error procesando inscripción:', err);
+        console.error('[Stripe Webhook] Error procesando inscripción:', err);
       }
     }
 
@@ -126,6 +146,166 @@ router.post(
   },
 );
 
+// ── Mercado Pago — checkout ARS ───────────────────────────────────────────────
+// POST /api/payments/mercadopago/:courseId
+//
+// Para activar:
+//   1. npm install mercadopago
+//   2. Agregar MP_ACCESS_TOKEN al .env
+//   3. Descomentar el bloque de código de abajo
+router.post(
+  '/mercadopago/:courseId',
+  authenticate,
+  requireMercadoPago,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const course = await prisma.course.findUnique({ where: { id: req.params.courseId } });
+      if (!course) return res.status(404).json({ message: 'Curso no encontrado' });
+
+      const existing = await prisma.enrollment.findUnique({
+        where: { userId_courseId: { userId: req.user!.userId, courseId: course.id } },
+      });
+      if (existing?.paidAt) {
+        return res.status(400).json({ message: 'Ya estás inscripto en este curso' });
+      }
+
+      // ── Descomentar tras instalar 'mercadopago' ───────────────────────────
+      //
+      // const { getMPClient, Preference } = await import('../lib/mercadopago');
+      // const preference = new Preference(getMPClient());
+      //
+      // const response = await preference.create({
+      //   body: {
+      //     items: [{
+      //       id:         course.id,
+      //       title:      course.title,
+      //       quantity:   1,
+      //       unit_price: course.price,   // precio en ARS
+      //       currency_id: 'ARS',
+      //     }],
+      //     payer: {
+      //       // Se puede pre-completar con datos del usuario si los tenemos
+      //     },
+      //     metadata: {
+      //       userId:   req.user!.userId,
+      //       courseId: course.id,
+      //     },
+      //     back_urls: {
+      //       success: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${course.id}`,
+      //       failure: `${process.env.FRONTEND_URL}/cursos/${course.id}?payment=failed`,
+      //       pending: `${process.env.FRONTEND_URL}/dashboard?payment=pending`,
+      //     },
+      //     auto_return:      'approved',
+      //     notification_url: `${process.env.BACKEND_URL}/api/payments/mercadopago/webhook`,
+      //     statement_descriptor: 'GO TRAVEL ACADEMY',
+      //   },
+      // });
+      //
+      // res.json({ url: response.init_point });
+      // ──────────────────────────────────────────────────────────────────────
+
+      res.status(503).json({
+        message: 'Mercado Pago: instalá el SDK y agregá las credenciales al .env para activar.',
+        code: 'MP_NOT_CONNECTED',
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// ── Mercado Pago — webhook ────────────────────────────────────────────────────
+// POST /api/payments/mercadopago/webhook
+//
+// MP envía notificaciones IPN a este endpoint.
+// Verificar firma: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
+router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
+  try {
+    const { type, data } = req.body as { type: string; data: { id: string } };
+
+    if (type === 'payment') {
+      // ── Descomentar tras instalar 'mercadopago' ─────────────────────────
+      //
+      // const { getMPClient, Payment } = await import('../lib/mercadopago');
+      // const paymentApi = new Payment(getMPClient());
+      // const payment = await paymentApi.get({ id: Number(data.id) });
+      //
+      // if (payment.status === 'approved' && payment.metadata) {
+      //   const { user_id: userId, course_id: courseId } = payment.metadata;
+      //   const amount = payment.transaction_amount ?? 0;
+      //
+      //   await prisma.enrollment.upsert({
+      //     where:  { userId_courseId: { userId, courseId } },
+      //     update: { paidAt: new Date(), mpPaymentId: data.id, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
+      //     create: { userId, courseId, mpPaymentId: data.id, paidAt: new Date(), amount, paymentProvider: 'mercadopago', currency: 'ARS' },
+      //   });
+      //
+      //   await prisma.course.update({
+      //     where: { id: courseId },
+      //     data:  { students: { increment: 1 } },
+      //   });
+      //
+      //   const [user, course] = await Promise.all([
+      //     prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
+      //     prisma.course.findUnique({ where: { id: courseId }, select: { title: true, price: true } }),
+      //   ]);
+      //   if (user && course) {
+      //     const invoiceNumber = `INV-MP-${Date.now().toString(36).toUpperCase()}`;
+      //     sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
+      //   }
+      // }
+      //
+      // ────────────────────────────────────────────────────────────────────
+
+      console.log('[MP Webhook] Payment notification received:', data.id);
+    }
+
+    res.json({ received: true });
+  } catch (err) {
+    console.error('[MP Webhook] Error:', err);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
+// ── Pagos (admin) ──────────────────────────────────────────────────────────────
+// GET /api/payments — solo pagos aprobados (lo único que se persiste hoy)
+router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const page  = Math.max(1, Number(req.query.page)  || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
+
+    const [enrollments, total] = await Promise.all([
+      prisma.enrollment.findMany({
+        where: { paidAt: { not: null } },
+        include: {
+          user:   { select: { id: true, name: true, email: true } },
+          course: { select: { id: true, title: true } },
+        },
+        orderBy: { paidAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.enrollment.count({ where: { paidAt: { not: null } } }),
+    ]);
+
+    const payments = enrollments.map(e => ({
+      id:       e.id,
+      user:     e.user,
+      course:   e.course,
+      amount:   e.amount,
+      currency: e.currency,
+      provider: e.paymentProvider,
+      paidAt:   e.paidAt,
+      status:   'aprobado' as const,
+    }));
+
+    res.json({ payments, total, page, totalPages: Math.max(1, Math.ceil(total / limit)) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Historial de pagos ────────────────────────────────────────────────────────
 // GET /api/payments/history
 router.get('/history', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -140,11 +320,13 @@ router.get('/history', authenticate, async (req: Request, res: Response, next: N
   }
 });
 
-// GET /api/payments/status — para verificar si Stripe está configurado
+// ── Estado de los procesadores ────────────────────────────────────────────────
+// GET /api/payments/status
 router.get('/status', (_req: Request, res: Response) => {
   res.json({
-    stripe:    isStripeReady(),
-    currency:  process.env.STRIPE_CURRENCY ?? 'ars',
+    stripe:       isStripeReady(),
+    mercadopago:  isMercadoPagoReady(),
+    currency:     process.env.STRIPE_CURRENCY ?? 'usd',
   });
 });
 
