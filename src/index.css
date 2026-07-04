@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@600;700;800&display=swap');
 
 :root {
   --black: #1E293B;
@@ -37,7 +37,7 @@
   --r: 10px;
   --r-lg: 16px;
   --sans: 'Inter', system-ui, sans-serif;
-  --display: 'Syne', sans-serif;
+  --display: 'DM Sans', sans-serif;
   --transition: all 0.2s ease;
 }
 
