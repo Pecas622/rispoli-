@@ -15,6 +15,9 @@ export default function CourseCard({ course }) {
   const { current, original } = getRegionPrice(course, region);
   const discount = original > 0 ? Math.round((1 - current / original) * 100) : 0;
   const lvl = levelColor[course.level] || { bg: 'var(--bg-2)', color: 'var(--text-2)' };
+  const instructorName   = course.instructorName   ?? course.instructor?.name;
+  const instructorAvatar = course.instructorAvatar ?? course.instructor?.avatar;
+  const comingSoon = course.price === 0;
 
   return (
     <article className="course-card">
@@ -22,7 +25,8 @@ export default function CourseCard({ course }) {
       <div className="cc-image-wrap">
         <img src={course.image} alt={course.title} className="cc-image" loading="lazy" />
         <span className="cc-cat-badge">{course.category}</span>
-        {discount > 0 && <span className="cc-discount-badge">-{discount}%</span>}
+        {comingSoon && <span className="cc-discount-badge">Próximamente</span>}
+        {!comingSoon && discount > 0 && <span className="cc-discount-badge">-{discount}%</span>}
       </div>
 
       {/* Body */}
@@ -39,14 +43,12 @@ export default function CourseCard({ course }) {
         <h3 className="cc-title">{course.title}</h3>
 
         {/* Instructor */}
-        <div className="cc-instructor">
-          <img
-            src={course.instructor?.avatar}
-            alt={course.instructor?.name}
-            className="cc-instructor-avatar"
-          />
-          <span className="cc-instructor-name">{course.instructor?.name}</span>
-        </div>
+        {instructorName && (
+          <div className="cc-instructor">
+            {instructorAvatar && <img src={instructorAvatar} alt={instructorName} className="cc-instructor-avatar" />}
+            <span className="cc-instructor-name">{instructorName}</span>
+          </div>
+        )}
 
         {/* Rating */}
         <div className="cc-rating">
@@ -57,18 +59,22 @@ export default function CourseCard({ course }) {
 
         {/* Meta */}
         <div className="cc-meta">
-          <span className="cc-meta-item"><Clock size={11} /> {course.duration}</span>
-          <span className="cc-meta-item"><BookOpen size={11} /> {course.hours}h</span>
+          {course.duration && <span className="cc-meta-item"><Clock size={11} /> {course.duration}</span>}
+          {course.hours    && <span className="cc-meta-item"><BookOpen size={11} /> {course.hours}h</span>}
           <span className="cc-meta-item"><Users size={11} /> {course.students.toLocaleString()}</span>
         </div>
       </div>
 
       {/* Footer */}
       <div className="cc-footer">
-        <div className="cc-price">
-          <span className="cc-price-now">{formatPrice(current, region)}</span>
-          {discount > 0 && <span className="cc-price-was">{formatPrice(original, region)}</span>}
-        </div>
+        {comingSoon ? (
+          <span className="cc-price-now">Próximamente</span>
+        ) : (
+          <div className="cc-price">
+            <span className="cc-price-now">{formatPrice(current, region)}</span>
+            {discount > 0 && <span className="cc-price-was">{formatPrice(original, region)}</span>}
+          </div>
+        )}
         <Link to={`/cursos/${course.id}`} className="cc-cta-btn">
           Ver curso
         </Link>

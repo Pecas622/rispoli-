@@ -52,18 +52,21 @@ export default function Home() {
     coursesApi.list().then(res => setCourses(res.courses)).catch(() => setCourses([]));
   }, []);
 
-  // Carrusel de cursos: 2 actuales (Agente + GDS Amadeus) + 1 próximamente. Central + laterales, bucle infinito.
-  const carouselCourses = [1, 2].map(id => courses.find(c => c.id === id)).filter(Boolean);
+  // Carrusel de cursos: los cursos reales en venta + el próximo a lanzar. Central + laterales, bucle infinito.
+  const carouselCourses = ['Agente de Viajes', 'Florida al completo']
+    .map(title => courses.find(c => c.title === title))
+    .filter(Boolean);
+  const comingSoon = courses.find(c => c.price === 0);
   const slides = [
     ...carouselCourses.map(c => ({ ...c, kind: 'course' })),
-    {
+    ...(comingSoon ? [{
       kind: 'soon',
-      id: 'soon',
+      id: comingSoon.id,
       category: 'Próximamente',
-      title: 'IA aplicada al turismo',
-      subtitle: 'Automatizá tu agencia y vendé más usando inteligencia artificial.',
-      image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&q=80',
-    },
+      title: comingSoon.title,
+      subtitle: comingSoon.subtitle ?? '',
+      image: comingSoon.image,
+    }] : []),
   ];
   const n = slides.length;
   const [activeIndex, setActiveIndex] = useState(0);

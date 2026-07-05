@@ -158,25 +158,42 @@ export default function CourseDetail() {
                   </div>
                 </div>
                 <div className="enroll-body">
-                  <div className="enroll-price">
-                    <span className="enroll-price-now">{formatPrice(coursePrice, region)}</span>
-                    {discount > 0 && <span className="enroll-price-was">{formatPrice(courseOriginal, region)}</span>}
-                    {discount > 0 && <span className="enroll-discount">-{discount}%</span>}
-                  </div>
-                  {discount > 0 && <p className="enroll-urgency">Oferta finaliza en 2 días</p>}
+                  {course.price === 0 ? (
+                    <>
+                      <div className="enroll-price">
+                        <span className="enroll-price-now">Próximamente</span>
+                      </div>
+                      <button
+                        className="btn btn-outline"
+                        style={{width:'100%',justifyContent:'center',padding:'13px',marginTop:16}}
+                        onClick={() => { if (!user) setAuthModal('register'); else showToast('Te vamos a avisar apenas esté disponible'); }}
+                      >
+                        Avisame cuando esté disponible
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="enroll-price">
+                        <span className="enroll-price-now">{formatPrice(coursePrice, region)}</span>
+                        {discount > 0 && <span className="enroll-price-was">{formatPrice(courseOriginal, region)}</span>}
+                        {discount > 0 && <span className="enroll-discount">-{discount}%</span>}
+                      </div>
+                      {discount > 0 && <p className="enroll-urgency">Oferta finaliza en 2 días</p>}
 
-                  <button
-                    onClick={handleEnroll}
-                    className="btn btn-primary"
-                    style={{width:'100%',justifyContent:'center',padding:'13px',marginTop:16}}
-                    disabled={enrolling}
-                  >
-                    {enrolling ? <><div className="spinner" /> Procesando...</> : checkoutLabel}
-                  </button>
+                      <button
+                        onClick={handleEnroll}
+                        className="btn btn-primary"
+                        style={{width:'100%',justifyContent:'center',padding:'13px',marginTop:16}}
+                        disabled={enrolling}
+                      >
+                        {enrolling ? <><div className="spinner" /> Procesando...</> : checkoutLabel}
+                      </button>
 
-                  <p style={{textAlign:'center',fontSize:12,color:'var(--text-3)',marginTop:10}}>
-                    Garantía de devolución 30 días
-                  </p>
+                      <p style={{textAlign:'center',fontSize:12,color:'var(--text-3)',marginTop:10}}>
+                        Garantía de devolución 30 días
+                      </p>
+                    </>
+                  )}
 
                   {includes.length > 0 && (
                     <div className="enroll-includes">
