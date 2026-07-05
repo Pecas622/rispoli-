@@ -48,8 +48,8 @@
 }
 @keyframes hero-clouds-drift {
   0%   { background-position: 0 44%; }
-  50%  { background-position: 600px 56%; }
-  100% { background-position: 1200px 44%; }
+  50%  { background-position: -600px 56%; }
+  100% { background-position: -1200px 44%; }
 }
 
 /* Ala fija, camuflada y difuminada en todos los bordes (sin efecto "foto enmarcada") */
@@ -62,8 +62,8 @@
   background-image: url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1600&q=70');
   background-size: cover;
   background-position: center 62%;
-  opacity: 0.24;
-  filter: saturate(0.82) contrast(0.95);
+  opacity: 0.32;
+  filter: saturate(0.85) contrast(0.95);
   -webkit-mask-image: radial-gradient(82% 82% at 50% 40%, #000 4%, transparent 64%);
   mask-image: radial-gradient(82% 82% at 50% 40%, #000 4%, transparent 64%);
 }
@@ -366,30 +366,131 @@
   background: var(--violet-pale);
 }
 
-/* ── LOGOS BAR ───────────────────────────────────────────── */
-.logos-bar {
-  padding: 32px 0;
+/* ── ALIANZAS PROFESIONALES (cinta dinámica) ─────────────── */
+.allies-bar {
+  padding: 46px 0 52px;
+  background: #EDEFF3;
+  border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  background: var(--bg-2);
+  overflow: hidden;
 }
 
-.logos-label {
-  font-size: 11.5px; font-weight: 500; color: var(--text-3);
-  text-align: center; margin-bottom: 16px;
-  text-transform: uppercase; letter-spacing: 0.05em;
+.allies-label {
+  font-size: 12px; font-weight: 600; color: var(--text-3);
+  text-align: center; margin-bottom: 32px;
+  text-transform: uppercase; letter-spacing: 0.18em;
 }
 
-.logos-row {
+.allies-marquee {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.allies-track {
+  display: flex; align-items: center;
+  gap: 64px; width: max-content;
+  animation: allies-scroll 55s linear infinite;
+}
+.allies-marquee:hover .allies-track { animation-play-state: paused; }
+
+@keyframes allies-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.allies-item {
+  flex: 0 0 auto;
+  width: min(215px, 46vw); height: 96px;
+  background-color: #64748B;
+  -webkit-mask: var(--logo) center / contain no-repeat;
+  mask: var(--logo) center / contain no-repeat;
+  opacity: 0.75;
+  transition: background-color 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
+}
+.allies-item:hover {
+  background-color: var(--logo-color);
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+.allies-item-plain {
+  background: none;
+  -webkit-mask: none; mask: none;
+  opacity: 1;
   display: flex; align-items: center; justify-content: center;
-  flex-wrap: wrap; gap: 8px;
+}
+.allies-item-plain img {
+  max-width: 100%; max-height: 100%; object-fit: contain;
+  filter: grayscale(1) opacity(0.65);
+  transition: filter 0.35s ease;
+}
+.allies-item-plain:hover img { filter: grayscale(0) opacity(1); }
+
+/* ── INFO DEL CURSO (¿qué aprendés? / ¿qué incluye?) ─────── */
+.course-info-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  max-width: 960px; margin: 0 auto 28px;
+}
+.course-info-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 16px;
+  padding: 30px 30px 32px;
+  box-shadow: 0 10px 28px rgba(6, 4, 63, 0.05);
+}
+.course-info-card--includes { background: var(--bg-2); }
+.course-info-title {
+  font-family: var(--display, var(--sans));
+  font-size: 22px; font-weight: 800; letter-spacing: -0.02em;
+  color: var(--text); margin-bottom: 22px;
+}
+.course-info-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+.course-info-list li {
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: 15px; color: var(--text-2); line-height: 1.5;
+}
+.course-info-list li svg { color: #2E63D6; flex-shrink: 0; margin-top: 2px; }
+
+.course-highlights {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  max-width: 960px; margin: 0 auto 32px;
+}
+.course-highlight {
+  background: var(--violet-pale); border: 1px solid var(--violet-light);
+  border-radius: 14px; padding: 22px 24px;
+}
+.course-highlight h4 { font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.course-highlight p { font-size: 14px; color: var(--text-2); line-height: 1.55; }
+
+.course-info-cta { text-align: center; }
+
+/* ── BARRA FIJA CTA (aparece al pasar el carrusel) ───────── */
+.course-cta-bar {
+  position: fixed; top: 60px; left: 0; right: 0; z-index: 90;
+  background: #fff; border-bottom: 1px solid var(--border);
+  box-shadow: 0 8px 22px rgba(6, 4, 63, 0.07);
+  transform: translateY(calc(-100% - 72px));
+  transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.course-cta-bar.show { transform: translateY(0); }
+.course-cta-bar-inner {
+  display: flex; align-items: center; justify-content: center; gap: 22px;
+  padding: 11px 24px;
+}
+.course-cta-bar-text { font-size: 15px; font-weight: 600; color: var(--text); }
+
+@media (max-width: 768px) {
+  .course-cta-bar { top: 56px; }
+  .course-cta-bar-text { display: none; }
 }
 
-.logo-pill {
-  display: inline-flex; align-items: center;
-  padding: 6px 16px;
-  font-size: 13px; font-weight: 600; color: var(--text-2);
-  background: var(--bg); border: 1px solid var(--border);
-  border-radius: 20px;
+@media (max-width: 768px) {
+  .course-info-grid, .course-highlights { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .allies-track { animation: none; flex-wrap: wrap; justify-content: center; width: 100%; }
 }
 
 /* ── STATS BAR ───────────────────────────────────────────── */
@@ -558,7 +659,38 @@
 }
 .faq-q-icon { color: var(--text-3); transition: transform 0.25s; flex-shrink: 0; }
 .faq-q-icon.open { transform: rotate(45deg); }
-.faq-a { font-size: 14px; color: var(--text-2); line-height: 1.8; padding-bottom: 20px; }
+.faq-a { font-size: 14px; color: var(--text-2); line-height: 1.8; padding-bottom: 20px; white-space: pre-line; }
+
+.cc-soon-desc { font-size: 13px; color: var(--text-2); line-height: 1.5; margin-top: 6px; }
+
+/* ── CARRUSEL DE TESTIMONIOS (central + laterales, auto-avance) ── */
+.test-carousel { position: relative; }
+.test-stage { position: relative; height: 306px; overflow: hidden; }
+.test-card-wrap {
+  position: absolute; top: 8px; left: 50%;
+  width: min(500px, 88vw);
+  transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.5s ease;
+  will-change: transform, opacity;
+}
+.test-card-wrap.is-center { transform: translateX(-50%) scale(1); opacity: 1; z-index: 3; }
+.test-card-wrap.is-right  { transform: translateX(calc(-50% + min(375px, 45vw))) scale(0.82); opacity: 0.35; z-index: 2; cursor: pointer; filter: blur(3px); }
+.test-card-wrap.is-left   { transform: translateX(calc(-50% - min(375px, 45vw))) scale(0.82); opacity: 0.35; z-index: 2; cursor: pointer; filter: blur(3px); }
+.test-card-wrap.is-right:hover, .test-card-wrap.is-left:hover { filter: blur(0); opacity: 0.6; }
+.test-card-wrap.is-hidden { transform: translateX(-50%) scale(0.78); opacity: 0; pointer-events: none; z-index: 1; }
+.testimonial-card--solo { height: 100%; background: #fff; box-shadow: 0 20px 46px rgba(6, 4, 63, 0.13); }
+.test-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 6;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: #fff; border: 1px solid var(--border); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 6px 16px rgba(6, 4, 63, 0.10); transition: var(--transition);
+}
+.test-arrow-prev { left: 4px; }
+.test-arrow-next { right: 4px; }
+.test-arrow:hover { background: #2E63D6; color: #fff; border-color: #2E63D6; }
+.test-dots { display: flex; gap: 8px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+.test-dot { width: 9px; height: 9px; border-radius: 50%; border: none; padding: 0; background: var(--gray-2); cursor: pointer; transition: var(--transition); }
+.test-dot.active { background: #2E63D6; width: 26px; border-radius: 5px; }
 
 /* ── CTA STRIP ───────────────────────────────────────────── */
 .cta-strip {
@@ -651,8 +783,8 @@
   .cta-actions .btn { justify-content: center; }
   .cta-strip { padding: 48px 0; }
 
-  .logos-row { gap: 6px; }
-  .logo-pill { font-size: 11px; padding: 4px 10px; }
+  .allies-track { gap: 40px; }
+  .allies-item { width: min(150px, 44vw); height: 66px; }
 }
 
 @media (max-width: 400px) {

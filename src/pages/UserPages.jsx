@@ -86,7 +86,7 @@ function CertCard({ course, user, showToast }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
           <div>
             <p style={{ color: '#8CB0F4', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Certificado oficial</p>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>GO Travel Academy</p>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>Go Travel Academy</p>
           </div>
           <Award size={28} color="#8CB0F4" />
         </div>
