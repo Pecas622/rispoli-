@@ -166,8 +166,8 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const { email, password } = loginSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });
-    // Mismo mensaje para usuario inexistente o contraseña incorrecta (evita user enumeration)
-    if (!user) return res.status(401).json({ message: 'Credenciales incorrectas' });
+    // Mismo mensaje para usuario inexistente, eliminado o contraseña incorrecta (evita user enumeration)
+    if (!user || user.deletedAt) return res.status(401).json({ message: 'Credenciales incorrectas' });
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) return res.status(401).json({ message: 'Credenciales incorrectas' });
@@ -200,7 +200,7 @@ router.post('/verify-login', async (req: Request, res: Response, next: NextFunct
     }).parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.emailVerified) {
+    if (!user || !user.emailVerified || user.deletedAt) {
       return res.status(401).json({ message: 'Acceso no autorizado' });
     }
 
@@ -315,8 +315,8 @@ router.post('/change-password', authenticate, async (req: Request, res: Response
 // GET /api/auth/me
 router.get('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await prisma.user.findUnique({
-      where:  { id: req.user!.userId },
+    const user = await prisma.user.findFirst({
+      where:  { id: req.user!.userId, deletedAt: null },
       select: { id: true, name: true, email: true, role: true, avatar: true, createdAt: true },
     });
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });

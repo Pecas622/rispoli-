@@ -25,12 +25,15 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
     const page  = Math.max(1, Number(req.query.page)  || 1);
     const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
 
-    const where = search
-      ? { OR: [
-          { name:  { contains: search, mode: 'insensitive' as const } },
-          { email: { contains: search, mode: 'insensitive' as const } },
-        ] }
-      : {};
+    const where = {
+      deletedAt: null,
+      ...(search
+        ? { OR: [
+            { name:  { contains: search, mode: 'insensitive' as const } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+          ] }
+        : {}),
+    };
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
@@ -58,7 +61,7 @@ router.get('/:id', authenticate, async (req: Request, res: Response, next: NextF
       return res.status(403).json({ message: 'Acceso denegado' });
     }
 
-    const user = await prisma.user.findUnique({ where: { id }, select: USER_SELECT });
+    const user = await prisma.user.findFirst({ where: { id, deletedAt: null }, select: USER_SELECT });
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
     res.json({ user });
   } catch (err) {
@@ -92,9 +95,15 @@ router.patch('/:id', authenticate, async (req: Request, res: Response, next: Nex
 });
 
 // DELETE /api/users/:id — admin only
+// Soft delete: no se borra la fila de verdad, se marca como eliminada.
+// Asi nunca se pierden sus compras (enrollments) ni su progreso, y se puede
+// deshacer si fue un error. El usuario queda bloqueado y oculto de las listas.
 router.delete('/:id', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await prisma.user.delete({ where: { id: req.params.id } });
+    await prisma.user.update({
+      where: { id: req.params.id },
+      data:  { deletedAt: new Date(), isBlocked: true },
+    });
     res.json({ message: 'Usuario eliminado' });
   } catch (err) {
     next(err);
