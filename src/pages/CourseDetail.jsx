@@ -63,8 +63,10 @@ export default function CourseDetail() {
     avatar: course.instructorAvatar ?? course.instructor?.avatar ?? '',
     bio:    course.instructorBio    ?? course.instructor?.bio    ?? '',
   };
-  const requirements = course.requirements ?? [];
-  const includes     = course.includes ?? [];
+  const requirements     = course.requirements ?? [];
+  const includes         = course.includes ?? [];
+  const learningObjectives = course.learningObjectives ?? [];
+  const targetAudience     = course.targetAudience ?? [];
 
   // ── Temario: real (módulos/clases) si viene de la API, mock si no ───────────
   const syllabus = course.modules
@@ -122,8 +124,8 @@ export default function CourseDetail() {
                   <strong>{course.rating}</strong> ({course.reviews.toLocaleString()} reseñas)
                 </span>
                 <span className="detail-meta-item"><Users size={13} /> {course.students.toLocaleString()} estudiantes</span>
-                <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>
-                <span className="detail-meta-item"><BookOpen size={13} /> {course.hours}h de contenido</span>
+                {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
+                {course.hours && <span className="detail-meta-item"><BookOpen size={13} /> {course.hours}h de contenido</span>}
               </div>
 
               <div className="instructor-mini">
@@ -176,15 +178,17 @@ export default function CourseDetail() {
                     Garantía de devolución 30 días
                   </p>
 
-                  <div className="enroll-includes">
-                    <p className="enroll-includes-title">Incluye</p>
-                    {includes.map(item => (
-                      <div key={item} className="include-item">
-                        <CheckCircle size={13} style={{color:'var(--violet-mid)',flexShrink:0}} />
-                        {item}
-                      </div>
-                    ))}
-                  </div>
+                  {includes.length > 0 && (
+                    <div className="enroll-includes">
+                      <p className="enroll-includes-title">Incluye</p>
+                      {includes.map(item => (
+                        <div key={item} className="include-item">
+                          <CheckCircle size={13} style={{color:'var(--violet-mid)',flexShrink:0}} />
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -197,6 +201,7 @@ export default function CourseDetail() {
           <div className="detail-cols">
             <div>
               {/* ── Programa ── */}
+              {modulesWithIdx.length > 0 && (
               <div className="detail-section">
                 <h2 className="detail-section-title">Programa del curso</h2>
 
@@ -268,6 +273,7 @@ export default function CourseDetail() {
                   );
                 })}
               </div>
+              )}
 
               {/* ── Instructor ── */}
               <div className="detail-section">
@@ -281,6 +287,32 @@ export default function CourseDetail() {
                   </div>
                 </div>
               </div>
+
+              {/* ── Con este curso aprenderás ── */}
+              {learningObjectives.length > 0 && (
+                <div className="detail-section">
+                  <h2 className="detail-section-title">Con este curso aprenderás</h2>
+                  {learningObjectives.map(item => (
+                    <div key={item} className="req-item">
+                      <CheckCircle size={15} style={{color:'var(--violet-mid)',flexShrink:0,marginTop:2}} />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ── Orientado para ── */}
+              {targetAudience.length > 0 && (
+                <div className="detail-section">
+                  <h2 className="detail-section-title">Orientado para</h2>
+                  {targetAudience.map(item => (
+                    <div key={item} className="req-item">
+                      <div className="req-dot" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* ── Requisitos ── */}
               <div className="detail-section">

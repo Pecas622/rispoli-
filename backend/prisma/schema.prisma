@@ -81,6 +81,8 @@ model Course {
   tags             String[]
   requirements     String[]
   includes         String[]
+  learningObjectives String[] @map("learning_objectives")
+  targetAudience     String[] @map("target_audience")
   instructorName   String?  @map("instructor_name")
   instructorRole   String?  @map("instructor_role")
   instructorAvatar String?  @map("instructor_avatar")

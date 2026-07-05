@@ -12,7 +12,7 @@ const emptyForm = {
   category: categories[1], level: levels[1], modality: modalities[1],
   duration: '', hours: '', price: '', originalPrice: '', priceUSD: '', originalPriceUSD: '',
   image: '', featured: false, published: true,
-  tags: '', requirements: '', includes: '',
+  tags: '', requirements: '', includes: '', learningObjectives: '', targetAudience: '',
   instructorName: '', instructorRole: '', instructorAvatar: '', instructorBio: '',
 };
 
@@ -37,6 +37,8 @@ function formToPayload(form) {
     tags:             form.tags.split(',').map(t => t.trim()).filter(Boolean),
     requirements:     form.requirements.split('\n').map(t => t.trim()).filter(Boolean),
     includes:         form.includes.split('\n').map(t => t.trim()).filter(Boolean),
+    learningObjectives: form.learningObjectives.split('\n').map(t => t.trim()).filter(Boolean),
+    targetAudience:     form.targetAudience.split('\n').map(t => t.trim()).filter(Boolean),
     instructorName:   form.instructorName || undefined,
     instructorRole:   form.instructorRole || undefined,
     instructorAvatar: form.instructorAvatar || undefined,
@@ -55,6 +57,8 @@ function courseToForm(c) {
     tags: (c.tags ?? []).join(', '),
     requirements: (c.requirements ?? []).join('\n'),
     includes: (c.includes ?? []).join('\n'),
+    learningObjectives: (c.learningObjectives ?? []).join('\n'),
+    targetAudience: (c.targetAudience ?? []).join('\n'),
     instructorName: c.instructorName ?? '', instructorRole: c.instructorRole ?? '',
     instructorAvatar: c.instructorAvatar ?? '', instructorBio: c.instructorBio ?? '',
   };
@@ -313,6 +317,14 @@ export default function AdminCourses() {
               <div className="form-field">
                 <label>Tags (separados por coma)</label>
                 <input className="input" placeholder="IATA, Amadeus, Sabre" value={form.tags} onChange={set('tags')} />
+              </div>
+              <div className="form-field">
+                <label>Con este curso aprenderás (uno por línea)</label>
+                <textarea className="input" rows={2} placeholder="Cotizar y vender vuelos, hoteles y servicios turísticos" value={form.learningObjectives} onChange={set('learningObjectives')} />
+              </div>
+              <div className="form-field">
+                <label>Orientado para (uno por línea)</label>
+                <textarea className="input" rows={2} placeholder="Personas interesadas en comenzar a trabajar en turismo" value={form.targetAudience} onChange={set('targetAudience')} />
               </div>
               <div className="form-field">
                 <label>Requisitos (uno por línea)</label>

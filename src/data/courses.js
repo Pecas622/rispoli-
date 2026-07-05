@@ -1,4 +1,4 @@
-export const categories = ['Todos', 'Formación', 'GDS & Reservas', 'Turismo de Lujo', 'Marketing Turístico', 'Gestión Hotelera'];
+export const categories = ['Todos', 'Formación', 'Destinos', 'GDS & Reservas', 'Turismo de Lujo', 'Marketing Turístico', 'Gestión Hotelera'];
 export const levels = ['Todos', 'Principiante', 'Intermedio', 'Avanzado'];
 export const modalities = ['Todos', 'Online', 'En vivo', 'Grabado'];
 
