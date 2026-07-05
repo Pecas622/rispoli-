@@ -1,32 +1,38 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Plus } from 'lucide-react';
-import { courses as mockCourses, testimonials, stats, faqs } from '../data/courses';
+import { ArrowRight, Plus, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { courses as mockCourses, testimonials, faqs } from '../data/courses';
 import { coursesApi } from '../services/api';
 import CourseCard from '../components/CourseCard';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import './Home.css';
 
 const USE_API = import.meta.env.VITE_USE_API === 'true';
 
-const statIcons = { users: '👤', book: '📚', building: '🏢', 'trending-up': '📈' };
-
-const BENEFITS = [
-  { icon: '📜', title: 'Certificados reconocidos', desc: 'Avalados por IATA y organismos internacionales del turismo.' },
-  { icon: '🎥', title: 'Clases en vivo y grabadas', desc: 'Participá en directo o accedé a las grabaciones cuando quieras.' },
-  { icon: '⏰', title: 'Acceso 24/7', desc: 'Aprendé a tu ritmo desde cualquier lugar del mundo.' },
-  { icon: '👨‍🏫', title: 'Instructores activos', desc: 'Profesionales que trabajan hoy en la industria turística.' },
-  { icon: '📥', title: 'Material descargable', desc: 'Guías, plantillas y recursos exclusivos para tu agencia.' },
-  { icon: '🤝', title: 'Comunidad profesional', desc: 'Red de contactos y networking con agentes de todo el país.' },
+const ALLIES = [
+  { name: 'Rispoli Viajes', src: '/alianzas/rispoli-viajes.png', color: '#FF2F00' },
+  { name: 'Universidad del Aconcagua', src: '/alianzas/aconcagua.png', color: '#3F9BC4', plain: true },
+  { name: 'Rispoli Teens', src: '/alianzas/rispoli-teens.png', color: '#F3769E' },
 ];
 
-const LOGOS = ['Despegar', 'Almundo', 'Flybondi', 'Latam', 'Aerolíneas', 'TripAdvisor', 'Booking.com', 'Expedia'];
+const LEARN = [
+  'Cotizar vuelos y hoteles',
+  'Armar paquetes turísticos',
+  'Manejar clientes reales',
+  'Evitar errores comunes de venta',
+  'Usar sistemas profesionales como el NDC y centrales de reservas de servicios terrestres',
+];
 
-const WHY_ITEMS = [
-  { title: 'Instructores activos en la industria', desc: 'No enseñamos teoría desactualizada. Cada instructor trabaja hoy en empresas como Despegar, IATA o Booking.com.' },
-  { title: 'Práctica real con sistemas GDS', desc: 'Accedés a simuladores de Amadeus y Sabre idénticos a los que usan las agencias. Llegás listo para trabajar desde el día 1.' },
-  { title: 'Comunidad y soporte continuo', desc: 'Grupo activo, tutores disponibles y red de alumni que se ayudan entre sí en la industria.' },
-  { title: 'Garantía de 30 días sin preguntas', desc: 'Si en el primer mes el curso no es lo que esperabas, te devolvemos el 100% del dinero.' },
+const INCLUDES = [
+  'Certificado avalado por la Universidad del Aconcagua',
+  'Formación práctica con casos reales',
+  'Acceso a clases grabadas',
+  'Uso de sistemas profesionales',
+];
+
+const HIGHLIGHTS = [
+  { title: 'Formación práctica', desc: 'Aprendé con casos reales.' },
+  { title: 'Herramientas', desc: 'Sistemas del rubro turístico y preparación para trabajar en turismo.' },
 ];
 
 const AVATAR_IDS = [
@@ -46,156 +52,302 @@ export default function Home() {
     coursesApi.list().then(res => setCourses(res.courses)).catch(() => setCourses([]));
   }, []);
 
-  const featured = courses.filter(c => c.featured).slice(0, 4);
+  // Carrusel de cursos: 2 actuales (Agente + GDS Amadeus) + 1 próximamente. Central + laterales, bucle infinito.
+  const carouselCourses = [1, 2].map(id => courses.find(c => c.id === id)).filter(Boolean);
+  const slides = [
+    ...carouselCourses.map(c => ({ ...c, kind: 'course' })),
+    {
+      kind: 'soon',
+      id: 'soon',
+      category: 'Próximamente',
+      title: 'IA aplicada al turismo',
+      subtitle: 'Automatizá tu agencia y vendé más usando inteligencia artificial.',
+      image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&q=80',
+    },
+  ];
+  const n = slides.length;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const nextSlide = () => setActiveIndex(i => (i + 1) % n);
+  const prevSlide = () => setActiveIndex(i => (i - 1 + n) % n);
+  const slidePos = (i) => {
+    const r = ((i - activeIndex) % n + n) % n;
+    if (r === 0) return 'is-center';
+    if (r === 1) return 'is-right';
+    if (r === n - 1) return 'is-left';
+    return 'is-hidden';
+  };
+
+  // Barra fija con CTA a cursos: aparece cuando el carrusel queda arriba (fuera de vista)
+  const carouselRef = useRef(null);
+  const [showCtaBar, setShowCtaBar] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const el = carouselRef.current;
+      if (el) setShowCtaBar(el.getBoundingClientRect().bottom < 70);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Testimonios: carrusel de a uno, con auto-avance cada 4s (se reinicia al interactuar)
+  const [testIndex, setTestIndex] = useState(0);
+  const nextTest = () => setTestIndex(i => (i + 1) % testimonials.length);
+  const prevTest = () => setTestIndex(i => (i - 1 + testimonials.length) % testimonials.length);
+  const testPos = (i) => {
+    const nT = testimonials.length;
+    const r = ((i - testIndex) % nT + nT) % nT;
+    if (r === 0) return 'is-center';
+    if (r === 1) return 'is-right';
+    if (r === nT - 1) return 'is-left';
+    return 'is-hidden';
+  };
+  useEffect(() => {
+    const id = setInterval(() => setTestIndex(i => (i + 1) % testimonials.length), 4000);
+    return () => clearInterval(id);
+  }, [testIndex]);
 
   return (
     <div>
 
+      {/* Barra fija con CTA a cursos, aparece al pasar el carrusel */}
+      <div className={`course-cta-bar ${showCtaBar ? 'show' : ''}`}>
+        <div className="container course-cta-bar-inner">
+          <span className="course-cta-bar-text">Empezá tu carrera de agente de viajes</span>
+          <Link to="/cursos" className="btn btn-primary btn-sm">
+            Ver cursos <ArrowRight size={15} />
+          </Link>
+        </div>
+      </div>
+
       {/* ── HERO ────────────────────────────────────────── */}
       <section className="hero">
-        <div className="container hero-grid">
+        {/* Fondo: nubes en bucle continuo + ala fija camuflada */}
+        <div className="hero-clouds" aria-hidden="true" />
+        <div className="hero-wing" aria-hidden="true" />
 
-          {/* Left: text */}
-          <div className="hero-left">
-            <div className="hero-eyebrow">
-              <span>✈️</span>
-              La plataforma N°1 para agentes de viajes
-            </div>
+        <div className="container hero-inner">
+          <div className="hero-eyebrow">
+            <span>✈️</span>
+            La plataforma N°1 para agentes de viajes
+          </div>
 
-            <h1 className="hero-title">
-              Dominá el turismo.<br />
-              <span className="hero-title-accent">Transformá tu carrera.</span>
-            </h1>
+          <h1 className="hero-title">
+            Convertite en <span className="hero-title-accent">agente de viajes</span> con clases 100% online
+          </h1>
 
-            <p className="hero-desc">
-              Formación profesional para agentes de viajes. Cursos con certificado IATA,
-              práctica en sistemas GDS y mentores activos en la industria.
-            </p>
+          <p className="hero-desc">
+            Aprendé a cotizar vuelos y hoteles, armar paquetes y manejar clientes reales
+            con casos prácticos y sistemas profesionales del rubro. Certificado avalado
+            por la Universidad del Aconcagua.
+          </p>
 
-            <div className="hero-cta">
-              <button onClick={() => setAuthModal('register')} className="btn btn-primary btn-lg">
-                Comenzar gratis <ArrowRight size={16} />
+          {/* Carrusel de cursos, justo debajo del texto secundario */}
+          <div className="hc-block" ref={carouselRef}>
+            <div className="hc-carousel">
+              <button className="hc-arrow hc-arrow-prev" onClick={prevSlide} aria-label="Anterior">
+                <ChevronLeft size={22} />
               </button>
-              <Link to="/cursos" className="btn btn-outline btn-lg">
-                Ver cursos
-              </Link>
-            </div>
 
-            <div className="hero-trust">
-              <div className="avatars">
-                {AVATAR_IDS.map(p => (
-                  <img key={p} src={`https://images.unsplash.com/${p}?w=40&q=80`} alt="" className="avatar-sm" />
+              <div className="hc-stage">
+                {slides.map((s, i) => (
+                  <article
+                    className={`hc-card ${slidePos(i)} ${s.kind === 'soon' ? 'hc-card-soon' : ''}`}
+                    key={s.id}
+                    onClick={() => { if (slidePos(i) !== 'is-center') setActiveIndex(i); }}
+                  >
+                    <div className="hc-card-media">
+                      <img src={s.image} alt={s.title} />
+                      <span className={`hc-badge ${s.kind === 'soon' ? 'hc-badge-soon' : ''}`}>{s.category}</span>
+                    </div>
+                    <div className="hc-card-body">
+                      <h3 className="hc-card-title">{s.title}</h3>
+                      <p className="hc-card-sub">{s.subtitle}</p>
+                      {s.kind === 'course' ? (
+                        <>
+                          <div className="hc-card-meta">
+                            <span>{s.level}</span><span>·</span><span>{s.duration}</span>
+                          </div>
+                          <div className="hc-card-foot">
+                            <span className="hc-price">${(s.priceARS ?? s.price).toLocaleString('es-AR')}</span>
+                            <Link to="/cursos" className="hc-card-btn">Ver curso</Link>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="hc-card-meta"><span>Muy pronto</span></div>
+                          <div className="hc-card-foot">
+                            <span className="hc-soon-note">Lanzamiento próximo</span>
+                            <button className="hc-card-btn hc-card-btn-ghost" onClick={(e) => { e.stopPropagation(); setAuthModal('register'); }}>Avisame</button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </article>
                 ))}
               </div>
-              <span>Más de 12.000 agentes certificados</span>
+
+              <button className="hc-arrow hc-arrow-next" onClick={nextSlide} aria-label="Siguiente">
+                <ChevronRight size={22} />
+              </button>
+            </div>
+
+            <div className="hc-dots">
+              {slides.map((s, i) => (
+                <button
+                  key={s.id}
+                  className={`hc-dot ${activeIndex === i ? 'active' : ''}`}
+                  onClick={() => setActiveIndex(i)}
+                  aria-label={`Ir al curso ${i + 1}`}
+                />
+              ))}
             </div>
           </div>
 
-          {/* Right: visual mockup */}
-          <div className="hero-right">
-            <div className="hero-mockup">
-              {/* Browser chrome */}
-              <div className="mockup-chrome">
-                <span className="chrome-dot" style={{ background: '#FF5F56' }} />
-                <span className="chrome-dot" style={{ background: '#FFBD2E' }} />
-                <span className="chrome-dot" style={{ background: '#27C93F' }} />
-                <div className="chrome-bar">go-travel-academy.com/cursos</div>
-              </div>
-
-              {/* Course preview card */}
-              <div className="mockup-body">
-                <div className="mockup-course">
-                  <img
-                    src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&q=80"
-                    alt="Course"
-                    className="mockup-course-img"
-                  />
-                  <div className="mockup-course-info">
-                    <span className="mockup-badge">Formación</span>
-                    <div className="mockup-course-title">Agente de Viajes Profesional</div>
-                    <div className="mockup-course-sub">María Eugenia Torres · IATA</div>
-                    <div className="mockup-progress-label">
-                      <span>Progreso</span>
-                      <span className="mockup-pct">68%</span>
-                    </div>
-                    <div className="mockup-progress-track">
-                      <div className="mockup-progress-fill" style={{ width: '68%' }} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mini stat badges */}
-                <div className="mockup-stats">
-                  <div className="mockup-stat">
-                    <div className="mockup-stat-val">4</div>
-                    <div className="mockup-stat-lbl">Cursos activos</div>
-                  </div>
-                  <div className="mockup-stat">
-                    <div className="mockup-stat-val">2</div>
-                    <div className="mockup-stat-lbl">Certificados</div>
-                  </div>
-                  <div className="mockup-stat">
-                    <div className="mockup-stat-val">86h</div>
-                    <div className="mockup-stat-lbl">Horas</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating pills */}
-              <div className="mockup-pill pill-top">
-                🎓 ¡Certificado obtenido!
-              </div>
-              <div className="mockup-pill pill-bottom">
-                ✈️ 98% satisfacción
-              </div>
+          <div className="hero-trust">
+            <div className="avatars">
+              {AVATAR_IDS.map(p => (
+                <img key={p} src={`https://images.unsplash.com/${p}?w=40&q=80`} alt="" className="avatar-sm" />
+              ))}
             </div>
+            <span>Más de 12.000 agentes certificados</span>
           </div>
         </div>
       </section>
 
-      {/* ── LOGOS BAR ───────────────────────────────────── */}
-      <div className="logos-bar">
+      {/* ── ALIANZAS PROFESIONALES (cinta dinámica de logos) ─── */}
+      <div className="allies-bar">
         <div className="container">
-          <p className="logos-label">Empresas que confían en nosotros</p>
-          <div className="logos-row">
-            {LOGOS.map(name => (
-              <span key={name} className="logo-pill">{name}</span>
-            ))}
+          <p className="allies-label">Alianzas profesionales</p>
+        </div>
+        <div className="allies-marquee">
+          <div className="allies-track">
+            {Array.from({ length: 8 }).flatMap((_, g) =>
+              ALLIES.map((a, i) => (
+                a.plain ? (
+                  <div
+                    className="allies-item allies-item-plain"
+                    key={`${g}-${i}`}
+                    role="img"
+                    aria-label={g > 0 ? undefined : a.name}
+                    aria-hidden={g > 0 ? 'true' : undefined}
+                  >
+                    <img src={a.src} alt="" />
+                  </div>
+                ) : (
+                  <div
+                    className="allies-item"
+                    key={`${g}-${i}`}
+                    role="img"
+                    aria-label={g > 0 ? undefined : a.name}
+                    aria-hidden={g > 0 ? 'true' : undefined}
+                    style={{ '--logo': `url(${a.src})`, '--logo-color': a.color }}
+                  />
+                )
+              ))
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── STATS ───────────────────────────────────────── */}
-      <div className="stats-bar">
-        <div className="container">
-          <div className="stats-inner">
-            {stats.map(s => (
-              <div key={s.label} className="stat-col">
-                <span className="stat-icon">{statIcons[s.icon]}</span>
-                <span className="stat-num">{s.value}</span>
-                <span className="stat-desc">{s.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── BENEFITS ────────────────────────────────────── */}
-      <section className="benefits-section">
+      {/* ── TESTIMONIALS ────────────────────────────────── */}
+      <section className="testimonials-section">
         <div className="container">
           <div className="section-header centered">
-            <p className="section-eyebrow">Por qué elegirnos</p>
-            <h2 className="section-title">Todo lo que necesitás para crecer</h2>
-            <p className="section-lead">Formación diseñada por profesionales de la industria turística para que alcances tu próximo nivel.</p>
+            <p className="section-eyebrow">Testimonios</p>
+            <h2 className="section-title">Resultados reales de agentes reales</h2>
+            <p className="section-lead">Historias de agentes que usaron Go Travel Academy para dar el salto en su carrera.</p>
           </div>
-          <div className="benefits-grid">
-            {BENEFITS.map(b => (
-              <div key={b.title} className="benefit-card">
-                <div className="benefit-icon">{b.icon}</div>
-                <h3 className="benefit-title">{b.title}</h3>
-                <p className="benefit-desc">{b.desc}</p>
+          <div className="test-carousel">
+            <button className="test-arrow test-arrow-prev" onClick={prevTest} aria-label="Anterior">
+              <ChevronLeft size={22} />
+            </button>
+
+            <div className="test-stage">
+              {testimonials.map((t, i) => (
+                <div
+                  key={t.id}
+                  className={`test-card-wrap ${testPos(i)}`}
+                  onClick={() => { if (testPos(i) !== 'is-center') setTestIndex(i); }}
+                >
+                  <div className="testimonial-card testimonial-card--solo">
+                    <div className="test-stars">
+                      {[...Array(t.rating)].map((_, i2) => (
+                        <svg key={i2} width="15" height="15" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                      ))}
+                    </div>
+                    <p className="test-body">"{t.text}"</p>
+                    <div className="test-footer">
+                      <img src={t.avatar} alt={t.name} className="test-avatar" />
+                      <div>
+                        <div className="test-name">{t.name}</div>
+                        <div className="test-role">{t.role}</div>
+                      </div>
+                      <div className="test-course-tag">{t.course}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button className="test-arrow test-arrow-next" onClick={nextTest} aria-label="Siguiente">
+              <ChevronRight size={22} />
+            </button>
+          </div>
+
+          <div className="test-dots">
+            {testimonials.map((t, i) => (
+              <button
+                key={t.id}
+                className={`test-dot ${testIndex === i ? 'active' : ''}`}
+                onClick={() => setTestIndex(i)}
+                aria-label={`Testimonio ${i + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHY US ──────────────────────────────────────── */}
+      <section className="why-section">
+        <div className="container">
+          <div className="section-header centered">
+            <p className="section-eyebrow">Por qué Go Travel Academy</p>
+            <h2 className="section-title">Aprender diferente produce resultados diferentes</h2>
+          </div>
+
+          <div className="course-info-grid">
+            <div className="course-info-card">
+              <h3 className="course-info-title">¿Qué vas a aprender?</h3>
+              <ul className="course-info-list">
+                {LEARN.map(item => (
+                  <li key={item}><Check size={18} strokeWidth={2.5} /><span>{item}</span></li>
+                ))}
+              </ul>
+            </div>
+            <div className="course-info-card course-info-card--includes">
+              <h3 className="course-info-title">¿Qué incluye este curso?</h3>
+              <ul className="course-info-list">
+                {INCLUDES.map(item => (
+                  <li key={item}><Check size={18} strokeWidth={2.5} /><span>{item}</span></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="course-highlights">
+            {HIGHLIGHTS.map(h => (
+              <div key={h.title} className="course-highlight">
+                <h4>{h.title}</h4>
+                <p>{h.desc}</p>
               </div>
             ))}
+          </div>
+
+          <div className="course-info-cta">
+            <Link to="/cursos" className="btn btn-primary btn-lg">
+              Ver cursos <ArrowRight size={16} />
+            </Link>
           </div>
         </div>
       </section>
@@ -213,72 +365,28 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid-auto">
-            {featured.map(c => <CourseCard key={c.id} course={c} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHY US ──────────────────────────────────────── */}
-      <section className="why-section">
-        <div className="container">
-          <div className="why-grid">
-            <div className="why-img-wrap">
-              <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=700&q=80" alt="Agentes de viajes aprendiendo" className="why-img" />
-              <div className="why-stat-pill">
-                <strong>98%</strong>
-                <span>de satisfacción<br />en nuestros cursos</span>
-              </div>
-            </div>
-            <div>
-              <p className="section-eyebrow">Por qué GO Travel Academy</p>
-              <h2 className="section-title">Aprender diferente produce resultados diferentes</h2>
-              <div className="why-items">
-                {WHY_ITEMS.map((item, i) => (
-                  <div key={item.title} className="why-item">
-                    <div className="why-item-num">{i + 1}</div>
-                    <div>
-                      <div className="why-item-title">{item.title}</div>
-                      <div className="why-item-desc">{item.desc}</div>
+            {slides.map(s => (
+              s.kind === 'course'
+                ? <CourseCard key={s.id} course={s} />
+                : (
+                  <article key={s.id} className="course-card">
+                    <div className="cc-image-wrap">
+                      <img src={s.image} alt={s.title} className="cc-image" loading="lazy" />
+                      <span className="cc-cat-badge">Próximamente</span>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 36 }}>
-                <button onClick={() => setAuthModal('register')} className="btn btn-primary">
-                  Crear cuenta gratis <ArrowRight size={15} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ────────────────────────────────── */}
-      <section className="testimonials-section">
-        <div className="container">
-          <div className="section-header centered">
-            <p className="section-eyebrow">Testimonios</p>
-            <h2 className="section-title">Resultados reales de agentes reales</h2>
-            <p className="section-lead">Historias de agentes que usaron GO Travel Academy para dar el salto en su carrera.</p>
-          </div>
-          <div className="testimonials-grid">
-            {testimonials.map(t => (
-              <div key={t.id} className="testimonial-card">
-                <div className="test-stars">
-                  {[...Array(t.rating)].map((_, i) => (
-                    <svg key={i} width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                  ))}
-                </div>
-                <p className="test-body">"{t.text}"</p>
-                <div className="test-footer">
-                  <img src={t.avatar} alt={t.name} className="test-avatar" />
-                  <div>
-                    <div className="test-name">{t.name}</div>
-                    <div className="test-role">{t.role}</div>
-                  </div>
-                  <div className="test-course-tag">{t.course}</div>
-                </div>
-              </div>
+                    <div className="cc-body">
+                      <div className="cc-level-row">
+                        <span className="cc-level-pill" style={{ background: '#E8F1FD', color: '#2E63D6' }}>Nuevo</span>
+                      </div>
+                      <h3 className="cc-title">{s.title}</h3>
+                      <p className="cc-soon-desc">{s.subtitle}</p>
+                    </div>
+                    <div className="cc-footer">
+                      <span className="hc-soon-note">Lanzamiento próximo</span>
+                      <button className="cc-cta-btn" onClick={() => setAuthModal('register')}>Avisame</button>
+                    </div>
+                  </article>
+                )
             ))}
           </div>
         </div>
@@ -312,7 +420,7 @@ export default function Home() {
             <div className="cta-text">
               <p className="cta-eyebrow">¿Listo para despegar?</p>
               <h2 className="cta-title">Empezá tu carrera en turismo hoy</h2>
-              <p className="cta-lead">Acceso gratuito al primer módulo de cualquier curso. Sin tarjeta de crédito.</p>
+              <p className="cta-lead">La plataforma N°1 para agentes de viajes: formación 100% online, práctica con sistemas reales y certificado avalado por la Universidad del Aconcagua.</p>
             </div>
             <div className="cta-actions">
               <button onClick={() => setAuthModal('register')} className="btn cta-btn-primary btn-lg">
