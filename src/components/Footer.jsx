@@ -18,7 +18,7 @@ export default function Footer() {
           <div>
             <Link to="/" style={{display:'inline-flex',alignItems:'center',gap:7,marginBottom:14,color:'var(--text)',fontFamily:'var(--display)',fontSize:16,fontWeight:700,letterSpacing:'-0.02em'}}>
               <div style={{width:8,height:8,borderRadius:'50%',background:'var(--violet-mid)',flexShrink:0}}/>
-              GO Travel Academy
+              Go Travel Academy
 </Link>
             <p style={{fontSize:13,color:'var(--text-3)',lineHeight:1.75,marginBottom:18,maxWidth:220}}>
               La plataforma de educación tech líder en América Latina.
@@ -79,7 +79,7 @@ export default function Footer() {
         </div>
 
         <div style={{borderTop:'1px solid var(--border)',paddingTop:20,display:'flex',flexWrap:'wrap',gap:12,justifyContent:'space-between',alignItems:'center'}}>
-          <p style={{fontSize:12,color:'var(--text-3)'}}>© 2026 GO Travel Academy. Todos los derechos reservados.</p>
+          <p style={{fontSize:12,color:'var(--text-3)'}}>© 2026 Go Travel Academy. Todos los derechos reservados.</p>
           <div style={{display:'flex',gap:18}}>
             {['Privacidad','Términos','Cookies'].map(t=>(
               <a key={t} href="#" style={{fontSize:12,color:'var(--text-3)',transition:'color 0.15s'}}

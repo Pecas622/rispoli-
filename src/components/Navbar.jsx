@@ -48,8 +48,8 @@ export default function Navbar() {
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="container navbar-inner">
         <Link to="/" className="navbar-logo">
-          <img src="/logo.jpg" alt="GO Travel Academy" className="navbar-logo-img" />
-          <span className="logo-text"> Travel Academy</span>
+          <img src="/logo.jpg" alt="Go Travel Academy" className="navbar-logo-img" />
+          <span className="logo-text">Go Travel Academy</span>
         </Link>
 
         <div className={`navbar-links ${open ? 'open' : ''}`}>
