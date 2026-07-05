@@ -1,41 +1,53 @@
-type EmailPayload = { from?: string; to: string; subject: string; html: string };
+// ── Brevo (email transaccional) ────────────────────────────────────────────
+// Dashboard: https://app.brevo.com — SMTP & API → API Keys
+// A diferencia de Resend, alcanza con verificar un único email remitente
+// (sin dominio propio) para poder enviar a cualquier destinatario.
 
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
-const FROM_EMAIL = process.env.BREVO_FROM_EMAIL || 'onboarding@resend.dev';
-const FROM_NAME = process.env.BREVO_FROM_NAME || 'GO Travel Academy';
-const FROM = `${FROM_NAME} <${FROM_EMAIL}>`;
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-async function send(payload: EmailPayload) {
-    if (!BREVO_API_KEY) {
-          console.log('[Email - dev] Para:', payload.to, '| Asunto:', payload.subject);
-          return;
-    }
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-          method: 'POST',
-          headers: {
-                  'api-key': BREVO_API_KEY,
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json',
-          },
-          body: JSON.stringify({
-                  sender: { name: FROM_NAME, email: FROM_EMAIL },
-                  to: [{ email: payload.to }],
-                  subject: payload.subject,
-                  htmlContent: payload.html,
-          }),
-    });
-    if (!res.ok) {
-          const errText = await res.text();
-          console.error('[Brevo] Error enviando email:', res.status, errText);
-    }
+function isBrevoReady(): boolean {
+  const key = process.env.BREVO_API_KEY;
+  return !!key && key !== 'xkeysib-...';
 }
+
+const FROM_EMAIL = process.env.BREVO_FROM_EMAIL || 'noreply@gotravelacademy.com';
+const FROM_NAME  = process.env.BREVO_FROM_NAME  || 'GO Travel Academy';
+
+interface SendPayload { to: string; subject: string; html: string }
+
+async function send({ to, subject, html }: SendPayload) {
+  if (!isBrevoReady()) {
+    console.log('[Email - dev] Para:', to, '| Asunto:', subject);
+    return;
+  }
+
+  const res = await fetch(BREVO_API_URL, {
+    method: 'POST',
+    headers: {
+      'api-key':     process.env.BREVO_API_KEY!,
+      'Content-Type': 'application/json',
+      'Accept':       'application/json',
+    },
+    body: JSON.stringify({
+      sender:      { name: FROM_NAME, email: FROM_EMAIL },
+      to:          [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    console.error('[Email] Brevo rechazó el envío a', to, ':', res.status, body);
+  }
+}
+
 interface UserData   { name: string; email: string }
 interface CourseData { title: string; price: number }
 
 // ── Código de verificación ───────────────────────────────────────────────────
 export async function sendVerificationEmail(email: string, code: string) {
   await send({
-    from:    FROM,
     to:      email,
     subject: `${code} — Código de verificación GO Travel Academy`,
     html: `
@@ -80,7 +92,6 @@ export async function sendVerificationEmail(email: string, code: string) {
 // ── Bienvenida ───────────────────────────────────────────────────────────────
 export async function sendWelcomeEmail(user: UserData) {
   await send({
-    from:    FROM,
     to:      user.email,
     subject: `¡Bienvenido a GO Travel Academy, ${user.name.split(' ')[0]}!`,
     html: `
@@ -147,7 +158,6 @@ export async function sendPurchaseConfirmationEmail(
   });
 
   await send({
-    from:    FROM,
     to:      user.email,
     subject: `Factura #${invoiceNumber} — ${course.title}`,
     html: `
@@ -282,7 +292,6 @@ export async function sendPurchaseConfirmationEmail(
 // ── Código de acceso (login 2FA) ─────────────────────────────────────────────
 export async function sendLoginCodeEmail(email: string, code: string) {
   await send({
-    from:    FROM,
     to:      email,
     subject: `${code} — Código de acceso GO Travel Academy`,
     html: `
@@ -335,7 +344,6 @@ export async function sendLoginCodeEmail(email: string, code: string) {
 // ── Reset de contraseña ──────────────────────────────────────────────────────
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   await send({
-    from:    FROM,
     to:      email,
     subject: 'Restablecer contraseña — GO Travel Academy',
     html: `
