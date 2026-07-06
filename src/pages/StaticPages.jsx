@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useSEO } from '../hooks/useSEO';
 
-const PageShell = ({ label, title, lead, children }) => (
+const PageShell = ({ label, title, lead, path, children }) => {
+  useSEO({ title: `${title} — Go Travel Academy`, description: lead, path });
+  return (
   <div style={{paddingTop:80}}>
     <div style={{padding:'56px 0 48px',borderBottom:'1px solid var(--border)'}}>
       <div className="container">
@@ -13,14 +16,15 @@ const PageShell = ({ label, title, lead, children }) => (
     </div>
     <div className="container" style={{paddingBottom:96,paddingTop:64}}>{children}</div>
   </div>
-);
+  );
+};
 
 const logos = ['Google','Meta','Amazon','Mercado Libre','Globant','Rappi','Despegar','OLX','Accenture','IBM','Oracle','SAP'];
 
 export function Empresas() {
   const { setAuthModal } = useApp();
   return (
-    <PageShell label="Soluciones corporativas" title="Go Travel Academy para empresas" lead="Potenciá el talento de tu equipo con programas de capacitación a medida, diseñados junto a líderes de la industria.">
+    <PageShell path="/empresas" label="Soluciones corporativas" title="Go Travel Academy para empresas" lead="Potenciá el talento de tu equipo con programas de capacitación a medida, diseñados junto a líderes de la industria.">
       <div className="grid-4" style={{marginBottom:64}}>
         {[
           { icon:'🎯', title:'Hasta 500+ personas', desc:'Planes para equipos de cualquier tamaño con gestión centralizada.' },
@@ -51,6 +55,7 @@ export function Empresas() {
 export function Nosotros() {
   return (
     <PageShell
+      path="/nosotros"
       label="Nuestra historia"
       title="La escuela de agentes de viajes de Rispoli"
       lead="Formación creada por una de las agencias más reconocidas de Argentina. 100% práctica y enfocada en los destinos que de verdad cuesta vender."
@@ -102,7 +107,7 @@ const posts = [
 
 export function Blog() {
   return (
-    <PageShell label="Recursos gratuitos" title="Blog" lead="Artículos, tutoriales y guías escritas por profesionales de la industria.">
+    <PageShell path="/blog" label="Recursos gratuitos" title="Blog" lead="Artículos, tutoriales y guías escritas por profesionales de la industria.">
       <div className="grid-auto">
         {posts.map(p=>(
           <article key={p.title} style={{border:'1px solid var(--border)',borderRadius:'var(--r-lg)',overflow:'hidden',cursor:'pointer',transition:'border-color 0.2s'}}
@@ -127,7 +132,7 @@ export function Contacto() {
   const { showToast } = useApp();
   const handleSubmit = e => { e.preventDefault(); showToast('Mensaje enviado. Te respondemos pronto'); e.target.reset(); };
   return (
-    <PageShell label="Contacto" title="Hablemos" lead="¿Tenés dudas? Nuestro equipo te responde en menos de 24 horas.">
+    <PageShell path="/contacto" label="Contacto" title="Hablemos" lead="¿Tenés dudas? Nuestro equipo te responde en menos de 24 horas.">
       <div style={{maxWidth:560}}>
         <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:16}}>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>

@@ -6,6 +6,7 @@ import CourseCard from '../components/CourseCard';
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice } from '../utils/pricing';
+import { useSEO } from '../hooks/useSEO';
 import './Home.css';
 
 const USE_API = import.meta.env.VITE_USE_API === 'true';
@@ -47,6 +48,8 @@ export default function Home() {
   const { setAuthModal, region, dolarRate } = useApp();
   const [openFaq, setOpenFaq] = useState(null);
   const [courses, setCourses] = useState(USE_API ? [] : mockCourses);
+
+  useSEO({ path: '/' });
 
   useEffect(() => {
     if (!USE_API) return;

@@ -5,6 +5,7 @@ import { courses as mockCourses } from '../data/courses';
 import { coursesApi, progressApi } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice, getCheckoutLabel } from '../utils/pricing';
+import { useSEO } from '../hooks/useSEO';
 import './CourseDetail.css';
 
 const USE_API = import.meta.env.VITE_USE_API === 'true';
@@ -44,6 +45,29 @@ export default function CourseDetail() {
     if (!USE_API || !enrolled || !course) return;
     progressApi.getCourse(course.id).then(setProgress).catch(() => {});
   }, [enrolled, course?.id]);
+
+  useSEO({
+    title:       course ? `${course.title} — Go Travel Academy` : undefined,
+    description: course ? (course.subtitle || course.description?.slice(0, 160)) : undefined,
+    image:       course?.image,
+    path:        course ? `/cursos/${course.id}` : undefined,
+    jsonLd: course ? {
+      '@context': 'https://schema.org',
+      '@type':    'Course',
+      name:        course.title,
+      description: course.description ?? course.subtitle ?? '',
+      provider: {
+        '@type': 'Organization',
+        name:    'Go Travel Academy',
+        sameAs:  'https://gotravelacademy.vercel.app',
+      },
+      ...(course.level    ? { educationalLevel: course.level } : {}),
+      ...(course.modality ? { courseMode: course.modality } : {}),
+      ...(course.price > 0 ? {
+        offers: { '@type': 'Offer', price: course.price, priceCurrency: 'ARS', availability: 'https://schema.org/InStock' },
+      } : {}),
+    } : null,
+  });
 
   if (course === undefined) return <div style={{padding:'160px 0',textAlign:'center'}}><div className="spinner" style={{margin:'0 auto'}} /></div>;
   if (!course) return (
