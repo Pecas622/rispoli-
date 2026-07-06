@@ -41,7 +41,7 @@ const arsFormatter = new Intl.NumberFormat('es-AR', { style: 'currency', currenc
 const usdFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 export function formatPrice(amount, regionCode) {
-  return regionCode === 'WORLD' ? usdFormatter.format(amount) : arsFormatter.format(amount);
+  return regionCode === 'WORLD' ? `${usdFormatter.format(amount)} USD` : arsFormatter.format(amount);
 }
 
 export function getCheckoutLabel(regionCode) {
