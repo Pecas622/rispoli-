@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
-import { sendVerificationEmail, sendWelcomeEmail, sendLoginCodeEmail, sendPasswordResetEmail } from '../lib/email';
+import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail } from '../lib/email';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -61,15 +61,6 @@ async function createAndSendCode(email: string): Promise<string> {
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
   await prisma.verificationCode.create({ data: { email, code, expiresAt } });
   await sendVerificationEmail(email, code);
-  return code;
-}
-
-async function createAndSendLoginCode(email: string): Promise<string> {
-  await prisma.verificationCode.deleteMany({ where: { email } });
-  const code = generateCode();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
-  await prisma.verificationCode.create({ data: { email, code, expiresAt } });
-  await sendLoginCodeEmail(email, code);
   return code;
 }
 
@@ -160,7 +151,6 @@ router.post('/resend-code', async (req: Request, res: Response, next: NextFuncti
 });
 
 // POST /api/auth/login
-// Paso 1: valida credenciales y envía OTP al email
 router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
@@ -181,44 +171,6 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
         ...devPayload(code),
       });
     }
-
-    // Credenciales válidas → enviar código de acceso al email (2FA)
-    const code = await createAndSendLoginCode(email);
-    return res.status(200).json({ requiresLoginCode: true, email, ...devPayload(code) });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// POST /api/auth/verify-login
-// Paso 2: valida el OTP y devuelve el JWT
-router.post('/verify-login', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { email, code } = z.object({
-      email: z.string().email(),
-      code:  z.string().length(6),
-    }).parse(req.body);
-
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.emailVerified || user.deletedAt) {
-      return res.status(401).json({ message: 'Acceso no autorizado' });
-    }
-
-    const record = await prisma.verificationCode.findFirst({
-      where: { email, code },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!record) {
-      return res.status(400).json({ message: 'Código incorrecto' });
-    }
-    if (record.expiresAt < new Date()) {
-      await prisma.verificationCode.delete({ where: { id: record.id } });
-      return res.status(400).json({ message: 'El código expiró. Iniciá sesión de nuevo.' });
-    }
-
-    // Código válido → limpiar y emitir JWT
-    await prisma.verificationCode.deleteMany({ where: { email } });
 
     issueSession(res, user.id, user.role);
     const { passwordHash: _, emailVerified: __, ...safeUser } = user;

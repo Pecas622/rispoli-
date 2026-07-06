@@ -80,15 +80,12 @@ export function AppProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const data = await authApi.login(email, password);
-      // Login exitoso (credenciales válidas) → backend envía OTP al email
-      if (data.requiresLoginCode) {
-        setPendingVerification({ email, type: 'login', devCode: data.devCode });
-        showDevCode(data.devCode);
-        setAuthModal(null);
-        return { success: false, requiresLoginCode: true, email };
-      }
-      return { success: false };
+      const { user: apiUser } = await authApi.login(email, password);
+      const normalized = { ...apiUser, role: apiUser.role.toLowerCase() };
+      setUser(normalized);
+      setAuthModal(null);
+      showToast(`Bienvenido, ${normalized.name.split(' ')[0]}!`);
+      return { success: true };
     } catch (err) {
       if (err.code === 'EMAIL_NOT_VERIFIED' || err.message?.includes('Verificá tu email')) {
         setPendingVerification({ email, type: 'registration', devCode: err.devCode });
@@ -98,20 +95,6 @@ export function AppProvider({ children }) {
       }
       showToast(err.message || 'Credenciales incorrectas', 'error');
       return { success: false };
-    }
-  };
-
-  // Verifica el código OTP de login (paso 2 del 2FA)
-  const verifyLoginCode = async (email, code) => {
-    try {
-      const { user: apiUser } = await authApi.verifyLogin(email, code);
-      const normalized = { ...apiUser, role: apiUser.role.toLowerCase() };
-      setUser(normalized);
-      setPendingVerification(null);
-      showToast(`Bienvenido, ${normalized.name.split(' ')[0]}!`);
-      return { success: true };
-    } catch (err) {
-      return { success: false, message: err.message || 'Código incorrecto' };
     }
   };
 
@@ -232,7 +215,7 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider value={{
       user, login, register, logout,
-      verifyEmail, verifyLoginCode, resendVerificationCode,
+      verifyEmail, resendVerificationCode,
       forgotPassword, resetPassword, changePassword, updateProfile,
       pendingVerification, setPendingVerification,
       enrollCourse, isEnrolled,

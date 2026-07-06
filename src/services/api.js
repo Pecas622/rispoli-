@@ -31,7 +31,6 @@ export const authApi = {
   register:       (name, email, password) => api.post('/auth/register', { name, email, password }),
   login:          (email, password)       => api.post('/auth/login', { email, password }),
   verifyEmail:    (email, code)           => api.post('/auth/verify-email', { email, code }),
-  verifyLogin:    (email, code)           => api.post('/auth/verify-login', { email, code }),
   resendCode:     (email)                 => api.post('/auth/resend-code', { email }),
   me:             ()                      => api.get('/auth/me'),
   logout:         ()                      => api.post('/auth/logout', {}),
