@@ -5,7 +5,7 @@ import { getRegionPrice, formatPrice, REGIONS } from '../utils/pricing';
 import './CheckoutModal.css';
 
 export default function CheckoutModal() {
-  const { checkoutModal, setCheckoutModal, region, showToast } = useApp();
+  const { checkoutModal, setCheckoutModal, region, dolarRate, showToast } = useApp();
   const [step, setStep] = useState('form'); // form | processing | success
   const [card, setCard] = useState({ number: '', name: '', expiry: '', cvc: '' });
 
@@ -13,7 +13,7 @@ export default function CheckoutModal() {
   const course = checkoutModal;
 
   const processor = REGIONS[region === 'WORLD' ? 'WORLD' : 'AR'];
-  const { current: price } = getRegionPrice(course, region);
+  const { current: price } = getRegionPrice(course, region, dolarRate);
 
   const close = () => {
     setCheckoutModal(null);

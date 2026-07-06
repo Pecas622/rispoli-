@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authApi, enrollmentsApi, usersApi } from '../services/api';
+import { detectCountry, getDolarRate } from '../utils/currency';
 
 const AppContext = createContext();
 
@@ -16,6 +17,7 @@ export function AppProvider({ children }) {
   const [region,             setRegion]            = useState(() => localStorage.getItem('region') || null);
   const [showRegionModal,    setShowRegionModal]   = useState(false);
   const [checkoutModal,      setCheckoutModal]     = useState(null); // curso en checkout demo, o null
+  const [dolarRate,          setDolarRate]         = useState(null); // ARS por USD (dolarapi.com), respaldo para cursos sin priceUSD
 
   const selectRegion = (code, silent = false) => {
     localStorage.setItem('region', code);
@@ -27,17 +29,15 @@ export function AppProvider({ children }) {
     }
   };
 
-  // Auto-detección de región por IP (solo la primera vez)
+  // Auto-detección de región por IP (solo la primera vez; la elección manual
+  // del usuario, si existe en localStorage, siempre tiene prioridad)
   useEffect(() => {
     if (localStorage.getItem('region')) return;
-    fetch('https://ipapi.co/json/')
-      .then(r => r.json())
-      .then(data => {
-        const code = data.country_code === 'AR' ? 'AR' : 'WORLD';
-        selectRegion(code, false);
-      })
-      .catch(() => selectRegion('AR', true));
+    detectCountry().then(code => selectRegion(code === null ? 'AR' : (code === 'AR' ? 'AR' : 'WORLD'), code === null));
   }, []);
+
+  // Cotización del dólar, para convertir en vivo los cursos sin priceUSD cargado
+  useEffect(() => { getDolarRate().then(setDolarRate); }, []);
 
   useEffect(() => {
     if (user) localStorage.setItem('user', JSON.stringify(user));
@@ -223,7 +223,7 @@ export function AppProvider({ children }) {
       toast, showToast,
       authModal, setAuthModal,
       checkoutModal, setCheckoutModal,
-      region, selectRegion, showRegionModal, setShowRegionModal,
+      region, selectRegion, showRegionModal, setShowRegionModal, dolarRate,
     }}>
       {children}
     </AppContext.Provider>

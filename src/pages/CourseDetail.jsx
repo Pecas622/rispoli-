@@ -16,7 +16,7 @@ export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, enrollCourse, isEnrolled, setAuthModal, showToast, region } = useApp();
+  const { user, enrollCourse, isEnrolled, setAuthModal, showToast, region, dolarRate } = useApp();
   const [course, setCourse] = useState(undefined); // undefined = cargando, null = no encontrado
   const [progress, setProgress] = useState(EMPTY_PROGRESS);
   const [openModule, setOpenModule] = useState(0);
@@ -53,7 +53,7 @@ export default function CourseDetail() {
     </div>
   );
 
-  const { current: coursePrice, original: courseOriginal } = getRegionPrice(course, region);
+  const { current: coursePrice, original: courseOriginal } = getRegionPrice(course, region, dolarRate);
   const discount  = courseOriginal > 0 ? Math.round((1 - coursePrice / courseOriginal) * 100) : 0;
   const checkoutLabel = getCheckoutLabel(region);
 

@@ -11,8 +11,8 @@ const levelColor = {
 };
 
 export default function CourseCard({ course }) {
-  const { region } = useApp();
-  const { current, original } = getRegionPrice(course, region);
+  const { region, dolarRate } = useApp();
+  const { current, original } = getRegionPrice(course, region, dolarRate);
   const discount = original > 0 ? Math.round((1 - current / original) * 100) : 0;
   const lvl = levelColor[course.level] || { bg: 'var(--bg-2)', color: 'var(--text-2)' };
   const instructorName   = course.instructorName   ?? course.instructor?.name;
