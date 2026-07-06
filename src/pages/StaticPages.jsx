@@ -57,7 +57,7 @@ export function Nosotros() {
     >
       {/* ── El fundador ── */}
       <div style={{display:'grid',gridTemplateColumns:'0.85fr 1.15fr',gap:56,alignItems:'center',marginBottom:64}}>
-        <img src="/lucio-rispoli.png" alt="Lucio Rispoli, fundador de Go Travel Academy" style={{width:'100%',height:420,objectFit:'cover',objectPosition:'center 22%',borderRadius:'var(--r-lg)',border:'1px solid var(--border)'}} />
+        <img src="/luciorispoli.jpg" alt="Lucio Rispoli, fundador de Go Travel Academy" style={{width:'100%',height:420,objectFit:'cover',objectPosition:'center 22%',borderRadius:'var(--r-lg)',border:'1px solid var(--border)'}} />
         <div>
           <p className="label" style={{marginBottom:12,color:'var(--violet-mid)'}}>El fundador</p>
           <h2 style={{fontFamily:'var(--display)',fontSize:30,fontWeight:800,letterSpacing:'-0.02em',marginBottom:4}}>Lucio Rispoli</h2>
