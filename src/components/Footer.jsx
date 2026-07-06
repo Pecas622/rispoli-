@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Mail, Phone } from 'lucide-react';
 
 const SLink = ({ href, label, children }) => (
-  <a href={href} aria-label={label}
+  <a href={href} aria-label={label} target="_blank" rel="noopener noreferrer"
     style={{width:32,height:32,background:'var(--bg-2)',border:'1px solid var(--border)',borderRadius:'var(--r-sm)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--text-3)',transition:'var(--transition)'}}
     onMouseEnter={e=>{e.currentTarget.style.borderColor='var(--border-2)';e.currentTarget.style.color='var(--text)';}}
     onMouseLeave={e=>{e.currentTarget.style.borderColor='var(--border)';e.currentTarget.style.color='var(--text-3)';}}>
@@ -24,7 +24,7 @@ export default function Footer() {
               La plataforma líder en formación para agentes de viajes de toda Latinoamérica.
             </p>
             <div style={{display:'flex',gap:8}}>
-              <SLink href="#" label="Instagram">
+              <SLink href="https://www.instagram.com/go.travelacademy/" label="Instagram">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".5" fill="currentColor" stroke="none"/></svg>
               </SLink>
               <SLink href="#" label="Facebook">
