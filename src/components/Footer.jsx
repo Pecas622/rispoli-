@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone } from 'lucide-react';
 
 const SLink = ({ href, label, children }) => (
   <a href={href} aria-label={label}
@@ -20,28 +20,22 @@ export default function Footer() {
               <div style={{width:8,height:8,borderRadius:'50%',background:'var(--violet-mid)',flexShrink:0}}/>
               Go Travel Academy
 </Link>
-            <p style={{fontSize:13,color:'var(--text-3)',lineHeight:1.75,marginBottom:18,maxWidth:220}}>
-              La plataforma de educación tech líder en América Latina.
+            <p style={{fontSize:13,color:'var(--text-3)',lineHeight:1.75,marginBottom:18,maxWidth:240}}>
+              La plataforma líder en formación para agentes de viajes de toda Latinoamérica.
             </p>
             <div style={{display:'flex',gap:8}}>
-              <SLink href="#" label="X / Twitter">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.257 5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-              </SLink>
               <SLink href="#" label="Instagram">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".5" fill="currentColor" stroke="none"/></svg>
               </SLink>
-              <SLink href="#" label="LinkedIn">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
-              </SLink>
-              <SLink href="#" label="YouTube">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 00-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 00-1.95 1.96A29 29 0 001 12a29 29 0 00.46 5.58 2.78 2.78 0 001.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 001.95-1.96A29 29 0 0023 12a29 29 0 00-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/></svg>
+              <SLink href="#" label="Facebook">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.51 1.49-3.9 3.78-3.9 1.09 0 2.23.2 2.23.2v2.46H15.2c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.89h-2.33v6.99A10 10 0 0022 12z"/></svg>
               </SLink>
             </div>
           </div>
 
           <div>
             <p style={{fontSize:12,fontWeight:600,color:'var(--text-3)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:14}}>Cursos</p>
-            {['Programación Web','UX/UI Design','Marketing Digital','Data Science','Ciberseguridad','Apps Móviles'].map(item=>(
+            {['Agente de Viajes','Florida al completo','Europa esencial'].map(item=>(
               <Link key={item} to="/cursos" style={{display:'block',fontSize:13,color:'var(--text-3)',marginBottom:9,transition:'color 0.15s'}}
                 onMouseEnter={e=>e.currentTarget.style.color='var(--text)'}
                 onMouseLeave={e=>e.currentTarget.style.color='var(--text-3)'}>
@@ -52,7 +46,7 @@ export default function Footer() {
 
           <div>
             <p style={{fontSize:12,fontWeight:600,color:'var(--text-3)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:14}}>Empresa</p>
-            {[['Nosotros','/nosotros'],['Empresas','/empresas'],['Blog','/blog'],['Contacto','/contacto']].map(([l,to])=>(
+            {[['Nosotros','/nosotros'],['Contacto','/contacto']].map(([l,to])=>(
               <Link key={l} to={to} style={{display:'block',fontSize:13,color:'var(--text-3)',marginBottom:9,transition:'color 0.15s'}}
                 onMouseEnter={e=>e.currentTarget.style.color='var(--text)'}
                 onMouseLeave={e=>e.currentTarget.style.color='var(--text-3)'}>
@@ -63,7 +57,7 @@ export default function Footer() {
 
           <div>
             <p style={{fontSize:12,fontWeight:600,color:'var(--text-3)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:14}}>Contacto</p>
-            {[{I:Mail,t:'hola@gotravelacademy.com'},{I:Phone,t:'+54 11 4567-8900'},{I:MapPin,t:'Buenos Aires, Argentina'}].map(({I,t})=>(
+            {[{I:Mail,t:'academygotravel@gmail.com'},{I:Phone,t:'+54 9 2616 65-0766'}].map(({I,t})=>(
               <div key={t} style={{display:'flex',alignItems:'center',gap:9,fontSize:13,color:'var(--text-3)',marginBottom:10}}>
                 <I size={13} style={{flexShrink:0}}/>{t}
               </div>

@@ -50,27 +50,40 @@ export function Empresas() {
 
 export function Nosotros() {
   return (
-    <PageShell label="Nuestra historia" title="Transformando carreras desde 2018" lead="Nacimos con una misión: democratizar el acceso a la educación tecnológica en América Latina.">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:60,alignItems:'start',marginBottom:64}}>
+    <PageShell
+      label="Nuestra historia"
+      title="La escuela de agentes de viajes de Rispoli"
+      lead="Formación creada por una de las agencias más reconocidas de Argentina. 100% práctica y enfocada en los destinos que de verdad cuesta vender."
+    >
+      {/* ── El fundador ── */}
+      <div style={{display:'grid',gridTemplateColumns:'0.85fr 1.15fr',gap:56,alignItems:'center',marginBottom:64}}>
+        <img src="/lucio-rispoli.png" alt="Lucio Rispoli, fundador de Go Travel Academy" style={{width:'100%',height:420,objectFit:'cover',objectPosition:'center 22%',borderRadius:'var(--r-lg)',border:'1px solid var(--border)'}} />
         <div>
-          <p style={{color:'var(--text-2)',lineHeight:1.9,fontSize:15,marginBottom:18}}>Go Travel Academy nació en Buenos Aires con la convicción de que el talento está distribuido de manera equitativa, pero la oportunidad no. Nos propusimos cambiar eso.</p>
-          <p style={{color:'var(--text-2)',lineHeight:1.9,fontSize:15}}>Hoy somos la plataforma de educación tech líder en LATAM, con más de 150.000 estudiantes activos, 200+ cursos y alianzas con las empresas más importantes del ecosistema digital.</p>
+          <p className="label" style={{marginBottom:12,color:'var(--violet-mid)'}}>El fundador</p>
+          <h2 style={{fontFamily:'var(--display)',fontSize:30,fontWeight:800,letterSpacing:'-0.02em',marginBottom:4}}>Lucio Rispoli</h2>
+          <p style={{fontSize:14,color:'var(--text-3)',marginBottom:22}}>Fundador de Go Travel Academy · +12 años en la industria de viajes</p>
+          <p style={{color:'var(--text-2)',lineHeight:1.9,fontSize:15,marginBottom:20}}>Más de 12 años vendiendo viajes en una de las agencias más tradicionales y reconocidas de Argentina. Acompañó a miles de viajeros a los destinos más variados del mundo: de Europa a Asia, Estados Unidos, el Caribe y Sudamérica.</p>
+          <p style={{fontFamily:'var(--display)',fontSize:'clamp(18px,2vw,22px)',fontWeight:700,letterSpacing:'-0.02em',lineHeight:1.4,color:'var(--text)'}}>“Viajar transforma, y mi trabajo es ser el puente entre ese deseo y la vivencia concreta.”</p>
         </div>
-        <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600&q=80" alt="Equipo" style={{width:'100%',height:320,objectFit:'cover',borderRadius:'var(--r-lg)',border:'1px solid var(--border)'}} />
       </div>
-      <p className="label" style={{marginBottom:20}}>Historia</p>
+
+      {/* ── Por qué existe ── */}
+      <div style={{maxWidth:760,marginBottom:56}}>
+        <p className="label" style={{marginBottom:16,color:'var(--violet-mid)'}}>Por qué existe</p>
+        <h2 style={{fontFamily:'var(--display)',fontSize:'clamp(24px,3vw,32px)',fontWeight:800,letterSpacing:'-0.02em',lineHeight:1.2,marginBottom:20}}>Una escuela hecha por quienes venden viajes todos los días</h2>
+        <p style={{color:'var(--text-2)',lineHeight:1.9,fontSize:15}}>Faltaba una formación realmente práctica, con las habilidades que pide el mercado y no teoría desactualizada. Por eso nace Go Travel Academy: para que aprendas desde cero o te profesionalices como agente de viajes, con casos reales, sistemas del rubro y foco en los destinos más difíciles de vender —justo donde Rispoli tiene décadas de experiencia.</p>
+      </div>
+
+      {/* ── Pilares ── */}
       <div className="grid-3">
         {[
-          {year:'2018',txt:'Fundación en Buenos Aires. 3 cursos, 200 estudiantes.'},
-          {year:'2020',txt:'Expansión a México, Colombia y Chile. 20.000 alumnos.'},
-          {year:'2022',txt:'Serie B de $30M USD. Lanzamiento de planes enterprise.'},
-          {year:'2023',txt:'+100.000 estudiantes. Apertura de oficinas en São Paulo.'},
-          {year:'2025',txt:'500 empresas partners. Job placement garantizado.'},
-          {year:'2026',txt:'150.000 estudiantes activos. Expansión en toda LATAM.'},
-        ].map(({year,txt})=>(
-          <div key={year} style={{padding:'20px',border:'1px solid var(--border)',borderRadius:'var(--r)'}}>
-            <div style={{fontFamily:'var(--display)',fontSize:22,fontWeight:800,letterSpacing:'-0.03em',marginBottom:8}}>{year}</div>
-            <p style={{fontSize:13,color:'var(--text-2)',lineHeight:1.6}}>{txt}</p>
+          {t:'Experiencia real',d:'Aprendés de quienes venden viajes de verdad, todos los días. Nada de teoría desactualizada.'},
+          {t:'100% práctico',d:'Casos reales y las habilidades concretas que el mercado laboral le pide a un agente de viajes.'},
+          {t:'Destinos que cuestan vender',d:'Nos especializamos en los destinos más difíciles, donde Rispoli tiene décadas de trayectoria.'},
+        ].map(({t,d})=>(
+          <div key={t} style={{padding:'24px',border:'1px solid var(--border)',borderRadius:'var(--r-lg)'}}>
+            <h3 style={{fontSize:16,fontWeight:700,marginBottom:8}}>{t}</h3>
+            <p style={{fontSize:13.5,color:'var(--text-2)',lineHeight:1.7}}>{d}</p>
           </div>
         ))}
       </div>
