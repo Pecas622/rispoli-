@@ -1,9 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+function waitForGoogleScript(timeoutMs = 8000) {
+  return new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) return resolve();
+    const start = Date.now();
+    const check = setInterval(() => {
+      if (window.google?.accounts?.id) {
+        clearInterval(check);
+        resolve();
+      } else if (Date.now() - start > timeoutMs) {
+        clearInterval(check);
+        reject(new Error('No se pudo cargar el script de Google'));
+      }
+    }, 100);
+  });
+}
+
 export default function AuthModal() {
-  const { authModal, setAuthModal, login, register, forgotPassword } = useApp();
+  const { authModal, setAuthModal, login, loginWithGoogle, register, forgotPassword } = useApp();
+  const googleBtnRef = useRef(null);
   const [form, setForm] = useState({ name:'', email:'', password:'' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -12,6 +31,26 @@ export default function AuthModal() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authModal || forgotMode || !GOOGLE_CLIENT_ID) return;
+    let cancelled = false;
+    waitForGoogleScript()
+      .then(() => {
+        if (cancelled || !googleBtnRef.current) return;
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (response) => loginWithGoogle(response.credential),
+        });
+        googleBtnRef.current.innerHTML = '';
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'outline', size: 'large', width: 360,
+          text: authModal === 'login' ? 'signin_with' : 'signup_with',
+        });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [authModal, forgotMode]);
 
   if (!authModal) return null;
   const isLogin = authModal === 'login';
@@ -96,6 +135,17 @@ export default function AuthModal() {
         <p style={{fontSize:14,color:'var(--text-3)',marginBottom:24}}>
           {isLogin ? 'Continuá aprendiendo donde lo dejaste' : 'Únete a más de 150.000 estudiantes'}
         </p>
+
+        {GOOGLE_CLIENT_ID && (
+          <>
+            <div ref={googleBtnRef} style={{display:'flex',justifyContent:'center',minHeight:40,marginBottom:18}} />
+            <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:18}}>
+              <div style={{flex:1,height:1,background:'var(--border)'}} />
+              <span style={{fontSize:12,color:'var(--text-3)'}}>o</span>
+              <div style={{flex:1,height:1,background:'var(--border)'}} />
+            </div>
+          </>
+        )}
 
         <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:14}}>
           {!isLogin && (

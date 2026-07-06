@@ -98,6 +98,20 @@ export function AppProvider({ children }) {
     }
   };
 
+  const loginWithGoogle = async (credential) => {
+    try {
+      const { user: apiUser } = await authApi.google(credential);
+      const normalized = { ...apiUser, role: apiUser.role.toLowerCase() };
+      setUser(normalized);
+      setAuthModal(null);
+      showToast(`Bienvenido, ${normalized.name.split(' ')[0]}!`);
+      return { success: true };
+    } catch (err) {
+      showToast(err.message || 'No se pudo iniciar sesión con Google', 'error');
+      return { success: false };
+    }
+  };
+
   const register = async (name, email, password) => {
     try {
       const data = await authApi.register(name, email, password);
@@ -214,7 +228,7 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      user, login, register, logout,
+      user, login, loginWithGoogle, register, logout,
       verifyEmail, resendVerificationCode,
       forgotPassword, resetPassword, changePassword, updateProfile,
       pendingVerification, setPendingVerification,
