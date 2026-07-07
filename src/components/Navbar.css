@@ -182,6 +182,8 @@
   .navbar-mobile-actions .btn { justify-content: center; }
   .auth-btns { display: none; }
   .mobile-menu-btn { display: flex; }
+  .user-trigger-name, .chevron { display: none; }
+  .user-trigger { padding: 4px; }
 }
 
 @media (max-width: 360px) {
