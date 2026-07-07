@@ -177,7 +177,7 @@ export default function Home() {
                           </div>
                           <div className="hc-card-foot">
                             <span className="hc-price">{formatPrice(getRegionPrice(s, region, dolarRate).current, region)}</span>
-                            <Link to="/cursos" className="hc-card-btn">Ver curso</Link>
+                            <Link to={`/cursos/${s.id}`} className="hc-card-btn" onClick={e => e.stopPropagation()}>Ver curso</Link>
                           </div>
                         </>
                       ) : (
