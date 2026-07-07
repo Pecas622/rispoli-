@@ -22,6 +22,7 @@ export default function CourseDetail() {
   const [progress, setProgress] = useState(EMPTY_PROGRESS);
   const [openModule, setOpenModule] = useState(0);
   const [enrolling, setEnrolling] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('payment') === 'cancelled') {
@@ -140,7 +141,25 @@ export default function CourseDetail() {
               </div>
               <h1 className="detail-title">{course.title}</h1>
               <p className="detail-subtitle">{course.subtitle}</p>
-              <p className="detail-desc">{course.description}</p>
+              {course.description && (() => {
+                const LIMIT = 260;
+                const isLong = course.description.length > LIMIT;
+                const shown = descExpanded || !isLong ? course.description : course.description.slice(0, LIMIT).trimEnd() + '…';
+                return (
+                  <p className="detail-desc" style={{ whiteSpace: 'pre-line' }}>
+                    {shown}
+                    {isLong && (
+                      <button
+                        type="button"
+                        onClick={() => setDescExpanded(v => !v)}
+                        style={{ background: 'none', border: 'none', color: 'var(--violet-mid)', fontWeight: 600, cursor: 'pointer', padding: 0, marginLeft: 6, fontSize: 'inherit' }}
+                      >
+                        {descExpanded ? 'Leer menos' : 'Leer más'}
+                      </button>
+                    )}
+                  </p>
+                );
+              })()}
 
               <div className="detail-meta-row">
                 <span className="detail-meta-item">
@@ -150,14 +169,6 @@ export default function CourseDetail() {
                 <span className="detail-meta-item"><Users size={13} /> {course.students.toLocaleString()} estudiantes</span>
                 {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
                 {course.hours && <span className="detail-meta-item"><BookOpen size={13} /> {course.hours}h de contenido</span>}
-              </div>
-
-              <div className="instructor-mini">
-                <img src={instructor.avatar} alt={instructor.name} />
-                <div>
-                  <div className="instructor-mini-name">{instructor.name}</div>
-                  <div className="instructor-mini-role">{instructor.role}</div>
-                </div>
               </div>
             </div>
 
