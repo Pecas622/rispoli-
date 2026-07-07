@@ -7,7 +7,7 @@ const router = Router();
 
 const updateSchema = z.object({
   name:      z.string().min(2).optional(),
-  avatar:    z.string().url().optional(),
+  avatar:    z.union([z.string().url(), z.literal('')]).optional(),
   role:      z.enum(['ADMIN', 'INSTRUCTOR', 'STUDENT']).optional(),
   isBlocked: z.boolean().optional(),
 });
