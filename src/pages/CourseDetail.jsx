@@ -213,8 +213,6 @@ export default function CourseDetail() {
                         {discount > 0 && <span className="enroll-price-was">{formatPrice(courseOriginal, region)}</span>}
                         {discount > 0 && <span className="enroll-discount">-{discount}%</span>}
                       </div>
-                      {discount > 0 && <p className="enroll-urgency">Oferta finaliza en 2 días</p>}
-
                       <button
                         onClick={handleEnroll}
                         className="btn btn-primary"
@@ -224,9 +222,29 @@ export default function CourseDetail() {
                         {enrolling ? <><div className="spinner" /> Procesando...</> : checkoutLabel}
                       </button>
 
-                      <p style={{textAlign:'center',fontSize:12,color:'var(--text-3)',marginTop:10}}>
-                        Garantía de devolución 30 días
-                      </p>
+                      {region === 'AR' && course.transferCode && (
+                        <div className="enroll-includes">
+                          <p className="enroll-includes-title">Promociones disponibles</p>
+
+                          <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px',marginBottom:10}}>
+                            <p style={{fontSize:12,fontWeight:700,color:'var(--green)',marginBottom:4}}>10% OFF — Pagando por transferencia</p>
+                            <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:2}}>
+                              <span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * 0.9, region)}</span>
+                              <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>
+                            </div>
+                            <p style={{fontSize:11,color:'var(--text-3)',marginBottom:8}}>Pago único</p>
+                            <p style={{fontSize:11,color:'var(--text-3)'}}>
+                              Aplicá este código al pagar: <strong style={{color:'var(--text)',fontFamily:'monospace'}}>{course.transferCode}</strong>
+                            </p>
+                          </div>
+
+                          <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}>
+                            <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:4}}>6 cuotas sin interés — Con Mercado Pago</p>
+                            <p style={{fontSize:18,fontWeight:800,marginBottom:2}}>6 x {formatPrice(coursePrice / 6, region)}</p>
+                            <p style={{fontSize:11,color:'var(--text-3)'}}>Total: {formatPrice(coursePrice, region)} sin interés</p>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
 

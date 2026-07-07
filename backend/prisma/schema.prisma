@@ -81,6 +81,7 @@ model Course {
   tags             String[]
   requirements     String[]
   includes         String[]
+  transferCode     String?  @map("transfer_code") // cupón de 10% off pagando por transferencia (ej. "TRANSFER10")
   learningObjectives String[] @map("learning_objectives")
   targetAudience     String[] @map("target_audience")
   instructorName   String?  @map("instructor_name")
