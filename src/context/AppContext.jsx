@@ -218,10 +218,10 @@ export function AppProvider({ children }) {
   // La pasarela de pago real (Stripe/Mercado Pago) todavía no está conectada
   // con credenciales productivas — por ahora esto abre un checkout de demo
   // que no procesa ningún cargo real ni otorga inscripción.
-  const enrollCourse = (course) => {
+  const enrollCourse = (course, overrides) => {
     if (!user) { setAuthModal('login'); return; }
     if (enrolledCourseIds.includes(course.id)) { showToast('Ya estás inscripto en este curso', 'info'); return; }
-    setCheckoutModal(course);
+    setCheckoutModal(overrides ? { ...course, ...overrides } : course);
   };
 
   const isEnrolled = (courseId) => enrolledCourseIds.includes(courseId);

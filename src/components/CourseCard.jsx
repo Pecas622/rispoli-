@@ -8,6 +8,8 @@ const levelColor = {
   'Principiante': { bg: '#DCFCE7', color: '#16A34A' },
   'Intermedio':   { bg: '#FEF9C3', color: '#CA8A04' },
   'Avanzado':     { bg: '#FEE2E2', color: '#DC2626' },
+  'Principiante-Intermedio': { bg: '#DCFCE7', color: '#16A34A' },
+  'Intermedio-Avanzado':     { bg: '#FEF9C3', color: '#CA8A04' },
 };
 
 export default function CourseCard({ course }) {

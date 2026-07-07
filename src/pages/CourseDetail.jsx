@@ -9,7 +9,10 @@ import { useSEO } from '../hooks/useSEO';
 import './CourseDetail.css';
 
 const USE_API = import.meta.env.VITE_USE_API === 'true';
-const levelBadge = { 'Principiante':'badge-green','Intermedio':'badge-amber','Avanzado':'badge-red' };
+const levelBadge = {
+  'Principiante':'badge-green','Intermedio':'badge-amber','Avanzado':'badge-red',
+  'Principiante-Intermedio':'badge-green','Intermedio-Avanzado':'badge-amber',
+};
 const EMPTY_PROGRESS = { percent: 0, completed: 0, total: 0, completedLessonIds: [] };
 const MOCK_PROGRESS = { 1: 68, 2: 35, 3: 100, 4: 12, 5: 0, 6: 55 }; // solo para el fallback sin backend
 
@@ -118,6 +121,14 @@ export default function CourseDetail() {
     setEnrolling(true);
     await new Promise(r => setTimeout(r, 700));
     enrollCourse(course);
+    setEnrolling(false);
+  };
+
+  const handleEnrollTransfer = async () => {
+    if (!user) { setAuthModal('register'); return; }
+    setEnrolling(true);
+    await new Promise(r => setTimeout(r, 700));
+    enrollCourse(course, { overridePrice: coursePrice * 0.9, paymentMethodLabel: 'Transferencia bancaria' });
     setEnrolling(false);
   };
 
@@ -232,10 +243,15 @@ export default function CourseDetail() {
                               <span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * 0.9, region)}</span>
                               <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>
                             </div>
-                            <p style={{fontSize:11,color:'var(--text-3)',marginBottom:8}}>Pago único</p>
-                            <p style={{fontSize:11,color:'var(--text-3)'}}>
-                              Aplicá este código al pagar: <strong style={{color:'var(--text)',fontFamily:'monospace'}}>{course.transferCode}</strong>
-                            </p>
+                            <p style={{fontSize:11,color:'var(--text-3)',marginBottom:10}}>Pago único</p>
+                            <button
+                              onClick={handleEnrollTransfer}
+                              className="btn btn-outline btn-sm"
+                              style={{width:'100%',justifyContent:'center'}}
+                              disabled={enrolling}
+                            >
+                              {enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar ${formatPrice(coursePrice * 0.9, region)} por transferencia`}
+                            </button>
                           </div>
 
                           <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}>
