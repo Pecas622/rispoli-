@@ -26,7 +26,7 @@ export default function CourseCard({ course }) {
       {/* Image */}
       <div className="cc-image-wrap">
         <img src={course.image} alt={course.title} className="cc-image" loading="lazy" />
-        <span className="cc-cat-badge">Certificado por U. Aconcagua</span>
+        <span className="cc-cat-badge">Certificado por {course.certifiedBy || 'Go Travel Academy'}</span>
         <div className="cc-top-right-badges">
           {comingSoon && <span className="cc-discount-badge">Próximamente</span>}
           {!comingSoon && discount > 0 && <span className="cc-discount-badge">-{discount}%</span>}

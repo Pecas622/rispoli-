@@ -82,6 +82,7 @@ model Course {
   requirements     String[]
   includes         String[]
   transferCode     String?  @map("transfer_code") // cupón de 10% off pagando por transferencia (ej. "TRANSFER10")
+  certifiedBy      String?  @map("certified_by") // entidad que avala el certificado (default: Go Travel Academy)
   learningObjectives String[] @map("learning_objectives")
   targetAudience     String[] @map("target_audience")
   instructorName   String?  @map("instructor_name")

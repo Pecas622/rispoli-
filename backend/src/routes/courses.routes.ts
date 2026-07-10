@@ -25,6 +25,7 @@ const courseSchema = z.object({
   requirements:     z.array(z.string()).optional(),
   includes:         z.array(z.string()).optional(),
   transferCode:     z.string().optional(),
+  certifiedBy:      z.string().optional(),
   learningObjectives: z.array(z.string()).optional(),
   targetAudience:     z.array(z.string()).optional(),
   instructorName:   z.string().optional(),

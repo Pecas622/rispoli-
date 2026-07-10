@@ -165,7 +165,9 @@ export default function Home() {
                   >
                     <div className="hc-card-media">
                       <img src={s.image} alt={s.title} />
-                      <span className={`hc-badge ${s.kind === 'soon' ? 'hc-badge-soon' : ''}`}>{s.category}</span>
+                      <span className={`hc-badge ${s.kind === 'soon' ? 'hc-badge-soon' : ''}`}>
+                        {s.kind === 'course' ? `Certificado por ${s.certifiedBy || 'Go Travel Academy'}` : s.category}
+                      </span>
                     </div>
                     <div className="hc-card-body">
                       <h3 className="hc-card-title">{s.title}</h3>
