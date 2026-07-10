@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authApi, enrollmentsApi, usersApi } from '../services/api';
+import { pixelTrack } from '../lib/pixel';
 import { detectCountry, getDolarRate } from '../utils/currency';
 
 const AppContext = createContext();
@@ -115,6 +116,7 @@ export function AppProvider({ children }) {
   const register = async (name, email, password) => {
     try {
       const data = await authApi.register(name, email, password);
+      pixelTrack('Lead');
       if (data.requiresVerification) {
         setPendingVerification({ email, type: 'registration', devCode: data.devCode });
         showDevCode(data.devCode);
@@ -221,6 +223,13 @@ export function AppProvider({ children }) {
   const enrollCourse = (course, overrides) => {
     if (!user) { setAuthModal('login'); return; }
     if (enrolledCourseIds.includes(course.id)) { showToast('Ya estás inscripto en este curso', 'info'); return; }
+    pixelTrack('InitiateCheckout', {
+      content_type: 'product',
+      content_ids: [String(course.id)],
+      content_name: course.title,
+      value: course.priceARS ?? course.price ?? 0,
+      currency: 'ARS',
+    });
     setCheckoutModal(overrides ? { ...course, ...overrides } : course);
   };
 

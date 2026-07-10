@@ -18,6 +18,7 @@ import CourseContent from './pages/CourseContent';
 import ResetPassword from './pages/ResetPassword';
 import { Empresas, Nosotros, Blog, Contacto } from './pages/StaticPages';
 import { Certificaciones, Descargas, Perfil } from './pages/UserPages';
+import { loadPixel, pixelTrack } from './lib/pixel';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -25,10 +26,19 @@ function ScrollToTop() {
   return null;
 }
 
+// Meta Pixel: carga una vez y dispara PageView en cada cambio de página
+function PixelTracker() {
+  const { pathname } = useLocation();
+  useEffect(() => { loadPixel(); }, []);
+  useEffect(() => { pixelTrack('PageView'); }, [pathname]);
+  return null;
+}
+
 function Layout() {
   return (
     <>
       <ScrollToTop />
+      <PixelTracker />
       <Navbar />
       <main>
         <Routes>
