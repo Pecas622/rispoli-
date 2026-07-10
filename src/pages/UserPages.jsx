@@ -62,7 +62,7 @@ export function Certificaciones() {
         <EmptyState
           icon={Award}
           title="Todavía no tenés certificados"
-          desc="Completá un curso al 100% para obtener tu certificado oficial con validez IATA."
+          desc="Completá un curso al 100% para obtener tu certificado oficial avalado por la Universidad del Aconcagua."
           action={<Link to="/cursos" className="btn btn-primary">Explorar cursos <BookOpen size={14} /></Link>}
         />
       ) : (
@@ -101,7 +101,7 @@ function CertCard({ course, user, showToast }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
           <CheckCircle size={13} color="var(--violet-mid)" />
-          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Verificado · Aval IATA</span>
+          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Verificado · Aval Universidad del Aconcagua</span>
         </div>
       </div>
 

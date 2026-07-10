@@ -3,11 +3,18 @@ import { Search, X } from 'lucide-react';
 import { courses as mockCourses, categories, levels, modalities } from '../data/courses';
 import { coursesApi } from '../services/api';
 import CourseCard from '../components/CourseCard';
+import { useSEO } from '../hooks/useSEO';
 import './Courses.css';
 
 const USE_API = import.meta.env.VITE_USE_API === 'true';
 
 export default function Courses() {
+  useSEO({
+    title:       'Cursos de agente de viajes y turismo — Go Travel Academy',
+    description: 'Explorá nuestros cursos de formación en turismo: agente de viajes, destinos internacionales y más, con certificado avalado por la Universidad del Aconcagua.',
+    path:        '/cursos',
+  });
+
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(USE_API);
   const [query, setQuery] = useState('');

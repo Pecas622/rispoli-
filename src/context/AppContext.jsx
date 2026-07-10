@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authApi, enrollmentsApi, usersApi } from '../services/api';
 import { pixelTrack } from '../lib/pixel';
+import { detectCountry, getDolarRate } from '../utils/currency';
 
 const AppContext = createContext();
 
@@ -17,6 +18,7 @@ export function AppProvider({ children }) {
   const [region,             setRegion]            = useState(() => localStorage.getItem('region') || null);
   const [showRegionModal,    setShowRegionModal]   = useState(false);
   const [checkoutModal,      setCheckoutModal]     = useState(null); // curso en checkout demo, o null
+  const [dolarRate,          setDolarRate]         = useState(null); // ARS por USD (dolarapi.com), respaldo para cursos sin priceUSD
 
   const selectRegion = (code, silent = false) => {
     localStorage.setItem('region', code);
@@ -28,17 +30,15 @@ export function AppProvider({ children }) {
     }
   };
 
-  // Auto-detección de región por IP (solo la primera vez)
+  // Auto-detección de región por IP (solo la primera vez; la elección manual
+  // del usuario, si existe en localStorage, siempre tiene prioridad)
   useEffect(() => {
     if (localStorage.getItem('region')) return;
-    fetch('https://ipapi.co/json/')
-      .then(r => r.json())
-      .then(data => {
-        const code = data.country_code === 'AR' ? 'AR' : 'WORLD';
-        selectRegion(code, false);
-      })
-      .catch(() => selectRegion('AR', true));
+    detectCountry().then(code => selectRegion(code === null ? 'AR' : (code === 'AR' ? 'AR' : 'WORLD'), code === null));
   }, []);
+
+  // Cotización del dólar, para convertir en vivo los cursos sin priceUSD cargado
+  useEffect(() => { getDolarRate().then(setDolarRate); }, []);
 
   useEffect(() => {
     if (user) localStorage.setItem('user', JSON.stringify(user));
@@ -81,15 +81,12 @@ export function AppProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const data = await authApi.login(email, password);
-      // Login exitoso (credenciales válidas) → backend envía OTP al email
-      if (data.requiresLoginCode) {
-        setPendingVerification({ email, type: 'login', devCode: data.devCode });
-        showDevCode(data.devCode);
-        setAuthModal(null);
-        return { success: false, requiresLoginCode: true, email };
-      }
-      return { success: false };
+      const { user: apiUser } = await authApi.login(email, password);
+      const normalized = { ...apiUser, role: apiUser.role.toLowerCase() };
+      setUser(normalized);
+      setAuthModal(null);
+      showToast(`Bienvenido, ${normalized.name.split(' ')[0]}!`);
+      return { success: true };
     } catch (err) {
       if (err.code === 'EMAIL_NOT_VERIFIED' || err.message?.includes('Verificá tu email')) {
         setPendingVerification({ email, type: 'registration', devCode: err.devCode });
@@ -102,17 +99,17 @@ export function AppProvider({ children }) {
     }
   };
 
-  // Verifica el código OTP de login (paso 2 del 2FA)
-  const verifyLoginCode = async (email, code) => {
+  const loginWithGoogle = async (credential) => {
     try {
-      const { user: apiUser } = await authApi.verifyLogin(email, code);
+      const { user: apiUser } = await authApi.google(credential);
       const normalized = { ...apiUser, role: apiUser.role.toLowerCase() };
       setUser(normalized);
-      setPendingVerification(null);
+      setAuthModal(null);
       showToast(`Bienvenido, ${normalized.name.split(' ')[0]}!`);
       return { success: true };
     } catch (err) {
-      return { success: false, message: err.message || 'Código incorrecto' };
+      showToast(err.message || 'No se pudo iniciar sesión con Google', 'error');
+      return { success: false };
     }
   };
 
@@ -223,7 +220,7 @@ export function AppProvider({ children }) {
   // La pasarela de pago real (Stripe/Mercado Pago) todavía no está conectada
   // con credenciales productivas — por ahora esto abre un checkout de demo
   // que no procesa ningún cargo real ni otorga inscripción.
-  const enrollCourse = (course) => {
+  const enrollCourse = (course, overrides) => {
     if (!user) { setAuthModal('login'); return; }
     if (enrolledCourseIds.includes(course.id)) { showToast('Ya estás inscripto en este curso', 'info'); return; }
     pixelTrack('InitiateCheckout', {
@@ -233,15 +230,15 @@ export function AppProvider({ children }) {
       value: course.priceARS ?? course.price ?? 0,
       currency: 'ARS',
     });
-    setCheckoutModal(course);
+    setCheckoutModal(overrides ? { ...course, ...overrides } : course);
   };
 
   const isEnrolled = (courseId) => enrolledCourseIds.includes(courseId);
 
   return (
     <AppContext.Provider value={{
-      user, login, register, logout,
-      verifyEmail, verifyLoginCode, resendVerificationCode,
+      user, login, loginWithGoogle, register, logout,
+      verifyEmail, resendVerificationCode,
       forgotPassword, resetPassword, changePassword, updateProfile,
       pendingVerification, setPendingVerification,
       enrollCourse, isEnrolled,
@@ -249,7 +246,7 @@ export function AppProvider({ children }) {
       toast, showToast,
       authModal, setAuthModal,
       checkoutModal, setCheckoutModal,
-      region, selectRegion, showRegionModal, setShowRegionModal,
+      region, selectRegion, showRegionModal, setShowRegionModal, dolarRate,
     }}>
       {children}
     </AppContext.Provider>

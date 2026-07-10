@@ -10,7 +10,7 @@ const USE_API = import.meta.env.VITE_USE_API === 'true';
 const emptyForm = {
   title: '', subtitle: '', description: '',
   category: categories[1], level: levels[1], modality: modalities[1],
-  duration: '', hours: '', price: '', originalPrice: '', priceUSD: '', originalPriceUSD: '',
+  duration: '', hours: '', price: '', originalPrice: '', priceUSD: '', originalPriceUSD: '', transferCode: '',
   image: '', featured: false, published: true,
   tags: '', requirements: '', includes: '', learningObjectives: '', targetAudience: '',
   instructorName: '', instructorRole: '', instructorAvatar: '', instructorBio: '',
@@ -31,6 +31,7 @@ function formToPayload(form) {
     originalPrice:    form.originalPrice ? Number(form.originalPrice) : undefined,
     priceUSD:         form.priceUSD ? Number(form.priceUSD) : undefined,
     originalPriceUSD: form.originalPriceUSD ? Number(form.originalPriceUSD) : undefined,
+    transferCode:     form.transferCode || undefined,
     image:            form.image || undefined,
     featured:         form.featured,
     published:        form.published,
@@ -52,7 +53,7 @@ function courseToForm(c) {
     title: c.title ?? '', subtitle: c.subtitle ?? '', description: c.description ?? '',
     category: c.category ?? categories[1], level: c.level ?? levels[1], modality: c.modality ?? modalities[1],
     duration: c.duration ?? '', hours: c.hours ?? '',
-    price: c.price ?? '', originalPrice: c.originalPrice ?? '', priceUSD: c.priceUSD ?? '', originalPriceUSD: c.originalPriceUSD ?? '',
+    price: c.price ?? '', originalPrice: c.originalPrice ?? '', priceUSD: c.priceUSD ?? '', originalPriceUSD: c.originalPriceUSD ?? '', transferCode: c.transferCode ?? '',
     image: c.image ?? '', featured: !!c.featured, published: c.published ?? true,
     tags: (c.tags ?? []).join(', '),
     requirements: (c.requirements ?? []).join('\n'),
@@ -275,6 +276,10 @@ export default function AdminCourses() {
                   <label>Precio original USD</label>
                   <input className="input" type="number" placeholder="129" value={form.originalPriceUSD} onChange={set('originalPriceUSD')} />
                 </div>
+              </div>
+              <div className="form-field">
+                <label>Código de descuento por transferencia (10% off, opcional)</label>
+                <input className="input" placeholder="TRANSFER10" value={form.transferCode} onChange={set('transferCode')} />
               </div>
               <div className="form-row">
                 <div className="form-field">

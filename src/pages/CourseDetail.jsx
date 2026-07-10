@@ -6,10 +6,14 @@ import { coursesApi, progressApi } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice, getCheckoutLabel } from '../utils/pricing';
 import { pixelTrack } from '../lib/pixel';
+import { useSEO } from '../hooks/useSEO';
 import './CourseDetail.css';
 
 const USE_API = import.meta.env.VITE_USE_API === 'true';
-const levelBadge = { 'Principiante':'badge-green','Intermedio':'badge-amber','Avanzado':'badge-red' };
+const levelBadge = {
+  'Principiante':'badge-green','Intermedio':'badge-amber','Avanzado':'badge-red',
+  'Principiante-Intermedio':'badge-green','Intermedio-Avanzado':'badge-amber',
+};
 const EMPTY_PROGRESS = { percent: 0, completed: 0, total: 0, completedLessonIds: [] };
 const MOCK_PROGRESS = { 1: 68, 2: 35, 3: 100, 4: 12, 5: 0, 6: 55 }; // solo para el fallback sin backend
 
@@ -17,11 +21,12 @@ export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, enrollCourse, isEnrolled, setAuthModal, showToast, region } = useApp();
+  const { user, enrollCourse, isEnrolled, setAuthModal, showToast, region, dolarRate } = useApp();
   const [course, setCourse] = useState(undefined); // undefined = cargando, null = no encontrado
   const [progress, setProgress] = useState(EMPTY_PROGRESS);
   const [openModule, setOpenModule] = useState(0);
   const [enrolling, setEnrolling] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('payment') === 'cancelled') {
@@ -58,6 +63,29 @@ export default function CourseDetail() {
     progressApi.getCourse(course.id).then(setProgress).catch(() => {});
   }, [enrolled, course?.id]);
 
+  useSEO({
+    title:       course ? `${course.title} — Go Travel Academy` : undefined,
+    description: course ? (course.subtitle || course.description?.slice(0, 160)) : undefined,
+    image:       course?.image,
+    path:        course ? `/cursos/${course.id}` : undefined,
+    jsonLd: course ? {
+      '@context': 'https://schema.org',
+      '@type':    'Course',
+      name:        course.title,
+      description: course.description ?? course.subtitle ?? '',
+      provider: {
+        '@type': 'Organization',
+        name:    'Go Travel Academy',
+        sameAs:  'https://gotravelacademy.vercel.app',
+      },
+      ...(course.level    ? { educationalLevel: course.level } : {}),
+      ...(course.modality ? { courseMode: course.modality } : {}),
+      ...(course.price > 0 ? {
+        offers: { '@type': 'Offer', price: course.price, priceCurrency: 'ARS', availability: 'https://schema.org/InStock' },
+      } : {}),
+    } : null,
+  });
+
   if (course === undefined) return <div style={{padding:'160px 0',textAlign:'center'}}><div className="spinner" style={{margin:'0 auto'}} /></div>;
   if (!course) return (
     <div style={{padding:'160px 0',textAlign:'center'}}>
@@ -66,7 +94,7 @@ export default function CourseDetail() {
     </div>
   );
 
-  const { current: coursePrice, original: courseOriginal } = getRegionPrice(course, region);
+  const { current: coursePrice, original: courseOriginal } = getRegionPrice(course, region, dolarRate);
   const discount  = courseOriginal > 0 ? Math.round((1 - coursePrice / courseOriginal) * 100) : 0;
   const checkoutLabel = getCheckoutLabel(region);
 
@@ -109,6 +137,14 @@ export default function CourseDetail() {
     setEnrolling(false);
   };
 
+  const handleEnrollTransfer = async () => {
+    if (!user) { setAuthModal('register'); return; }
+    setEnrolling(true);
+    await new Promise(r => setTimeout(r, 700));
+    enrollCourse(course, { overridePrice: coursePrice * 0.9, paymentMethodLabel: 'Transferencia bancaria' });
+    setEnrolling(false);
+  };
+
   const handleContinue = () => showToast('El visor de clases estará disponible próximamente', 'info');
 
   return (
@@ -129,7 +165,25 @@ export default function CourseDetail() {
               </div>
               <h1 className="detail-title">{course.title}</h1>
               <p className="detail-subtitle">{course.subtitle}</p>
-              <p className="detail-desc">{course.description}</p>
+              {course.description && (() => {
+                const LIMIT = 260;
+                const isLong = course.description.length > LIMIT;
+                const shown = descExpanded || !isLong ? course.description : course.description.slice(0, LIMIT).trimEnd() + '…';
+                return (
+                  <p className="detail-desc" style={{ whiteSpace: 'pre-line' }}>
+                    {shown}
+                    {isLong && (
+                      <button
+                        type="button"
+                        onClick={() => setDescExpanded(v => !v)}
+                        style={{ background: 'none', border: 'none', color: 'var(--violet-mid)', fontWeight: 600, cursor: 'pointer', padding: 0, marginLeft: 6, fontSize: 'inherit' }}
+                      >
+                        {descExpanded ? 'Leer menos' : 'Leer más'}
+                      </button>
+                    )}
+                  </p>
+                );
+              })()}
 
               <div className="detail-meta-row">
                 <span className="detail-meta-item">
@@ -139,14 +193,6 @@ export default function CourseDetail() {
                 <span className="detail-meta-item"><Users size={13} /> {course.students.toLocaleString()} estudiantes</span>
                 {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
                 {course.hours && <span className="detail-meta-item"><BookOpen size={13} /> {course.hours}h de contenido</span>}
-              </div>
-
-              <div className="instructor-mini">
-                <img src={instructor.avatar} alt={instructor.name} />
-                <div>
-                  <div className="instructor-mini-name">{instructor.name}</div>
-                  <div className="instructor-mini-role">{instructor.role}</div>
-                </div>
               </div>
             </div>
 
@@ -191,8 +237,6 @@ export default function CourseDetail() {
                         {discount > 0 && <span className="enroll-price-was">{formatPrice(courseOriginal, region)}</span>}
                         {discount > 0 && <span className="enroll-discount">-{discount}%</span>}
                       </div>
-                      {discount > 0 && <p className="enroll-urgency">Oferta finaliza en 2 días</p>}
-
                       <button
                         onClick={handleEnroll}
                         className="btn btn-primary"
@@ -202,9 +246,34 @@ export default function CourseDetail() {
                         {enrolling ? <><div className="spinner" /> Procesando...</> : checkoutLabel}
                       </button>
 
-                      <p style={{textAlign:'center',fontSize:12,color:'var(--text-3)',marginTop:10}}>
-                        Garantía de devolución 30 días
-                      </p>
+                      {region === 'AR' && course.transferCode && (
+                        <div className="enroll-includes">
+                          <p className="enroll-includes-title">Promociones disponibles</p>
+
+                          <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px',marginBottom:10}}>
+                            <p style={{fontSize:12,fontWeight:700,color:'var(--green)',marginBottom:4}}>10% OFF — Pagando por transferencia</p>
+                            <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:2}}>
+                              <span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * 0.9, region)}</span>
+                              <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>
+                            </div>
+                            <p style={{fontSize:11,color:'var(--text-3)',marginBottom:10}}>Pago único</p>
+                            <button
+                              onClick={handleEnrollTransfer}
+                              className="btn btn-outline btn-sm"
+                              style={{width:'100%',justifyContent:'center'}}
+                              disabled={enrolling}
+                            >
+                              {enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar ${formatPrice(coursePrice * 0.9, region)} por transferencia`}
+                            </button>
+                          </div>
+
+                          <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}>
+                            <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:4}}>6 cuotas sin interés — Con Mercado Pago</p>
+                            <p style={{fontSize:18,fontWeight:800,marginBottom:2}}>6 x {formatPrice(coursePrice / 6, region)}</p>
+                            <p style={{fontSize:11,color:'var(--text-3)'}}>Total: {formatPrice(coursePrice, region)} sin interés</p>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
 

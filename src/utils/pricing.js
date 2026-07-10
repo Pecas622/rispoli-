@@ -21,11 +21,14 @@ export const REGIONS = {
   },
 };
 
-export function getRegionPrice(course, regionCode) {
+// dolarRate = cotización ARS por USD (dolarapi.com). Solo se usa como respaldo
+// para convertir en vivo cuando un curso no tiene cargado su precio en USD a mano.
+export function getRegionPrice(course, regionCode, dolarRate) {
   if (regionCode === 'WORLD') {
+    const arsToUsd = (ars) => (dolarRate ? +(ars / dolarRate).toFixed(2) : ars);
     return {
-      current:  course.priceUSD         ?? 0,
-      original: course.originalPriceUSD ?? 0,
+      current:  course.priceUSD         ?? (course.price         != null ? arsToUsd(course.price)         : 0),
+      original: course.originalPriceUSD ?? (course.originalPrice != null ? arsToUsd(course.originalPrice) : 0),
     };
   }
   return {
@@ -34,11 +37,11 @@ export function getRegionPrice(course, regionCode) {
   };
 }
 
+const arsFormatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+const usdFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
 export function formatPrice(amount, regionCode) {
-  if (regionCode === 'WORLD') {
-    return `USD ${amount.toLocaleString('en-US')}`;
-  }
-  return `$${amount.toLocaleString('es-AR')}`;
+  return regionCode === 'WORLD' ? `${usdFormatter.format(amount)} USD` : arsFormatter.format(amount);
 }
 
 export function getCheckoutLabel(regionCode) {

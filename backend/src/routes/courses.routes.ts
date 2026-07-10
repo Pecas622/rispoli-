@@ -24,6 +24,7 @@ const courseSchema = z.object({
   tags:             z.array(z.string()).optional(),
   requirements:     z.array(z.string()).optional(),
   includes:         z.array(z.string()).optional(),
+  transferCode:     z.string().optional(),
   learningObjectives: z.array(z.string()).optional(),
   targetAudience:     z.array(z.string()).optional(),
   instructorName:   z.string().optional(),

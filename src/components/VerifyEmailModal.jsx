@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Mail, ShieldCheck, X, RotateCcw } from 'lucide-react';
+import { Mail, X, RotateCcw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './VerifyEmailModal.css';
 
 export default function VerifyEmailModal() {
-  const { pendingVerification, setPendingVerification, verifyEmail, verifyLoginCode, resendVerificationCode } = useApp();
+  const { pendingVerification, setPendingVerification, verifyEmail, resendVerificationCode } = useApp();
 
   const [digits, setDigits]       = useState(['', '', '', '', '', '']);
   const [error,  setError]        = useState('');
@@ -29,8 +29,7 @@ export default function VerifyEmailModal() {
 
   if (!pendingVerification) return null;
 
-  const { email, type = 'registration', devCode } = pendingVerification;
-  const isLogin = type === 'login';
+  const { email, devCode } = pendingVerification;
   const code = digits.join('');
 
   const handleDigit = (i, value) => {
@@ -67,8 +66,7 @@ export default function VerifyEmailModal() {
     if (finalCode.length < 6) { setError('Ingresá los 6 dígitos'); return; }
     setLoading(true);
     setError('');
-    const verifyFn = isLogin ? verifyLoginCode : verifyEmail;
-    const result = await verifyFn(email, finalCode);
+    const result = await verifyEmail(email, finalCode);
     if (!result.success) {
       setError(result.message || 'Código incorrecto');
       setDigits(['', '', '', '', '', '']);
@@ -78,7 +76,7 @@ export default function VerifyEmailModal() {
   };
 
   const handleResend = async () => {
-    if (cooldown > 0 || isLogin) return; // Para login, el usuario debe volver a iniciar sesión
+    if (cooldown > 0) return;
     setResending(true);
     await resendVerificationCode(email);
     setResending(false);
@@ -98,18 +96,13 @@ export default function VerifyEmailModal() {
           <X size={18} />
         </button>
 
-        <div className="vem-icon" style={isLogin ? { background: 'rgba(111,149,232,0.12)', color: 'var(--accent)' } : {}}>
-          {isLogin ? <ShieldCheck size={28} /> : <Mail size={28} />}
+        <div className="vem-icon">
+          <Mail size={28} />
         </div>
 
-        <h2 className="vem-title">
-          {isLogin ? 'Verificá tu identidad' : 'Verificá tu email'}
-        </h2>
+        <h2 className="vem-title">Verificá tu email</h2>
         <p className="vem-subtitle">
-          {isLogin
-            ? <>Por seguridad, enviamos un código de acceso a<br /><strong>{maskedEmail}</strong></>
-            : <>Enviamos un código de 6 dígitos a<br /><strong>{maskedEmail}</strong></>
-          }
+          Enviamos un código de 6 dígitos a<br /><strong>{maskedEmail}</strong>
         </p>
         {devCode && (
           <div className="vem-dev-banner">
@@ -122,12 +115,6 @@ export default function VerifyEmailModal() {
             }}>
               Usar automáticamente
             </button>
-          </div>
-        )}
-
-        {isLogin && !devCode && (
-          <div style={{ background: '#FEF9C3', border: '1px solid #FDE047', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#713F12', marginBottom: 8, textAlign: 'left' }}>
-            🔒 Este código expira en <strong>10 minutos</strong>. No lo compartás con nadie.
           </div>
         )}
 
@@ -158,26 +145,20 @@ export default function VerifyEmailModal() {
           {loading ? 'Verificando…' : 'Confirmar código'}
         </button>
 
-        {isLogin ? (
-          <p className="vem-note" style={{ color: 'var(--text-3)', marginTop: 4 }}>
-            ¿No llegó? Cerrá esta ventana e iniciá sesión de nuevo para pedir un nuevo código.
-          </p>
-        ) : (
-          <div className="vem-resend">
-            <span>¿No llegó el email?</span>
-            <button
-              className="vem-resend-btn"
-              onClick={handleResend}
-              disabled={resending || cooldown > 0}
-            >
-              {resending ? 'Enviando…' :
-               cooldown > 0 ? `Reenviar en ${cooldown}s` :
-               <><RotateCcw size={13} /> Reenviar código</>}
-            </button>
-          </div>
-        )}
+        <div className="vem-resend">
+          <span>¿No llegó el email?</span>
+          <button
+            className="vem-resend-btn"
+            onClick={handleResend}
+            disabled={resending || cooldown > 0}
+          >
+            {resending ? 'Enviando…' :
+             cooldown > 0 ? `Reenviar en ${cooldown}s` :
+             <><RotateCcw size={13} /> Reenviar código</>}
+          </button>
+        </div>
 
-        <p className="vem-note">El código expira en {isLogin ? '10' : '15'} minutos</p>
+        <p className="vem-note">El código expira en 15 minutos</p>
       </div>
     </div>
   );

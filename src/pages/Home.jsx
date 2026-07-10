@@ -5,6 +5,8 @@ import { coursesApi } from '../services/api';
 import CourseCard from '../components/CourseCard';
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
+import { getRegionPrice, formatPrice } from '../utils/pricing';
+import { useSEO } from '../hooks/useSEO';
 import './Home.css';
 
 const USE_API = import.meta.env.VITE_USE_API === 'true';
@@ -43,9 +45,11 @@ const AVATAR_IDS = [
 ];
 
 export default function Home() {
-  const { setAuthModal } = useApp();
+  const { setAuthModal, region, dolarRate } = useApp();
   const [openFaq, setOpenFaq] = useState(null);
   const [courses, setCourses] = useState(USE_API ? [] : mockCourses);
+
+  useSEO({ path: '/' });
 
   useEffect(() => {
     if (!USE_API) return;
@@ -172,8 +176,8 @@ export default function Home() {
                             <span>{s.level}</span><span>·</span><span>{s.duration}</span>
                           </div>
                           <div className="hc-card-foot">
-                            <span className="hc-price">${(s.priceARS ?? s.price).toLocaleString('es-AR')}</span>
-                            <Link to="/cursos" className="hc-card-btn">Ver curso</Link>
+                            <span className="hc-price">{formatPrice(getRegionPrice(s, region, dolarRate).current, region)}</span>
+                            <Link to={`/cursos/${s.id}`} className="hc-card-btn" onClick={e => e.stopPropagation()}>Ver curso</Link>
                           </div>
                         </>
                       ) : (

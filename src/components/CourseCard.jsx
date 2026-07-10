@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Star, Clock, Users, BookOpen } from 'lucide-react';
+import { Star, Clock, Users, BookOpen, CheckCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice } from '../utils/pricing';
 import './CourseCard.css';
@@ -8,11 +8,13 @@ const levelColor = {
   'Principiante': { bg: '#DCFCE7', color: '#16A34A' },
   'Intermedio':   { bg: '#FEF9C3', color: '#CA8A04' },
   'Avanzado':     { bg: '#FEE2E2', color: '#DC2626' },
+  'Principiante-Intermedio': { bg: '#DCFCE7', color: '#16A34A' },
+  'Intermedio-Avanzado':     { bg: '#FEF9C3', color: '#CA8A04' },
 };
 
 export default function CourseCard({ course }) {
-  const { region } = useApp();
-  const { current, original } = getRegionPrice(course, region);
+  const { region, dolarRate } = useApp();
+  const { current, original } = getRegionPrice(course, region, dolarRate);
   const discount = original > 0 ? Math.round((1 - current / original) * 100) : 0;
   const lvl = levelColor[course.level] || { bg: 'var(--bg-2)', color: 'var(--text-2)' };
   const instructorName   = course.instructorName   ?? course.instructor?.name;
@@ -25,8 +27,16 @@ export default function CourseCard({ course }) {
       <div className="cc-image-wrap">
         <img src={course.image} alt={course.title} className="cc-image" loading="lazy" />
         <span className="cc-cat-badge">{course.category}</span>
-        {comingSoon && <span className="cc-discount-badge">Próximamente</span>}
-        {!comingSoon && discount > 0 && <span className="cc-discount-badge">-{discount}%</span>}
+        <div className="cc-top-right-badges">
+          {comingSoon && <span className="cc-discount-badge">Próximamente</span>}
+          {!comingSoon && discount > 0 && <span className="cc-discount-badge">-{discount}%</span>}
+          {course.category === 'Certificado' && (
+            <span className="cc-certified-badge">
+              <CheckCircle size={11} />
+              CERTIFICADO POR UNIV. DEL ACONCAGUA
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Body */}

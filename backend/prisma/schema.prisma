@@ -17,7 +17,7 @@ model User {
   id            String   @id @default(cuid())
   name          String
   email         String   @unique
-  passwordHash  String   @map("password_hash")
+  passwordHash  String?  @map("password_hash")
   role          Role     @default(STUDENT)
   avatar        String?
   emailVerified Boolean  @default(false) @map("email_verified")
@@ -81,6 +81,7 @@ model Course {
   tags             String[]
   requirements     String[]
   includes         String[]
+  transferCode     String?  @map("transfer_code") // cupón de 10% off pagando por transferencia (ej. "TRANSFER10")
   learningObjectives String[] @map("learning_objectives")
   targetAudience     String[] @map("target_audience")
   instructorName   String?  @map("instructor_name")

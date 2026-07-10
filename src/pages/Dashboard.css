@@ -347,6 +347,10 @@
 }
 
 @media (max-width: 768px) {
+  /* El bottom nav es fixed y se superpone al final de la página; sin este
+     padding en el footer, el copyright y los links legales quedan tapados
+     sin forma de verlos haciendo scroll. */
+  main:has(.dashboard) ~ footer { padding-bottom: 90px !important; }
   .dash-sidebar { display: none; }
   .dash-main { margin-left: 0; padding: 24px 16px 100px; }
   .dash-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }

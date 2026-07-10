@@ -3,11 +3,13 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { z } from 'zod';
+import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../lib/prisma';
-import { sendVerificationEmail, sendWelcomeEmail, sendLoginCodeEmail, sendPasswordResetEmail } from '../lib/email';
+import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail } from '../lib/email';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const registerSchema = z.object({
   name:     z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -61,15 +63,6 @@ async function createAndSendCode(email: string): Promise<string> {
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
   await prisma.verificationCode.create({ data: { email, code, expiresAt } });
   await sendVerificationEmail(email, code);
-  return code;
-}
-
-async function createAndSendLoginCode(email: string): Promise<string> {
-  await prisma.verificationCode.deleteMany({ where: { email } });
-  const code = generateCode();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
-  await prisma.verificationCode.create({ data: { email, code, expiresAt } });
-  await sendLoginCodeEmail(email, code);
   return code;
 }
 
@@ -160,7 +153,6 @@ router.post('/resend-code', async (req: Request, res: Response, next: NextFuncti
 });
 
 // POST /api/auth/login
-// Paso 1: valida credenciales y envía OTP al email
 router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
@@ -169,6 +161,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     // Mismo mensaje para usuario inexistente, eliminado o contraseña incorrecta (evita user enumeration)
     if (!user || user.deletedAt) return res.status(401).json({ message: 'Credenciales incorrectas' });
 
+    if (!user.passwordHash) return res.status(401).json({ message: 'Credenciales incorrectas' });
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) return res.status(401).json({ message: 'Credenciales incorrectas' });
 
@@ -182,47 +175,51 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
       });
     }
 
-    // Credenciales válidas → enviar código de acceso al email (2FA)
-    const code = await createAndSendLoginCode(email);
-    return res.status(200).json({ requiresLoginCode: true, email, ...devPayload(code) });
+    issueSession(res, user.id, user.role);
+    const { passwordHash: _, emailVerified: __, ...safeUser } = user;
+
+    res.json({ user: safeUser });
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/auth/verify-login
-// Paso 2: valida el OTP y devuelve el JWT
-router.post('/verify-login', async (req: Request, res: Response, next: NextFunction) => {
+// POST /api/auth/google — login/registro con Google (ID token de Google Identity Services)
+router.post('/google', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, code } = z.object({
-      email: z.string().email(),
-      code:  z.string().length(6),
-    }).parse(req.body);
+    const { credential } = z.object({ credential: z.string().min(1) }).parse(req.body);
 
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.emailVerified || user.deletedAt) {
-      return res.status(401).json({ message: 'Acceso no autorizado' });
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return res.status(503).json({ message: 'El login con Google no está configurado' });
     }
 
-    const record = await prisma.verificationCode.findFirst({
-      where: { email, code },
-      orderBy: { createdAt: 'desc' },
+    const ticket = await googleClient.verifyIdToken({
+      idToken:  credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
+    const payload = ticket.getPayload();
+    if (!payload?.email) return res.status(401).json({ message: 'Token de Google inválido' });
 
-    if (!record) {
-      return res.status(400).json({ message: 'Código incorrecto' });
-    }
-    if (record.expiresAt < new Date()) {
-      await prisma.verificationCode.delete({ where: { id: record.id } });
-      return res.status(400).json({ message: 'El código expiró. Iniciá sesión de nuevo.' });
-    }
+    let user = await prisma.user.findUnique({ where: { email: payload.email } });
 
-    // Código válido → limpiar y emitir JWT
-    await prisma.verificationCode.deleteMany({ where: { email } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          name:          payload.name ?? payload.email.split('@')[0],
+          email:         payload.email,
+          avatar:        payload.picture,
+          emailVerified: true, // Google ya verificó la propiedad del email
+        },
+      });
+    } else {
+      if (user.deletedAt) return res.status(401).json({ message: 'Credenciales incorrectas' });
+      if (!user.emailVerified) {
+        user = await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true } });
+      }
+    }
 
     issueSession(res, user.id, user.role);
     const { passwordHash: _, emailVerified: __, ...safeUser } = user;
-
     res.json({ user: safeUser });
   } catch (err) {
     next(err);
@@ -299,6 +296,9 @@ router.post('/change-password', authenticate, async (req: Request, res: Response
 
     const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+    if (!user.passwordHash) {
+      return res.status(400).json({ message: 'Esta cuenta inició sesión con Google y no tiene contraseña propia' });
+    }
 
     const valid = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!valid) return res.status(401).json({ message: 'Contraseña actual incorrecta' });

@@ -66,9 +66,9 @@ app.get('/health', (_req, res) => {
 // ── API routes ─────────────────────────────────────────────
 // Aplicar rate limits a los endpoints de autenticación
 app.use('/api/auth/login',          authLimiter);
+app.use('/api/auth/google',         authLimiter);
 app.use('/api/auth/register',       authLimiter);
 app.use('/api/auth/verify-email',   otpLimiter);
-app.use('/api/auth/verify-login',   otpLimiter);
 app.use('/api/auth/resend-code',    otpLimiter);
 app.use('/api/auth/forgot-password', passwordResetLimiter);
 app.use('/api/auth/change-password', passwordResetLimiter);

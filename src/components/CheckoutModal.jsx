@@ -5,7 +5,7 @@ import { getRegionPrice, formatPrice, REGIONS } from '../utils/pricing';
 import './CheckoutModal.css';
 
 export default function CheckoutModal() {
-  const { checkoutModal, setCheckoutModal, region, showToast } = useApp();
+  const { checkoutModal, setCheckoutModal, region, dolarRate, showToast } = useApp();
   const [step, setStep] = useState('form'); // form | processing | success
   const [card, setCard] = useState({ number: '', name: '', expiry: '', cvc: '' });
 
@@ -13,7 +13,9 @@ export default function CheckoutModal() {
   const course = checkoutModal;
 
   const processor = REGIONS[region === 'WORLD' ? 'WORLD' : 'AR'];
-  const { current: price } = getRegionPrice(course, region);
+  const { current: regionPrice } = getRegionPrice(course, region, dolarRate);
+  const price = course.overridePrice ?? regionPrice;
+  const methodLabel = course.paymentMethodLabel ?? processor.checkoutLabel;
 
   const close = () => {
     setCheckoutModal(null);
@@ -52,7 +54,7 @@ export default function CheckoutModal() {
               <Lock size={11} /> Checkout de demostración
             </p>
             <h2 style={{ fontSize: 19, fontWeight: 700, marginBottom: 4, letterSpacing: '-0.02em' }}>
-              {processor.checkoutLabel}
+              {methodLabel}
             </h2>
             <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 20 }}>
               Ningún dato de esta pantalla se procesa ni se guarda.
