@@ -17,8 +17,12 @@
 .detail-layout {
   display: grid;
   grid-template-columns: 1fr 360px;
+  grid-template-areas: "info checkout" "learn checkout";
   gap: 60px; align-items: start;
 }
+.detail-info { grid-area: info; }
+.detail-checkout { grid-area: checkout; }
+.detail-learn { grid-area: learn; }
 
 .detail-badges { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 18px; }
 
@@ -254,7 +258,11 @@
 
 @media (max-width: 900px) {
   .detail-head { padding: 36px 0; }
-  .detail-layout { grid-template-columns: 1fr; gap: 32px; }
+  .detail-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas: "info" "checkout" "learn";
+    gap: 32px;
+  }
   .enroll-card, .progress-card { position: static; }
   .detail-cols { grid-template-columns: 1fr; }
   .detail-title { font-size: 26px; }

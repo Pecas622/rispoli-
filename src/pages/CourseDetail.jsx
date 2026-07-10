@@ -156,7 +156,7 @@ export default function CourseDetail() {
 
           <div className="detail-layout">
             {/* ── Columna izquierda ── */}
-            <div>
+            <div className="detail-info">
               <div className="detail-badges">
                 <span className={`badge ${levelBadge[course.level]||'badge-default'}`}>{course.level}</span>
                 <span className="badge badge-default">{course.category}</span>
@@ -177,19 +177,6 @@ export default function CourseDetail() {
                 {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
                 {course.hours && <span className="detail-meta-item"><BookOpen size={13} /> {course.hours}h de contenido</span>}
               </div>
-
-              {/* ── Con este curso aprenderás ── */}
-              {learningObjectives.length > 0 && (
-                <div className="detail-section" style={{marginTop:28}}>
-                  <h2 className="detail-section-title">Con este curso aprenderás</h2>
-                  {learningObjectives.map(item => (
-                    <div key={item} className="req-item">
-                      <CheckCircle size={15} style={{color:'var(--violet-mid)',flexShrink:0,marginTop:2}} />
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* ── Sidebar ── */}
@@ -203,7 +190,7 @@ export default function CourseDetail() {
                 onContinue={handleContinue}
               />
             ) : (
-              <div className="enroll-card card card-elevated">
+              <div className="enroll-card card card-elevated detail-checkout">
                 <div className="enroll-thumb">
                   <img src={course.image} alt={course.title} />
                   <div className="enroll-thumb-overlay">
@@ -278,6 +265,19 @@ export default function CourseDetail() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* ── Con este curso aprenderás ── */}
+            {learningObjectives.length > 0 && (
+              <div className="detail-section detail-learn">
+                <h2 className="detail-section-title">Con este curso aprenderás</h2>
+                {learningObjectives.map(item => (
+                  <div key={item} className="req-item">
+                    <CheckCircle size={15} style={{color:'var(--violet-mid)',flexShrink:0,marginTop:2}} />
+                    {item}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -415,7 +415,7 @@ function ProgressCard({ course, prog, completedCount, totalTopics, nextTopic, on
   const isComplete = prog === 100;
 
   return (
-    <div className="progress-card card card-elevated">
+    <div className="progress-card card card-elevated detail-checkout">
       {/* Imagen con overlay de progreso */}
       <div className="pc-thumb">
         <img src={course.image} alt={course.title} />
