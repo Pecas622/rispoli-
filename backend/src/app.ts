@@ -13,6 +13,7 @@ import { lessonsRouter }     from './routes/lessons.routes';
 import { enrollmentsRouter } from './routes/enrollments.routes';
 import { progressRouter }    from './routes/progress.routes';
 import { paymentsRouter }    from './routes/payments.routes';
+import { trackRouter }       from './routes/track.routes';
 import { errorMiddleware }   from './middleware/error.middleware';
 
 const app = express();
@@ -90,6 +91,7 @@ app.use('/api/lessons',  lessonsRouter);
 app.use('/api/enrollments', enrollmentsRouter);
 app.use('/api/progress',    progressRouter);
 app.use('/api/payments',    paymentsRouter);
+app.use('/api/events',      trackRouter);
 
 // ── 404 ────────────────────────────────────────────────────
 app.use((_req, res) => {

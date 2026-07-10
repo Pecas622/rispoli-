@@ -4,6 +4,7 @@ import { getStripe, isStripeReady } from '../lib/stripe';
 import { isMercadoPagoReady } from '../lib/mercadopago';
 import { prisma } from '../lib/prisma';
 import { sendPurchaseConfirmationEmail } from '../lib/email';
+import { sendMetaEvent } from '../lib/capi';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -136,6 +137,22 @@ router.post(
         if (user && course) {
           const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
           sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
+
+          // Meta CAPI: Purchase server-side (la conversión que más importa).
+          // event_id estable por sesión → se deduplica si el navegador también lo dispara.
+          sendMetaEvent({
+            eventName:      'Purchase',
+            eventId:        `purchase_${session.id}`,
+            eventSourceUrl: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${courseId}`,
+            userData:       { email: user.email, externalId: userId },
+            customData: {
+              currency:     'USD',
+              value:        amount,
+              content_type: 'product',
+              content_ids:  [courseId],
+              content_name: course.title,
+            },
+          }).catch(() => {});
         }
       } catch (err) {
         console.error('[Stripe Webhook] Error procesando inscripción:', err);
@@ -242,6 +259,21 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
         if (user && course) {
           const invoiceNumber = `INV-MP-${Date.now().toString(36).toUpperCase()}`;
           sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
+
+          // Meta CAPI: Purchase server-side (Mercado Pago, ARS).
+          sendMetaEvent({
+            eventName:      'Purchase',
+            eventId:        `purchase_${data.id}`,
+            eventSourceUrl: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${courseId}`,
+            userData:       { email: user.email, externalId: userId },
+            customData: {
+              currency:     'ARS',
+              value:        amount,
+              content_type: 'product',
+              content_ids:  [courseId],
+              content_name: course.title,
+            },
+          }).catch(() => {});
         }
       }
 
