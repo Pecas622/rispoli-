@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Star, Clock, Users, BookOpen } from 'lucide-react';
+import { Star, Clock, Users, BookOpen, CheckCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice } from '../utils/pricing';
 import './CourseCard.css';
@@ -26,14 +26,17 @@ export default function CourseCard({ course }) {
       {/* Image */}
       <div className="cc-image-wrap">
         <img src={course.image} alt={course.title} className="cc-image" loading="lazy" />
-        <span className="cc-cat-badge">
+        <span className="cc-cat-badge">{course.category}</span>
+        <div className="cc-top-right-badges">
+          {comingSoon && <span className="cc-discount-badge">Próximamente</span>}
+          {!comingSoon && discount > 0 && <span className="cc-discount-badge">-{discount}%</span>}
           {course.category === 'Certificado' && (
-            <img src="/alianzas/aconcagua.png" alt="Universidad del Aconcagua" className="cc-cat-badge-logo" />
+            <span className="cc-certified-badge">
+              <CheckCircle size={11} />
+              CERTIFICADO POR UNIV. DEL ACONCAGUA
+            </span>
           )}
-          {course.category}
-        </span>
-        {comingSoon && <span className="cc-discount-badge">Próximamente</span>}
-        {!comingSoon && discount > 0 && <span className="cc-discount-badge">-{discount}%</span>}
+        </div>
       </div>
 
       {/* Body */}

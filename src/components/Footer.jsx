@@ -20,8 +20,11 @@ export default function Footer() {
               <div style={{width:8,height:8,borderRadius:'50%',background:'var(--violet-mid)',flexShrink:0}}/>
               Go Travel Academy
 </Link>
-            <p style={{fontSize:13,color:'var(--text-3)',lineHeight:1.75,marginBottom:18,maxWidth:240}}>
+            <p style={{fontSize:13,color:'var(--text-3)',lineHeight:1.75,marginBottom:14,maxWidth:240}}>
               La plataforma líder en formación para agentes de viajes de toda Latinoamérica.
+            </p>
+            <p style={{fontSize:12,color:'var(--text-3)',marginBottom:18}}>
+              Certificado por <strong style={{color:'var(--text-2)'}}>Universidad del Aconcagua</strong>
             </p>
             <div style={{display:'flex',gap:8}}>
               <SLink href="https://www.instagram.com/go.travelacademy/" label="Instagram">
