@@ -14,6 +14,7 @@ import { enrollmentsRouter } from './routes/enrollments.routes';
 import { progressRouter }    from './routes/progress.routes';
 import { paymentsRouter }    from './routes/payments.routes';
 import { trackRouter }       from './routes/track.routes';
+import { catalogRouter }     from './routes/catalog.routes';
 import { errorMiddleware }   from './middleware/error.middleware';
 
 const app = express();
@@ -92,6 +93,7 @@ app.use('/api/enrollments', enrollmentsRouter);
 app.use('/api/progress',    progressRouter);
 app.use('/api/payments',    paymentsRouter);
 app.use('/api/events',      trackRouter);
+app.use('/api/catalog',     catalogRouter);
 
 // ── 404 ────────────────────────────────────────────────────
 app.use((_req, res) => {
