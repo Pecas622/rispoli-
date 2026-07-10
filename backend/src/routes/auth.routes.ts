@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../lib/prisma';
 import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail } from '../lib/email';
+import { sendMetaEvent } from '../lib/capi';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -88,11 +89,28 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    await prisma.user.create({ data: { name, email, passwordHash } });
+    const newUser = await prisma.user.create({ data: { name, email, passwordHash } });
 
     const code = await createAndSendCode(email);
 
-    res.status(201).json({ requiresVerification: true, email, ...devPayload(code) });
+    // Meta CAPI: Lead server-side (acá conocemos el email → mejor calidad de match).
+    // Devolvemos el eventId para que el Pixel del navegador dispare con el mismo id
+    // y Meta deduplique.
+    const leadEventId = `lead_${crypto.randomUUID()}`;
+    sendMetaEvent({
+      eventName: 'Lead',
+      eventId:   leadEventId,
+      userData: {
+        email,
+        externalId:      newUser.id,
+        clientIpAddress: (req.headers['x-forwarded-for'] as string || '').split(',')[0].trim() || undefined,
+        clientUserAgent: req.headers['user-agent'],
+        fbp:             req.cookies?._fbp,
+        fbc:             req.cookies?._fbc,
+      },
+    }).catch(() => {});
+
+    res.status(201).json({ requiresVerification: true, email, leadEventId, ...devPayload(code) });
   } catch (err) {
     next(err);
   }
