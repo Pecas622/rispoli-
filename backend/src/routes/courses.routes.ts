@@ -52,7 +52,7 @@ router.get('/', optionalAuth, async (req: Request, res: Response, next: NextFunc
           ],
         }),
       },
-      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ featured: 'desc' }, { createdAt: 'asc' }],
       include: {
         _count: { select: { modules: true, enrollments: true } },
       },

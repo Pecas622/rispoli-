@@ -25,7 +25,6 @@ export default function CourseDetail() {
   const [progress, setProgress] = useState(EMPTY_PROGRESS);
   const [openModule, setOpenModule] = useState(0);
   const [enrolling, setEnrolling] = useState(false);
-  const [descExpanded, setDescExpanded] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('payment') === 'cancelled') {
@@ -152,25 +151,9 @@ export default function CourseDetail() {
               </div>
               <h1 className="detail-title">{course.title}</h1>
               <p className="detail-subtitle">{course.subtitle}</p>
-              {course.description && (() => {
-                const LIMIT = 260;
-                const isLong = course.description.length > LIMIT;
-                const shown = descExpanded || !isLong ? course.description : course.description.slice(0, LIMIT).trimEnd() + '…';
-                return (
-                  <p className="detail-desc" style={{ whiteSpace: 'pre-line' }}>
-                    {shown}
-                    {isLong && (
-                      <button
-                        type="button"
-                        onClick={() => setDescExpanded(v => !v)}
-                        style={{ background: 'none', border: 'none', color: 'var(--violet-mid)', fontWeight: 600, cursor: 'pointer', padding: 0, marginLeft: 6, fontSize: 'inherit' }}
-                      >
-                        {descExpanded ? 'Leer menos' : 'Leer más'}
-                      </button>
-                    )}
-                  </p>
-                );
-              })()}
+              {course.description && (
+                <p className="detail-desc" style={{ whiteSpace: 'pre-line' }}>{course.description}</p>
+              )}
 
               <div className="detail-meta-row">
                 <span className="detail-meta-item">
@@ -209,13 +192,6 @@ export default function CourseDetail() {
                       <div className="enroll-price">
                         <span className="enroll-price-now">Próximamente</span>
                       </div>
-                      <button
-                        className="btn btn-outline"
-                        style={{width:'100%',justifyContent:'center',padding:'13px',marginTop:16}}
-                        onClick={() => { if (!user) setAuthModal('register'); else showToast('Te vamos a avisar apenas esté disponible'); }}
-                      >
-                        Avisame cuando esté disponible
-                      </button>
                     </>
                   ) : (
                     <>

@@ -60,19 +60,6 @@
   border-radius: 6px;
 }
 
-.cc-certified-badge {
-  display: flex; align-items: center; gap: 5px;
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--green);
-  font-size: 9px; font-weight: 700; letter-spacing: 0.02em;
-  padding: 4px 9px;
-  border-radius: 20px;
-  border: 1px solid rgba(0,0,0,0.08);
-  white-space: nowrap;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-}
-
 /* Body */
 .cc-body {
   padding: 16px 20px 12px;
