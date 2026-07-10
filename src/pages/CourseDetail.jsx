@@ -177,6 +177,19 @@ export default function CourseDetail() {
                 {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
                 {course.hours && <span className="detail-meta-item"><BookOpen size={13} /> {course.hours}h de contenido</span>}
               </div>
+
+              {/* ── Con este curso aprenderás ── */}
+              {learningObjectives.length > 0 && (
+                <div className="detail-section" style={{marginTop:28}}>
+                  <h2 className="detail-section-title">Con este curso aprenderás</h2>
+                  {learningObjectives.map(item => (
+                    <div key={item} className="req-item">
+                      <CheckCircle size={15} style={{color:'var(--violet-mid)',flexShrink:0,marginTop:2}} />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* ── Sidebar ── */}
@@ -362,19 +375,6 @@ export default function CourseDetail() {
                   </div>
                 </div>
               </div>
-
-              {/* ── Con este curso aprenderás ── */}
-              {learningObjectives.length > 0 && (
-                <div className="detail-section">
-                  <h2 className="detail-section-title">Con este curso aprenderás</h2>
-                  {learningObjectives.map(item => (
-                    <div key={item} className="req-item">
-                      <CheckCircle size={15} style={{color:'var(--violet-mid)',flexShrink:0,marginTop:2}} />
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              )}
 
               {/* ── Orientado para ── */}
               {targetAudience.length > 0 && (
