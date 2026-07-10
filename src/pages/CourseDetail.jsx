@@ -5,6 +5,7 @@ import { courses as mockCourses } from '../data/courses';
 import { coursesApi, progressApi } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice, getCheckoutLabel } from '../utils/pricing';
+import { pixelTrack } from '../lib/pixel';
 import { useSEO } from '../hooks/useSEO';
 import './CourseDetail.css';
 
@@ -41,6 +42,18 @@ export default function CourseDetail() {
       .then(res => setCourse(res.course))
       .catch(() => setCourse(null));
   }, [id]);
+
+  // Meta Pixel: ViewContent al ver el detalle de un curso
+  useEffect(() => {
+    if (!course) return;
+    pixelTrack('ViewContent', {
+      content_type: 'product',
+      content_ids: [String(course.id)],
+      content_name: course.title,
+      value: course.priceARS ?? course.price ?? 0,
+      currency: 'ARS',
+    });
+  }, [course?.id]);
 
   const enrolled = course ? isEnrolled(course.id) : false;
 
