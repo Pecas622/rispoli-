@@ -186,7 +186,7 @@ router.post(
         return res.status(400).json({ message: 'Ya estás inscripto en este curso' });
       }
 
-      const { getMPClient, Preference } = await import('../lib/mercadopago');
+      const { getMPClient, Preference } = await import('../lib/mercadopago'); const installments = Math.min(36, Math.max(1, Number(req.body?.installments) || 1));
       const preference = new Preference(getMPClient());
 
       const response = await preference.create({
@@ -198,7 +198,7 @@ router.post(
             unit_price: course.price,   // precio en ARS
             currency_id: 'ARS',
           }],
-          payer: {}, payment_methods: { installments: 12 },
+          payer: {}, payment_methods: { installments, default_installments: installments },
           metadata: {
             userId:   req.user!.userId,
             courseId: course.id,
