@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, Award, Lock } from 'lucide-react';
 import { courses as mockCourses } from '../data/courses';
-import { coursesApi, progressApi } from '../services/api';
+import { coursesApi, progressApi, paymentsApi } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice, getCheckoutLabel } from '../utils/pricing';
 import { track } from '../lib/pixel';
@@ -128,13 +128,7 @@ export default function CourseDetail() {
     return { ...mod, startIdx, endIdx: runningIdx };
   });
 
-  const handleEnroll = async () => {
-    if (!user) { setAuthModal('register'); return; }
-    setEnrolling(true);
-    await new Promise(r => setTimeout(r, 700));
-    enrollCourse(course);
-    setEnrolling(false);
-  };
+  const handleEnroll = async () => { if (!user) { setAuthModal('register'); return; } setEnrolling(true); try { const { url } = region === 'AR' ? await paymentsApi.checkoutMercadoPago(course.id) : await paymentsApi.checkout(course.id); window.location.href = url; } catch (err) { showToast(err.message || 'No se pudo iniciar el pago. Probá de nuevo en unos minutos.', 'error'); setEnrolling(false); } };
 
   const handleEnrollTransfer = async () => {
     if (!user) { setAuthModal('register'); return; }
