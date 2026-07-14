@@ -198,9 +198,7 @@ router.post(
             unit_price: course.price,   // precio en ARS
             currency_id: 'ARS',
           }],
-          payer: {
-            // Se puede pre-completar con datos del usuario si los tenemos
-          },
+          payer: {}, payment_methods: { installments: 12 },
           metadata: {
             userId:   req.user!.userId,
             courseId: course.id,
