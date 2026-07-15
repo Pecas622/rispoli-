@@ -25,7 +25,7 @@ export default function CourseDetail() {
   const [course, setCourse] = useState(undefined); // undefined = cargando, null = no encontrado
   const [progress, setProgress] = useState(EMPTY_PROGRESS);
   const [openModule, setOpenModule] = useState(0);
-  const [enrolling, setEnrolling] = useState(false);
+  const [enrolling, setEnrolling] = useState(false); const [installments, setInstallments] = useState(1);
 
   useEffect(() => {
     if (searchParams.get('payment') === 'cancelled') {
@@ -133,14 +133,15 @@ export default function CourseDetail() {
     if (region === 'AR') {
       setEnrolling(true);
       try {
-        const { url } = await paymentsApi.checkoutMercadoPago(course.id);
+        const { url } = await paymentsApi.checkoutMercadoPago(course.id, { installments });
         window.location.href = url;
       } catch (err) {
-        showToast(err.message || 'No se pudo iniciar el pago', 'error');
+        showToast(err.message || 'No se pudo iniciar el pago. Probá de nuevo en unos minutos.', 'error');
         setEnrolling(false);
       }
       return;
     }
+    // Stripe (USD, resto del mundo) todavía no está conectado a credenciales reales.
     setEnrolling(true);
     await new Promise(r => setTimeout(r, 700));
     enrollCourse(course);
@@ -237,34 +238,7 @@ export default function CourseDetail() {
                         {enrolling ? <><div className="spinner" /> Procesando...</> : checkoutLabel}
                       </button>
 
-                      {region === 'AR' && course.transferCode && (
-                        <div className="enroll-includes">
-                          <p className="enroll-includes-title">Promociones disponibles</p>
-
-                          <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px',marginBottom:10}}>
-                            <p style={{fontSize:12,fontWeight:700,color:'var(--green)',marginBottom:4}}>10% OFF — Pagando por transferencia</p>
-                            <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:2}}>
-                              <span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * 0.9, region)}</span>
-                              <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>
-                            </div>
-                            <p style={{fontSize:11,color:'var(--text-3)',marginBottom:10}}>Pago único</p>
-                            <button
-                              onClick={handleEnrollTransfer}
-                              className="btn btn-outline btn-sm"
-                              style={{width:'100%',justifyContent:'center'}}
-                              disabled={enrolling}
-                            >
-                              {enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar ${formatPrice(coursePrice * 0.9, region)} por transferencia`}
-                            </button>
-                          </div>
-
-                          <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}>
-                            <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:4}}>6 cuotas sin interés — Con Mercado Pago</p>
-                            <p style={{fontSize:18,fontWeight:800,marginBottom:2}}>6 x {formatPrice(coursePrice / 6, region)}</p>
-                            <p style={{fontSize:11,color:'var(--text-3)'}}>Total: {formatPrice(coursePrice, region)} sin interés</p>
-                          </div>
-                        </div>
-                      )}
+                      {region === 'AR' && course.transferCode && (<div className="enroll-includes"><p className="enroll-includes-title">Promociones disponibles</p><div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px',marginBottom:10}}><p style={{fontSize:12,fontWeight:700,color:'var(--green)',marginBottom:4}}>10% OFF — Pagando por transferencia</p><div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:2}}><span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * 0.9, region)}</span><span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span></div><p style={{fontSize:11,color:'var(--text-3)',marginBottom:10}}>Pago único</p><button onClick={handleEnrollTransfer} className="btn btn-outline btn-sm" style={{width:'100%',justifyContent:'center'}} disabled={enrolling}>{enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar ${formatPrice(coursePrice * 0.9, region)} por transferencia`}</button></div><div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}><p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:8}}>Con Mercado Pago, elegí tus cuotas</p><div style={{display:'flex',gap:8}}><button type="button" onClick={() => setInstallments(1)} className={`btn btn-sm ${installments===1?'btn-primary':'btn-outline'}`} style={{flex:1,justifyContent:'center'}}>Pago único</button><button type="button" onClick={() => setInstallments(6)} className={`btn btn-sm ${installments===6?'btn-primary':'btn-outline'}`} style={{flex:1,justifyContent:'center'}}>6 cuotas</button></div><p style={{fontSize:11,color:'var(--text-3)',marginTop:8}}>{installments===6 ? `6 x ${formatPrice(coursePrice/6, region)} sin interés` : `${formatPrice(coursePrice, region)} en un pago`}</p></div></div>)}
                     </>
                   )}
 
