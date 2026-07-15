@@ -98,7 +98,7 @@ export const progressApi = {
 // ── Payments ──────────────────────────────────────────────
 export const paymentsApi = {
   checkout:            (courseId) => api.post(`/payments/checkout/${courseId}`, {}),
-  checkoutMercadoPago: (courseId) => api.post(`/payments/mercadopago/${courseId}`, {}),
+  checkoutMercadoPago: (courseId, body = {}) => api.post(`/payments/mercadopago/${courseId}`, body),
   history:             ()         => api.get('/payments/history'),
   adminList: (params = {}) => {
     const qs = new URLSearchParams(params).toString();

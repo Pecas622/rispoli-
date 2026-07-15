@@ -186,6 +186,9 @@ router.post(
         return res.status(400).json({ message: 'Ya estás inscripto en este curso' });
       }
 
+      const applyTransferDiscount = !!req.body?.transferDiscount && !!course.transferCode;
+      const unitPrice = applyTransferDiscount ? Math.round(course.price * 0.9) : course.price;
+
       const { getMPClient, Preference } = await import('../lib/mercadopago');
       const preference = new Preference(getMPClient());
 
@@ -193,9 +196,9 @@ router.post(
         body: {
           items: [{
             id:         course.id,
-            title:      course.title,
+            title:      applyTransferDiscount ? `${course.title} (10% OFF transferencia)` : course.title,
             quantity:   1,
-            unit_price: course.price,   // precio en ARS
+            unit_price: unitPrice,   // precio en ARS, con descuento por transferencia si aplica
             currency_id: 'ARS',
           }],
           payer: {
@@ -213,6 +216,10 @@ router.post(
           auto_return:      'approved',
           notification_url: `${process.env.BACKEND_URL}/api/payments/mercadopago/webhook`,
           statement_descriptor: 'GO TRAVEL ACADEMY',
+          // Pago por transferencia = pago único; compra normal = hasta 6 cuotas.
+          payment_methods: {
+            installments: applyTransferDiscount ? 1 : 6,
+          },
         },
       });
 

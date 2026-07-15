@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, Award, Lock } from 'lucide-react';
 import { courses as mockCourses } from '../data/courses';
-import { coursesApi, progressApi } from '../services/api';
+import { coursesApi, progressApi, paymentsApi } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice, getCheckoutLabel } from '../utils/pricing';
 import { track } from '../lib/pixel';
@@ -130,6 +130,17 @@ export default function CourseDetail() {
 
   const handleEnroll = async () => {
     if (!user) { setAuthModal('register'); return; }
+    if (region === 'AR') {
+      setEnrolling(true);
+      try {
+        const { url } = await paymentsApi.checkoutMercadoPago(course.id);
+        window.location.href = url;
+      } catch (err) {
+        showToast(err.message || 'No se pudo iniciar el pago', 'error');
+        setEnrolling(false);
+      }
+      return;
+    }
     setEnrolling(true);
     await new Promise(r => setTimeout(r, 700));
     enrollCourse(course);
@@ -139,9 +150,13 @@ export default function CourseDetail() {
   const handleEnrollTransfer = async () => {
     if (!user) { setAuthModal('register'); return; }
     setEnrolling(true);
-    await new Promise(r => setTimeout(r, 700));
-    enrollCourse(course, { overridePrice: coursePrice * 0.9, paymentMethodLabel: 'Transferencia bancaria' });
-    setEnrolling(false);
+    try {
+      const { url } = await paymentsApi.checkoutMercadoPago(course.id, { transferDiscount: true });
+      window.location.href = url;
+    } catch (err) {
+      showToast(err.message || 'No se pudo iniciar el pago', 'error');
+      setEnrolling(false);
+    }
   };
 
   const handleContinue = () => showToast('El visor de clases estará disponible próximamente', 'info');
