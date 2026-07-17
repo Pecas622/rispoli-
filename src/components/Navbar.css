@@ -191,3 +191,12 @@
   .navbar-inner { height: 56px; }
   .navbar-links { top: 56px; }
 }
+
+
+.user-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-2);
+    color: var(--text-2);
+}
