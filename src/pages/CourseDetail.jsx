@@ -25,7 +25,7 @@ export default function CourseDetail() {
   const [course, setCourse] = useState(undefined); // undefined = cargando, null = no encontrado
   const [progress, setProgress] = useState(EMPTY_PROGRESS);
   const [openModule, setOpenModule] = useState(0);
-  const [enrolling, setEnrolling] = useState(false); const [installments, setInstallments] = useState(1);
+  const [enrolling, setEnrolling] = useState(false); const [installments] = useState(6);
 
   useEffect(() => {
     if (searchParams.get('payment') === 'cancelled') {
@@ -257,11 +257,8 @@ export default function CourseDetail() {
                           </div>
                           <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}>
                             <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:8}}>Con Mercado Pago, elegí tus cuotas</p>
-                            <div style={{display:'flex',gap:8,marginBottom:8}}>
-                              <button type="button" onClick={() => setInstallments(1)} className={`btn btn-sm ${installments===1?'btn-primary':'btn-outline'}`} style={{flex:1,justifyContent:'center'}}>Pago único</button>
-                              <button type="button" onClick={() => setInstallments(6)} className={`btn btn-sm ${installments===6?'btn-primary':'btn-outline'}`} style={{flex:1,justifyContent:'center'}}>6 cuotas</button>
-                            </div>
-                            <p style={{fontSize:11,color:'var(--text-3)',marginBottom:10}}>{installments===6 ? `6 x ${formatPrice(coursePrice/6, region)} sin interés` : `${formatPrice(coursePrice, region)} en un pago`}</p>
+                            <div className="btn btn-sm btn-primary" style={{width:'100%',justifyContent:'center',marginBottom:8,pointerEvents:'none'}}>6 cuotas</div>
+                            <p style={{fontSize:11,color:'var(--text-3)',marginBottom:10}}>{`6 x ${formatPrice(coursePrice/6, region)} sin interés`}</p>
                             <button onClick={handleEnroll} className="btn btn-primary btn-sm" style={{width:'100%',justifyContent:'center'}} disabled={enrolling}>
                               {enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar con Mercado Pago`}
                             </button>
