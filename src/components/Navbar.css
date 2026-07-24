@@ -199,4 +199,5 @@
     justify-content: center;
     background: var(--bg-2);
     color: var(--text-2);
+    border: 1px solid var(--border);
 }
