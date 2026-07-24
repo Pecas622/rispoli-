@@ -208,12 +208,24 @@ export default function CourseDetail() {
             ) : (
               <div className="enroll-card card card-elevated detail-checkout">
                 <div className="enroll-thumb">
-                  <img src={course.image} alt={course.title} />
-                  <div className="enroll-thumb-overlay">
-                    <div className="play-btn-circle">
-                      <Play size={18} fill="var(--text)" color="var(--text)" style={{marginLeft:2}} />
-                    </div>
-                  </div>
+                  {course.previewVideo ? (
+                    <video
+                      className="enroll-thumb-video"
+                      src={course.previewVideo}
+                      poster={course.image}
+                      controls
+                      playsInline
+                    />
+                  ) : (
+                    <>
+                      <img src={course.image} alt={course.title} />
+                      <div className="enroll-thumb-overlay">
+                        <div className="play-btn-circle">
+                          <Play size={18} fill="var(--text)" color="var(--text)" style={{marginLeft:2}} />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="enroll-body">
                   {course.price === 0 ? (
