@@ -256,14 +256,9 @@ export default function CourseDetail() {
                             </button>
                           </div>
                           <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}>
-                            <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:8}}>Con Mercado Pago, elegí tus cuotas</p>
-                            <button onClick={handleEnroll} className="btn btn-primary btn-sm" style={{width:'100%',flexDirection:'column',gap:2,padding:'10px 14px'}} disabled={enrolling}>
-                              {enrolling ? <><div className="spinner" /> Procesando...</> : (
-                                <>
-                                  <span>{`En cuotas sin interés ${formatPrice(coursePrice, region)}`}</span>
-                                  <span style={{fontSize:11,fontWeight:500,opacity:0.85}}>{`6 x ${formatPrice(coursePrice/6, region)} sin interés`}</span>
-                                </>
-                              )}
+                            <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:8}}>{`En cuotas sin interés ${formatPrice(coursePrice, region)}`}</p>
+                            <button onClick={handleEnroll} className="btn btn-primary btn-sm" style={{width:'100%',justifyContent:'center'}} disabled={enrolling}>
+                              {enrolling ? <><div className="spinner" /> Procesando...</> : `6 x ${formatPrice(coursePrice/6, region)}`}
                             </button>
                           </div>
                         </div>
