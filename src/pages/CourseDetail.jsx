@@ -246,7 +246,7 @@ export default function CourseDetail() {
                           <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}>
                             <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:8}}>{`En cuotas sin interés ${formatPrice(coursePrice, region)}`}</p>
                             <button onClick={handleEnroll} className="btn btn-primary btn-sm" style={{width:'100%',justifyContent:'center'}} disabled={enrolling}>
-                              {enrolling ? <><div className="spinner" /> Procesando...</> : `6 x ${formatPrice(coursePrice/6, region)}`}
+                              {enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar 6 x ${formatPrice(coursePrice/6, region)}`}
                             </button>
                           </div>
                         </div>
