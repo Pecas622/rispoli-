@@ -315,7 +315,7 @@ export default function AdminCourses() {
               <div className="form-field">
                 <label>Imagen (URL)</label>
                 <input className="input" placeholder="https://..." value={form.image} onChange={set('image')} />
-                                <label style={{marginTop:12,display:'block'}}>Video del reel (URL o ruta, ej. /agente-de-viajes-reel.mp4)</label>label>
+                                <label style={{marginTop:12,display:'block'}}>Video del reel (URL o ruta, ej. /agente-de-viajes-reel.mp4)</label>
                 <input className="input" placeholder="https://... o /nombre-del-video.mp4" value={form.previewVideo} onChange={set('previewVideo')} />
               </div>
               <div className="form-field">
