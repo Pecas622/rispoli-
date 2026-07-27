@@ -75,6 +75,7 @@ model Course {
   reviews       Int      @default(0)
   students      Int      @default(0)
   image         String?
+  previewVideo  String?  @map("preview_video") // URL del video/reel de presentación (reemplaza la imagen en la ficha)
   featured      Boolean  @default(false)
   stripePriceId String?  @map("stripe_price_id")
   published     Boolean  @default(true)
