@@ -19,7 +19,6 @@ const courseSchema = z.object({
   priceUSD:         z.number().positive().optional(),             // USD
   originalPriceUSD: z.number().positive().optional(),             // USD original
   image:            z.string().url().optional(),
-  previewVideo:     z.string().optional(),
   featured:         z.boolean().optional(),
   published:        z.boolean().optional(),
   tags:             z.array(z.string()).optional(),

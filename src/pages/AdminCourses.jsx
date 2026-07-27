@@ -11,7 +11,7 @@ const emptyForm = {
   title: '', subtitle: '', description: '',
   category: categories[1], level: levels[1], modality: modalities[1],
   duration: '', hours: '', price: '', originalPrice: '', priceUSD: '', originalPriceUSD: '', transferCode: '',
-  image: '', previewVideo: '', featured: false, published: true,
+  image: '', featured: false, published: true,
   tags: '', requirements: '', includes: '', learningObjectives: '', targetAudience: '',
   instructorName: '', instructorRole: '', instructorAvatar: '', instructorBio: '',
 };
@@ -33,7 +33,6 @@ function formToPayload(form) {
     originalPriceUSD: form.originalPriceUSD ? Number(form.originalPriceUSD) : undefined,
     transferCode:     form.transferCode || undefined,
     image:            form.image || undefined,
-    previewVideo:     form.previewVideo || undefined,
     featured:         form.featured,
     published:        form.published,
     tags:             form.tags.split(',').map(t => t.trim()).filter(Boolean),
@@ -55,7 +54,7 @@ function courseToForm(c) {
     category: c.category ?? categories[1], level: c.level ?? levels[1], modality: c.modality ?? modalities[1],
     duration: c.duration ?? '', hours: c.hours ?? '',
     price: c.price ?? '', originalPrice: c.originalPrice ?? '', priceUSD: c.priceUSD ?? '', originalPriceUSD: c.originalPriceUSD ?? '', transferCode: c.transferCode ?? '',
-    image: c.image ?? '', previewVideo: c.previewVideo ?? '', featured: !!c.featured, published: c.published ?? true,
+    image: c.image ?? '', featured: !!c.featured, published: c.published ?? true,
     tags: (c.tags ?? []).join(', '),
     requirements: (c.requirements ?? []).join('\n'),
     includes: (c.includes ?? []).join('\n'),
@@ -315,10 +314,6 @@ export default function AdminCourses() {
               <div className="form-field">
                 <label>Imagen (URL)</label>
                 <input className="input" placeholder="https://..." value={form.image} onChange={set('image')} />
-              </div>
-              <div className="form-field">
-                <label>Video del reel (URL o ruta, opcional)</label>
-                <input className="input" placeholder="/agente-de-viajes-reel.mp4" value={form.previewVideo} onChange={set('previewVideo')} />
               </div>
               <div className="form-field">
                 <label>Descripción</label>
