@@ -5,6 +5,27 @@ import { authenticate, requireInstructor } from '../middleware/auth.middleware';
 
 const router = Router({ mergeParams: true });
 
+// Un usuario puede ver el CONTENIDO completo (video/texto/recursos) de un curso si:
+// - es ADMIN o INSTRUCTOR, o
+// - tiene una inscripción paga (Enrollment.paidAt) para ese courseId
+async function canAccessCourseContent(userId: string, role: string, courseId: string): Promise<boolean> {
+  if (role === 'ADMIN' || role === 'INSTRUCTOR') return true;
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { userId_courseId: { userId, courseId } },
+    select: { paidAt: true },
+  });
+  return !!enrollment?.paidAt;
+}
+
+// Oculta el contenido "pago" de una clase que no sea preview (video, texto, recursos)
+function maskLesson<T extends { isPreview: boolean; videoUrl: string | null; content: string | null; resources?: any[] }>(
+  lesson: T,
+  unlocked: boolean,
+): T {
+  if (unlocked || lesson.isPreview) return lesson;
+  return { ...lesson, videoUrl: null, content: null, resources: [] };
+}
+
 const moduleSchema = z.object({
   title:       z.string().min(2),
   description: z.string().optional(),
@@ -19,8 +40,13 @@ const reorderSchema = z.array(z.object({
 // GET /api/courses/:courseId/modules
 router.get('/', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const { courseId } = req.params;
+    if (!courseId) return res.status(400).json({ message: 'Falta courseId' });
+
+    const unlocked = await canAccessCourseContent(req.user!.userId, req.user!.role, courseId);
+
     const modules = await prisma.module.findMany({
-      where:   { courseId: req.params.courseId },
+      where:   { courseId },
       orderBy: { order: 'asc' },
       include: {
         lessons: {
@@ -29,7 +55,13 @@ router.get('/', authenticate, async (req: Request, res: Response, next: NextFunc
         },
       },
     });
-    res.json({ modules });
+
+    const safeModules = modules.map(m => ({
+      ...m,
+      lessons: m.lessons.map(l => maskLesson(l, unlocked)),
+    }));
+
+    res.json({ modules: safeModules, unlocked });
   } catch (err) {
     next(err);
   }

@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import express from 'express';
+import crypto from 'crypto';
 import { getStripe, isStripeReady } from '../lib/stripe';
 import { isMercadoPagoReady } from '../lib/mercadopago';
 import { prisma } from '../lib/prisma';
@@ -8,6 +9,45 @@ import { sendMetaEvent } from '../lib/capi';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
+
+// Valida la firma del webhook IPN de Mercado Pago.
+// Doc: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
+// Header "x-signature": "ts=<timestamp>,v1=<hash>"
+// manifest = "id:<data.id>;request-id:<x-request-id>;ts:<ts>;"
+// hash esperado = HMAC-SHA256(manifest, MP_WEBHOOK_SECRET) en hex
+function isValidMPSignature(req: Request): boolean {
+  const secret = process.env.MP_WEBHOOK_SECRET;
+  if (!secret) {
+    // Sin secreto configurado no podemos validar — lo dejamos pasar en dev,
+    // pero queda registrado para que se configure antes de ir a producción.
+    console.warn('[MP Webhook] MP_WEBHOOK_SECRET no configurado: la firma no se está validando.');
+    return true;
+  }
+
+  const signatureHeader = req.headers['x-signature'] as string | undefined;
+  const requestId = req.headers['x-request-id'] as string | undefined;
+  const dataId = (req.query['data.id'] as string | undefined) ?? req.body?.data?.id;
+  if (!signatureHeader || !dataId) return false;
+
+  const parts = Object.fromEntries(
+    signatureHeader.split(',').map(p => {
+      const [k, v] = p.split('=');
+      return [k?.trim(), v?.trim()];
+    }),
+  );
+  const ts = parts.ts;
+  const v1 = parts.v1;
+  if (!ts || !v1) return false;
+
+  const manifest = `id:${dataId};request-id:${requestId ?? ''};ts:${ts};`;
+  const expected = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(v1, 'hex'));
+  } catch {
+    return false;
+  }
+}
 
 // ── Guards ────────────────────────────────────────────────────────────────────
 
@@ -234,6 +274,11 @@ router.post(
 // Verificar firma: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
 router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
   try {
+    if (!isValidMPSignature(req)) {
+      console.warn('[MP Webhook] Firma inválida — notificación rechazada');
+      return res.status(401).json({ message: 'Firma inválida' });
+    }
+
     const { type, data } = req.body as { type: string; data: { id: string } };
 
     if (type === 'payment') {
