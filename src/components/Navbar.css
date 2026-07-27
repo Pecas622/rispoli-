@@ -1,18 +1,11 @@
 .navbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   padding: 0;
-}
-
-/* Fondo/blur en una capa aparte (no ancestro de .navbar-links): un elemento
-   con backdrop-filter crea un containing block para descendientes fixed,
-   lo que rompía el menú móvil (también fixed) al scrollear. */
-.navbar-bg {
-  position: absolute; inset: 0; z-index: -1;
   background: transparent;
   transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 
-.navbar.scrolled .navbar-bg {
+.navbar.scrolled {
   background: rgba(248, 250, 252, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -206,5 +199,4 @@
     justify-content: center;
     background: var(--bg-2);
     color: var(--text-2);
-    border: 1px solid var(--border);
 }

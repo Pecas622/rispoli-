@@ -21,11 +21,11 @@ export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, isEnrolled, setAuthModal, showToast, region, dolarRate } = useApp();
+  const { user, enrollCourse, isEnrolled, setAuthModal, showToast, region, dolarRate } = useApp();
   const [course, setCourse] = useState(undefined); // undefined = cargando, null = no encontrado
   const [progress, setProgress] = useState(EMPTY_PROGRESS);
   const [openModule, setOpenModule] = useState(0);
-  const [enrolling, setEnrolling] = useState(false); const [installments] = useState(6);
+  const [enrolling, setEnrolling] = useState(false); const [installments, setInstallments] = useState(1);
 
   useEffect(() => {
     if (searchParams.get('payment') === 'cancelled') {
@@ -141,8 +141,11 @@ export default function CourseDetail() {
       }
       return;
     }
-    // Pagos internacionales (Stripe, USD) — todavía no disponibles en producción.
-    showToast('Los pagos internacionales todavía no están disponibles. Muy pronto vas a poder pagar con tarjeta en dólares.', 'info');
+    // Stripe (USD, resto del mundo) todavía no está conectado a credenciales reales.
+    setEnrolling(true);
+    await new Promise(r => setTimeout(r, 700));
+    enrollCourse(course);
+    setEnrolling(false);
   };
 
   const handleEnrollTransfer = async () => {
@@ -157,7 +160,7 @@ export default function CourseDetail() {
     }
   };
 
-  const handleContinue = () => navigate(`/cursos/${course.id}/aprender`);
+  const handleContinue = () => showToast('El visor de clases estará disponible próximamente', 'info');
 
   return (
     <div className="course-detail">
@@ -205,24 +208,12 @@ export default function CourseDetail() {
             ) : (
               <div className="enroll-card card card-elevated detail-checkout">
                 <div className="enroll-thumb">
-                  {course.previewVideo ? (
-                    <video
-                      className="enroll-thumb-video"
-                      src={course.previewVideo}
-                      poster={course.image}
-                      controls
-                      playsInline
-                    />
-                  ) : (
-                    <>
-                      <img src={course.image} alt={course.title} />
-                      <div className="enroll-thumb-overlay">
-                        <div className="play-btn-circle">
-                          <Play size={18} fill="var(--text)" color="var(--text)" style={{marginLeft:2}} />
-                        </div>
-                      </div>
-                    </>
-                  )}
+                  <img src={course.image} alt={course.title} />
+                  <div className="enroll-thumb-overlay">
+                    <div className="play-btn-circle">
+                      <Play size={18} fill="var(--text)" color="var(--text)" style={{marginLeft:2}} />
+                    </div>
+                  </div>
                 </div>
                 <div className="enroll-body">
                   {course.price === 0 ? (
@@ -238,47 +229,16 @@ export default function CourseDetail() {
                         {discount > 0 && <span className="enroll-price-was">{formatPrice(courseOriginal, region)}</span>}
                         {discount > 0 && <span className="enroll-discount">-{discount}%</span>}
                       </div>
-                      {region === 'AR' && course.transferCode ? (
-                        <div className="enroll-includes">
-                          <p className="enroll-includes-title">Formas de pago</p>
-                          <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px',marginBottom:10}}>
-                            <p style={{fontSize:12,fontWeight:700,color:'var(--green)',marginBottom:4}}>10% OFF — Pagando por transferencia</p>
-                            <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:2}}>
-                              <span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * 0.9, region)}</span>
-                              <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>
-                            </div>
-                            <p style={{fontSize:11,color:'var(--text-3)',marginBottom:10}}>Pago único</p>
-                            <button onClick={handleEnrollTransfer} className="btn btn-primary btn-sm" style={{width:'100%',justifyContent:'center'}} disabled={enrolling}>
-                              {enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar ${formatPrice(coursePrice * 0.9, region)} por transferencia`}
-                            </button>
-                          </div>
-                          <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}>
-                            <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:8}}>{`En cuotas sin interés ${formatPrice(coursePrice, region)}`}</p>
-                            <button onClick={handleEnroll} className="btn btn-primary btn-sm" style={{width:'100%',justifyContent:'center'}} disabled={enrolling}>
-                              {enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar 6 x ${formatPrice(coursePrice/6, region)}`}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <button
-                            onClick={handleEnroll}
-                            className="btn btn-primary"
-                            style={{width:'100%',justifyContent:'center',padding:'13px',marginTop:16}}
-                            disabled={enrolling || region !== 'AR'}
-                            title={region !== 'AR' ? 'Pagos internacionales próximamente' : undefined}
-                          >
-                            {enrolling
-                              ? <><div className="spinner" /> Procesando...</>
-                              : region !== 'AR' ? 'Próximamente' : checkoutLabel}
-                          </button>
-                          {region !== 'AR' && (
-                            <p style={{fontSize:11,color:'var(--text-3)',marginTop:8,textAlign:'center'}}>
-                              Estamos habilitando el pago con tarjeta en dólares. Muy pronto vas a poder inscribirte.
-                            </p>
-                          )}
-                        </>
-                      )}
+                      <button
+                        onClick={handleEnroll}
+                        className="btn btn-primary"
+                        style={{width:'100%',justifyContent:'center',padding:'13px',marginTop:16}}
+                        disabled={enrolling}
+                      >
+                        {enrolling ? <><div className="spinner" /> Procesando...</> : checkoutLabel}
+                      </button>
+
+                      {region === 'AR' && course.transferCode && (<div className="enroll-includes"><p className="enroll-includes-title">Promociones disponibles</p><div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px',marginBottom:10}}><p style={{fontSize:12,fontWeight:700,color:'var(--green)',marginBottom:4}}>10% OFF — Pagando por transferencia</p><div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:2}}><span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * 0.9, region)}</span><span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span></div><p style={{fontSize:11,color:'var(--text-3)',marginBottom:10}}>Pago único</p><button onClick={handleEnrollTransfer} className="btn btn-outline btn-sm" style={{width:'100%',justifyContent:'center'}} disabled={enrolling}>{enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar ${formatPrice(coursePrice * 0.9, region)} por transferencia`}</button></div><div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}><p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:8}}>Con Mercado Pago, elegí tus cuotas</p><div style={{display:'flex',gap:8}}><button type="button" onClick={() => setInstallments(1)} className={`btn btn-sm ${installments===1?'btn-primary':'btn-outline'}`} style={{flex:1,justifyContent:'center'}}>Pago único</button><button type="button" onClick={() => setInstallments(6)} className={`btn btn-sm ${installments===6?'btn-primary':'btn-outline'}`} style={{flex:1,justifyContent:'center'}}>6 cuotas</button></div><p style={{fontSize:11,color:'var(--text-3)',marginTop:8}}>{installments===6 ? `6 x ${formatPrice(coursePrice/6, region)} sin interés` : `${formatPrice(coursePrice, region)} en un pago`}</p></div></div>)}
                     </>
                   )}
 

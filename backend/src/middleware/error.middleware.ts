@@ -30,15 +30,7 @@ export function errorMiddleware(
 
   console.error('[ERROR]', err);
 
-  const statusCode = err.statusCode ?? 500;
-  const isProd = process.env.NODE_ENV === 'production';
-  // En producción no devolvemos el mensaje crudo de errores 5xx (puede filtrar
-  // detalles internos: queries de Prisma, paths, etc.). Los errores controlados
-  // (4xx, con statusCode explícito) sí muestran su mensaje porque son mensajes
-  // pensados para el usuario.
-  const message = (!isProd || statusCode < 500)
-    ? (err.message ?? 'Error interno del servidor')
-    : 'Error interno del servidor';
-
-  res.status(statusCode).json({ message });
+  res.status(err.statusCode ?? 500).json({
+    message: err.message ?? 'Error interno del servidor',
+  });
 }

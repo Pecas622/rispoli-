@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut, LayoutDashboard, ChevronDown, Globe, Check, User } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, ChevronDown, Globe, Check } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './Navbar.css';
 
@@ -46,7 +46,6 @@ export default function Navbar() {
 
   return (
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-      <div className="navbar-bg" />
       <div className="container navbar-inner">
         <Link to="/" className="navbar-logo">
           <img src="/logo.jpg" alt="Go Travel Academy" className="navbar-logo-img" />
@@ -90,9 +89,7 @@ export default function Navbar() {
           {user ? (
             <div className="user-menu-wrap">
               <button className="user-trigger" onClick={() => setUserMenu(!userMenu)}>
-                <span className="user-avatar user-avatar-fallback">
-                  <User size={13} />
-                </span>
+                <img src={user.avatar} alt={user.name} className="user-avatar" />
                 <span className="user-trigger-name">{user.name.split(' ')[0]}</span>
                 <ChevronDown size={12} className={`chevron ${userMenu ? 'open' : ''}`} />
               </button>

@@ -50,8 +50,7 @@
   border-radius: var(--r-lg); overflow: hidden;
 }
 .enroll-thumb { position: relative; }
-.enroll-thumb img,
-.enroll-thumb-video { width: 100%; height: 180px; object-fit: cover; display: block; background: #000; }
+.enroll-thumb img { width: 100%; height: 180px; object-fit: cover; display: block; }
 .enroll-thumb-overlay {
   position: absolute; inset: 0; background: rgba(0,0,0,0.3);
   display: flex; align-items: center; justify-content: center;

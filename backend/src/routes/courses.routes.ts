@@ -65,8 +65,8 @@ router.get('/', optionalAuth, async (req: Request, res: Response, next: NextFunc
   }
 });
 
-// GET /api/courses/:id — public (no publicados solo visibles para ADMIN)
-router.get('/:id', optionalAuth, async (req: Request, res: Response, next: NextFunction) => {
+// GET /api/courses/:id — public
+router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const course = await prisma.course.findUnique({
       where: { id: req.params.id },
@@ -88,9 +88,6 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response, next: NextF
     });
 
     if (!course) return res.status(404).json({ message: 'Curso no encontrado' });
-    if (!course.published && req.user?.role !== 'ADMIN') {
-      return res.status(404).json({ message: 'Curso no encontrado' });
-    }
     res.json({ course });
   } catch (err) {
     next(err);
