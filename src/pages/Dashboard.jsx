@@ -204,7 +204,7 @@ export default function Dashboard() {
 
                     <div className="dash-actions">
                       <Link
-                        to={`/cursos/${id}`}
+                        to={`/cursos/${id}/aprender`}
                         className="btn btn-primary btn-sm"
                         style={{ flex: 1, justifyContent: 'center' }}
                       >

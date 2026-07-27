@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 import Instructor from './pages/Instructor';
 import CourseContent from './pages/CourseContent';
+import Learn from './pages/Learn';
 import ResetPassword from './pages/ResetPassword';
 import { Empresas, Nosotros, Blog, Contacto } from './pages/StaticPages';
 import { Certificaciones, Descargas, Perfil } from './pages/UserPages';
@@ -45,6 +46,7 @@ function Layout() {
           <Route path="/" element={<Home />} />
           <Route path="/cursos" element={<Courses />} />
           <Route path="/cursos/:id" element={<CourseDetail />} />
+          <Route path="/cursos/:id/aprender" element={<Learn />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/instructor" element={<Instructor />} />
