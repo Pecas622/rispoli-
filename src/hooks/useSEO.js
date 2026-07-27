@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const SITE_URL = 'https://gotravelacademy.vercel.app';
+const SITE_URL = 'https://gotravelacademy.com';
 const DEFAULT_IMAGE = `${SITE_URL}/gta-logo.jpeg`;
 
 function setMeta(attr, key, content) {

@@ -2,7 +2,7 @@
 // publicado, consultando el backend público (GET /api/courses) en vez de
 // conectarse directo a la base — así no depende de credenciales nuevas y
 // funciona apenas el backend de Railway esté arriba.
-const SITE_URL = 'https://gotravelacademy.vercel.app';
+const SITE_URL = 'https://gotravelacademy.com';
 
 const STATIC_PATHS = ['/', '/cursos', '/nosotros', '/contacto', '/empresas'];
 

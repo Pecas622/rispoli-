@@ -75,7 +75,7 @@ export default function CourseDetail() {
       provider: {
         '@type': 'Organization',
         name:    'Go Travel Academy',
-        sameAs:  'https://gotravelacademy.vercel.app',
+        sameAs:  'https://gotravelacademy.com',
       },
       ...(course.level    ? { educationalLevel: course.level } : {}),
       ...(course.modality ? { courseMode: course.modality } : {}),

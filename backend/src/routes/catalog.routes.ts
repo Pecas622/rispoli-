@@ -38,7 +38,7 @@ function absoluteUrl(base: string, path?: string | null): string | null {
 
 router.get('/feed', async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const site = (process.env.FRONTEND_URL || 'https://gotravelacademy.vercel.app').replace(/\/$/, '');
+    const site = (process.env.FRONTEND_URL || 'https://gotravelacademy.com').replace(/\/$/, '');
 
     const courses = await prisma.course.findMany({
       where:   { published: true },
