@@ -17,6 +17,10 @@ const levelBadge = {
 const EMPTY_PROGRESS = { percent: 0, completed: 0, total: 0, completedLessonIds: [] };
 const MOCK_PROGRESS = { 1: 68, 2: 35, 3: 100, 4: 12, 5: 0, 6: 55 }; // solo para el fallback sin backend
 
+function extractVimeoId(url = '') {
+  return url.match(/vimeo\.com\/(?:video\/)?(\d+)/)?.[1] ?? '';
+}
+
 export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -205,7 +209,16 @@ export default function CourseDetail() {
             ) : (
               <div className="enroll-card card card-elevated detail-checkout">
                 <div className="enroll-thumb">
-                  {course.previewVideo ? (
+                  {course.previewVideo && extractVimeoId(course.previewVideo) ? (
+                    <iframe
+                      className="enroll-thumb-video"
+                      src={`https://player.vimeo.com/video/${extractVimeoId(course.previewVideo)}?title=0&byline=0&portrait=0`}
+                      title={course.title}
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                      style={{border:'none'}}
+                    />
+                  ) : course.previewVideo ? (
                     <video
                       className="enroll-thumb-video"
                       src={course.previewVideo}

@@ -23,7 +23,7 @@ export const courses = [
     reviews: 2847,
     students: 12400,
     image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=80',
-    previewVideo: '/agente-de-viajes-reel.mp4',
+    previewVideo: 'https://vimeo.com/1213593972',
     color: '#06043F',
     instructor: {
       name: 'María Eugenia Torres',
