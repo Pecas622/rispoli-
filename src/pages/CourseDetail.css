@@ -38,6 +38,13 @@
 .detail-meta-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
 .detail-meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); }
 .detail-meta-item strong { color: var(--text); }
+/* La calificación es un atajo a las reseñas: se ve igual, pero es clickeable */
+.detail-meta-link {
+  background: none; border: none; padding: 0; font: inherit;
+  cursor: pointer; border-bottom: 1px dashed transparent;
+  transition: var(--transition);
+}
+.detail-meta-link:hover { color: var(--accent); border-bottom-color: var(--border-2); }
 
 .instructor-mini { display: flex; align-items: center; gap: 12px; }
 .instructor-mini img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
@@ -264,10 +271,44 @@
 }
 .reviews-summary strong { font-size: 14px; color: var(--text); }
 
-.reviews-grid {
-  display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
-  margin-top: 18px;
+/* Carrusel: el track scrollea con snap — en mobile se desliza con el dedo. */
+.reviews-carousel { position: relative; margin-top: 18px; }
+
+.reviews-track {
+  display: flex; gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;              /* Firefox */
+  -ms-overflow-style: none;           /* IE/Edge */
+  padding-bottom: 4px;
 }
+.reviews-track::-webkit-scrollbar { display: none; }
+
+.reviews-track .review-card {
+  flex: 0 0 calc((100% - 16px) / 2);  /* 2 tarjetas visibles en desktop */
+  scroll-snap-align: start;
+}
+
+.reviews-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #fff; border: 1px solid var(--border); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(6, 4, 63, 0.12);
+  transition: var(--transition);
+}
+.reviews-arrow:hover:not(:disabled) { background: #2E63D6; color: #fff; border-color: #2E63D6; }
+.reviews-arrow:disabled { opacity: 0; pointer-events: none; }
+.reviews-arrow-prev { left: -14px; }
+.reviews-arrow-next { right: -14px; }
+
+.reviews-dots { display: flex; gap: 7px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+.reviews-dot {
+  width: 8px; height: 8px; border-radius: 50%; border: none; padding: 0;
+  background: var(--gray-2); cursor: pointer; transition: var(--transition);
+}
+.reviews-dot.active { background: #2E63D6; width: 22px; border-radius: 4px; }
 
 .review-card {
   padding: 20px;
@@ -309,7 +350,9 @@
   .enroll-card, .progress-card { position: static; }
   .detail-cols { grid-template-columns: 1fr; }
   .detail-title { font-size: 26px; }
-  .reviews-grid { grid-template-columns: 1fr; }
+  /* Mobile: 1 tarjeta por pantalla y sin flechas (se desliza con el dedo) */
+  .reviews-track .review-card { flex: 0 0 100%; }
+  .reviews-arrow { display: none; }
 }
 
 @media (max-width: 640px) {
