@@ -96,7 +96,6 @@ router.post(
         : Math.round(course.price * 100);
 
       const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
         mode:   'payment',
         locale: 'auto',
         line_items: [{
