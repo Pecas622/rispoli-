@@ -93,7 +93,7 @@
   color: var(--text);
   text-align: left;
 }
-.learn-module-header span { flex: 1; min-width: 0; }
+.learn-module-header span { flex: 1; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
 .learn-module-header svg { flex-shrink: 0; transition: transform 0.2s ease; color: var(--text-3); }
 .learn-module-header svg.rot { transform: rotate(-90deg); }
 
