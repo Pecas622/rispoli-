@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, Award, Lock } from 'lucide-react';
-import { courses as mockCourses } from '../data/courses';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Award, Lock } from 'lucide-react';
+import { courses as mockCourses, testimonials } from '../data/courses';
 import { coursesApi, progressApi, paymentsApi } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice, getCheckoutLabel } from '../utils/pricing';
@@ -17,6 +17,11 @@ const levelBadge = {
 const EMPTY_PROGRESS = { percent: 0, completed: 0, total: 0, completedLessonIds: [] };
 const MOCK_PROGRESS = { 1: 68, 2: 35, 3: 100, 4: 12, 5: 0, 6: 55 }; // solo para el fallback sin backend
 
+// Normaliza títulos para comparar reseñas con cursos: sin acentos, minúsculas.
+function normalizeTitle(s = '') {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+
 function extractVimeoId(url = '') {
   return url.match(/vimeo\.com\/(?:video\/)?(\d+)/)?.[1] ?? '';
 }
@@ -30,6 +35,10 @@ export default function CourseDetail() {
   const [progress, setProgress] = useState(EMPTY_PROGRESS);
   const [openModule, setOpenModule] = useState(0);
   const [enrolling, setEnrolling] = useState(false); const [installments] = useState(6);
+  const reviewsRef = useRef(null);   // sección de reseñas (destino del scroll)
+  const reviewsTrackRef = useRef(null);
+  const [reviewIndex, setReviewIndex] = useState(0);
+  const [reviewPages, setReviewPages] = useState(1);
 
   useEffect(() => {
     if (searchParams.get('payment') === 'cancelled') {
@@ -65,6 +74,25 @@ export default function CourseDetail() {
     if (!USE_API || !enrolled || !course) return;
     progressApi.getCourse(course.id).then(setProgress).catch(() => {});
   }, [enrolled, course?.id]);
+
+  // Carrusel de reseñas: recalcular la cantidad de páginas al cargar y al redimensionar
+  useEffect(() => {
+    const sync = () => {
+      const track = reviewsTrackRef.current;
+      if (!track) return;
+      const page  = track.clientWidth || 1;
+      const cards = track.querySelectorAll('.review-card');
+      // Cuántas tarjetas entran por pantalla (el paso incluye el gap entre ellas).
+      // No usamos scrollWidth/page porque los gaps generan una última página falsa.
+      const step    = cards.length > 1 ? cards[1].offsetLeft - cards[0].offsetLeft : page;
+      const perView = Math.max(1, Math.round(page / (step || page)));
+      setReviewPages(Math.max(1, Math.ceil(cards.length / perView)));
+      setReviewIndex(Math.round(track.scrollLeft / page));
+    };
+    sync();
+    window.addEventListener('resize', sync);
+    return () => window.removeEventListener('resize', sync);
+  }, [course?.id]);
 
   useSEO({
     title:       course ? `${course.title} — Go Travel Academy` : undefined,
@@ -108,6 +136,41 @@ export default function CourseDetail() {
     bio:    course.instructorBio    ?? course.instructor?.bio    ?? '',
   };
   const requirements     = course.requirements ?? [];
+  // Reseñas reales de alumnos, filtradas por curso (las mismas que en la home).
+  // El match es tolerante para que no se pierdan si el título cambia levemente
+  // en la base (ej. "Agente de Viajes" → "Agente de Viajes Profesional").
+  const courseReviews    = testimonials.filter(t => {
+    const a = normalizeTitle(t.course);
+    const b = normalizeTitle(course.title);
+    return a === b || a.includes(b) || b.includes(a);
+  });
+
+  // ── Carrusel de reseñas ─────────────────────────────────────────────────────
+  // El track scrollea con scroll-snap: en mobile se desliza con el dedo y en
+  // desktop con las flechas. Cada "página" es un ancho completo del track.
+  // Scrolleamos la ventana a mano (y no con scrollIntoView) porque este último
+  // también desplaza los contenedores scrolleables anidados: movía el carrusel.
+  const scrollToReviews = () => {
+    const el = reviewsRef.current;
+    if (!el) return;
+    const y = el.getBoundingClientRect().top + window.scrollY - 80; // 80 = navbar
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  };
+
+  const slideReviews = (dir) => {
+    const track = reviewsTrackRef.current;
+    if (track) track.scrollBy({ left: dir * track.clientWidth, behavior: 'smooth' });
+  };
+
+  const goToReviewPage = (i) => {
+    const track = reviewsTrackRef.current;
+    if (track) track.scrollTo({ left: i * track.clientWidth, behavior: 'smooth' });
+  };
+
+  const onReviewsScroll = () => {
+    const track = reviewsTrackRef.current;
+    if (track) setReviewIndex(Math.round(track.scrollLeft / (track.clientWidth || 1)));
+  };
   const includes         = course.includes ?? [];
   const learningObjectives = course.learningObjectives ?? [];
   const targetAudience     = course.targetAudience ?? [];
@@ -186,10 +249,22 @@ export default function CourseDetail() {
               )}
 
               <div className="detail-meta-row">
-                <span className="detail-meta-item">
-                  <Star size={13} fill="#F59E0B" color="#F59E0B" />
-                  <strong>{course.rating}</strong> ({course.reviews.toLocaleString()} reseñas)
-                </span>
+                {courseReviews.length > 0 ? (
+                  <button
+                    type="button"
+                    className="detail-meta-item detail-meta-link"
+                    onClick={scrollToReviews}
+                    title="Ver las reseñas de los alumnos"
+                  >
+                    <Star size={13} fill="#F59E0B" color="#F59E0B" />
+                    <strong>{course.rating}</strong> ({course.reviews.toLocaleString()} reseñas)
+                  </button>
+                ) : (
+                  <span className="detail-meta-item">
+                    <Star size={13} fill="#F59E0B" color="#F59E0B" />
+                    <strong>{course.rating}</strong> ({course.reviews.toLocaleString()} reseñas)
+                  </span>
+                )}
                 <span className="detail-meta-item"><Users size={13} /> {course.students.toLocaleString()} estudiantes</span>
                 {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
                 {course.hours && <span className="detail-meta-item"><BookOpen size={13} /> {course.hours}h de contenido</span>}
@@ -441,6 +516,80 @@ export default function CourseDetail() {
                   </div>
                 ))}
               </div>
+
+              {/* ── Reseñas de alumnos ── */}
+              {courseReviews.length > 0 && (
+                <div className="detail-section" ref={reviewsRef}>
+                  <div className="reviews-head">
+                    <h2 className="detail-section-title">Reseñas de alumnos</h2>
+                    <div className="reviews-summary">
+                      <Star size={15} fill="#F59E0B" color="#F59E0B" />
+                      <strong>{course.rating}</strong>
+                      <span>· {courseReviews.length} reseñas</span>
+                    </div>
+                  </div>
+
+                  <div className="reviews-carousel">
+                    {reviewPages > 1 && (
+                      <button
+                        type="button"
+                        className="reviews-arrow reviews-arrow-prev"
+                        onClick={() => slideReviews(-1)}
+                        disabled={reviewIndex === 0}
+                        aria-label="Reseñas anteriores"
+                      >
+                        <ChevronLeft size={20} />
+                      </button>
+                    )}
+
+                    <div className="reviews-track" ref={reviewsTrackRef} onScroll={onReviewsScroll}>
+                      {courseReviews.map(t => (
+                        <div key={t.id} className="review-card">
+                          <div className="review-stars">
+                            {[...Array(t.rating)].map((_, i) => (
+                              <Star key={i} size={13} fill="#F59E0B" color="#F59E0B" />
+                            ))}
+                          </div>
+                          <p className="review-text">"{t.text}"</p>
+                          <div className="review-footer">
+                            <img src={t.avatar} alt={t.name} className="review-avatar" />
+                            <div>
+                              <div className="review-name">{t.name}</div>
+                              <div className="review-role">{t.role}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {reviewPages > 1 && (
+                      <button
+                        type="button"
+                        className="reviews-arrow reviews-arrow-next"
+                        onClick={() => slideReviews(1)}
+                        disabled={reviewIndex >= reviewPages - 1}
+                        aria-label="Siguientes reseñas"
+                      >
+                        <ChevronRight size={20} />
+                      </button>
+                    )}
+                  </div>
+
+                  {reviewPages > 1 && (
+                    <div className="reviews-dots">
+                      {[...Array(reviewPages)].map((_, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          className={`reviews-dot ${i === reviewIndex ? 'active' : ''}`}
+                          onClick={() => goToReviewPage(i)}
+                          aria-label={`Página de reseñas ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div />

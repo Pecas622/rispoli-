@@ -38,6 +38,13 @@
 .detail-meta-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
 .detail-meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); }
 .detail-meta-item strong { color: var(--text); }
+/* La calificación es un atajo a las reseñas: se ve igual, pero es clickeable */
+.detail-meta-link {
+  background: none; border: none; padding: 0; font: inherit;
+  cursor: pointer; border-bottom: 1px dashed transparent;
+  transition: var(--transition);
+}
+.detail-meta-link:hover { color: var(--accent); border-bottom-color: var(--border-2); }
 
 .instructor-mini { display: flex; align-items: center; gap: 12px; }
 .instructor-mini img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
@@ -252,6 +259,82 @@
 .req-item:first-child { border-top: 1px solid var(--border); }
 .req-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-2); flex-shrink: 0; margin-top: 6px; }
 
+/* ── RESEÑAS DE ALUMNOS ─────────────────────────────────────────────────────── */
+.reviews-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+.reviews-head .detail-section-title { margin-bottom: 0; }
+.reviews-summary {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 13px; color: var(--text-3);
+}
+.reviews-summary strong { font-size: 14px; color: var(--text); }
+
+/* Carrusel: el track scrollea con snap — en mobile se desliza con el dedo. */
+.reviews-carousel { position: relative; margin-top: 18px; }
+
+.reviews-track {
+  display: flex; gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;              /* Firefox */
+  -ms-overflow-style: none;           /* IE/Edge */
+  padding-bottom: 4px;
+}
+.reviews-track::-webkit-scrollbar { display: none; }
+
+.reviews-track .review-card {
+  flex: 0 0 calc((100% - 16px) / 2);  /* 2 tarjetas visibles en desktop */
+  scroll-snap-align: start;
+}
+
+.reviews-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #fff; border: 1px solid var(--border); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(6, 4, 63, 0.12);
+  transition: var(--transition);
+}
+.reviews-arrow:hover:not(:disabled) { background: #2E63D6; color: #fff; border-color: #2E63D6; }
+.reviews-arrow:disabled { opacity: 0; pointer-events: none; }
+.reviews-arrow-prev { left: -14px; }
+.reviews-arrow-next { right: -14px; }
+
+.reviews-dots { display: flex; gap: 7px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+.reviews-dot {
+  width: 8px; height: 8px; border-radius: 50%; border: none; padding: 0;
+  background: var(--gray-2); cursor: pointer; transition: var(--transition);
+}
+.reviews-dot.active { background: #2E63D6; width: 22px; border-radius: 4px; }
+
+.review-card {
+  padding: 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: flex; flex-direction: column; gap: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: var(--transition);
+}
+.review-card:hover {
+  border-color: var(--border-2);
+  box-shadow: 0 8px 22px rgba(6, 4, 63, 0.08);
+}
+
+.review-stars { display: flex; gap: 2px; }
+.review-text { font-size: 13.5px; line-height: 1.7; color: var(--text-2); flex: 1; }
+
+.review-footer {
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid var(--border); padding-top: 12px;
+}
+.review-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.review-name { font-size: 12.5px; font-weight: 650; color: var(--text); }
+.review-role { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+
 /* ── RESPONSIVE ─────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .detail-layout { grid-template-columns: 1fr 320px; gap: 40px; }
@@ -267,6 +350,9 @@
   .enroll-card, .progress-card { position: static; }
   .detail-cols { grid-template-columns: 1fr; }
   .detail-title { font-size: 26px; }
+  /* Mobile: 1 tarjeta por pantalla y sin flechas (se desliza con el dedo) */
+  .reviews-track .review-card { flex: 0 0 100%; }
+  .reviews-arrow { display: none; }
 }
 
 @media (max-width: 640px) {
