@@ -59,17 +59,6 @@
 .enroll-thumb { position: relative; }
 .enroll-thumb img,
 .enroll-thumb-video { width: 100%; height: 180px; object-fit: cover; display: block; background: #000; }
-.enroll-thumb-overlay {
-  position: absolute; inset: 0; background: rgba(0,0,0,0.3);
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity 0.2s; cursor: pointer;
-}
-.enroll-thumb:hover .enroll-thumb-overlay { opacity: 1; }
-.play-btn-circle {
-  width: 48px; height: 48px; border-radius: 50%;
-  background: var(--bg); display: flex; align-items: center; justify-content: center;
-}
-
 .enroll-body { padding: 22px; }
 .enroll-price { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
 .enroll-price-now { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }

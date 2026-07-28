@@ -302,14 +302,9 @@ export default function CourseDetail() {
                       playsInline
                     />
                   ) : (
-                    <>
-                      <img src={course.image} alt={course.title} />
-                      <div className="enroll-thumb-overlay">
-                        <div className="play-btn-circle">
-                          <Play size={18} fill="var(--text)" color="var(--text)" style={{marginLeft:2}} />
-                        </div>
-                      </div>
-                    </>
+                    /* Sin video: solo la imagen. Antes se mostraba un botón de
+                       play que no reproducía nada y confundía. */
+                    <img src={course.image} alt={course.title} />
                   )}
                 </div>
                 <div className="enroll-body">
