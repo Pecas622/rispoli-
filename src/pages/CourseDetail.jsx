@@ -212,7 +212,7 @@ export default function CourseDetail() {
                   {course.previewVideo && extractVimeoId(course.previewVideo) ? (
                     <iframe
                       className="enroll-thumb-video"
-                      src={`https://player.vimeo.com/video/${extractVimeoId(course.previewVideo)}?title=0&byline=0&portrait=0`}
+                      src={`https://player.vimeo.com/video/${extractVimeoId(course.previewVideo)}?background=1&autoplay=1&loop=1&muted=1&title=0&byline=0&portrait=0`}
                       title={course.title}
                       allow="autoplay; fullscreen; picture-in-picture"
                       allowFullScreen
