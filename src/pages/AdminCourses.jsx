@@ -27,7 +27,7 @@ function formToPayload(form) {
     modality:         form.modality,
     duration:         form.duration || undefined,
     hours:            form.hours ? Number(form.hours) : undefined,
-    price:            Number(form.price),
+    price:            form.price ? Number(form.price) : undefined,
     originalPrice:    form.originalPrice ? Number(form.originalPrice) : undefined,
     priceUSD:         form.priceUSD ? Number(form.priceUSD) : undefined,
     originalPriceUSD: form.originalPriceUSD ? Number(form.originalPriceUSD) : undefined,
@@ -98,15 +98,16 @@ export default function AdminCourses() {
   const openEdit = c => { setForm(courseToForm(c)); setModal(c); };
 
   const handleSave = async () => {
-    if (!form.title || !form.price) { showToast('Completá los campos requeridos', 'error'); return; }
+    const isCreate = modal === 'create';
+    if (!form.title || (isCreate && !form.price)) { showToast('Completá los campos requeridos', 'error'); return; }
 
     if (!USE_API) {
       // Mock fallback (sin backend corriendo)
-      const ars = Number(form.price);
+      const ars = form.price ? Number(form.price) : undefined;
       if (modal === 'create') {
         setCourses(p => [{ ...form, id: Date.now(), price: ars }, ...p]);
       } else {
-        setCourses(p => p.map(c => c.id === modal.id ? { ...c, ...form, price: ars } : c));
+        setCourses(p => p.map(c => c.id === modal.id ? { ...c, ...form, ...(ars !== undefined && { price: ars }) } : c));
       }
       showToast(modal === 'create' ? 'Curso creado' : 'Curso actualizado');
       setModal(null);
