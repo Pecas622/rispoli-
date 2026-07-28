@@ -20,7 +20,12 @@ import { errorMiddleware }   from './middleware/error.middleware';
 const app = express();
 
 // ── Security ───────────────────────────────────────────────
-app.use(helmet());
+// crossOriginResourcePolicy 'same-origin' (default de Helmet) bloquea que el
+// frontend (dominio distinto: Vercel) pueda leer las respuestas de esta API
+// (Railway), aunque el CORS esté bien configurado — son mecanismos separados.
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(cors({
   origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
   credentials: true,
