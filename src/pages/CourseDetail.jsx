@@ -269,7 +269,7 @@ export default function CourseDetail() {
             <ArrowLeft size={14} /> Volver
           </button>
 
-          <div className="detail-layout">
+          <div className={`detail-layout ${course.previewVideo ? 'has-video' : ''}`}>
             {/* ── Columna izquierda ── */}
             <div className="detail-info">
               <div className="detail-badges">
@@ -313,34 +313,10 @@ export default function CourseDetail() {
               />
             ) : (
               <div className="enroll-card card card-elevated detail-checkout">
+                {/* Solo la imagen: el video de presentación va más abajo, en su
+                    propio bloque (antes acá se veía con un play que confundía). */}
                 <div className="enroll-thumb">
-                  {course.previewVideo && extractVimeoId(course.previewVideo) ? (
-                    <iframe
-                      className="enroll-thumb-video"
-                      src={`https://player.vimeo.com/video/${extractVimeoId(course.previewVideo)}?background=1&autoplay=1&loop=1&muted=1&title=0&byline=0&portrait=0`}
-                      title={course.title}
-                      allow="autoplay; fullscreen; picture-in-picture"
-                      allowFullScreen
-                      style={{border:'none'}}
-                    />
-                  ) : course.previewVideo ? (
-                    <video
-                      className="enroll-thumb-video"
-                      src={course.previewVideo}
-                      poster={course.image}
-                      controls
-                      playsInline
-                    />
-                  ) : (
-                    <>
-                      <img src={course.image} alt={course.title} />
-                      <div className="enroll-thumb-overlay">
-                        <div className="play-btn-circle">
-                          <Play size={18} fill="var(--text)" color="var(--text)" style={{marginLeft:2}} />
-                        </div>
-                      </div>
-                    </>
-                  )}
+                  <img src={course.image} alt={course.title} />
                 </div>
                 <div className="enroll-body">
                   {course.price === 0 ? (
@@ -410,6 +386,24 @@ export default function CourseDetail() {
                         </div>
                       ))}
                     </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── Video de presentación ── */}
+            {course.previewVideo && (
+              <div className="detail-video">
+                <div className="detail-video-frame">
+                  {extractVimeoId(course.previewVideo) ? (
+                    <iframe
+                      src={`https://player.vimeo.com/video/${extractVimeoId(course.previewVideo)}?title=0&byline=0&portrait=0`}
+                      title={`Presentación de ${course.title}`}
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video src={course.previewVideo} poster={course.image} controls playsInline />
                   )}
                 </div>
               </div>
