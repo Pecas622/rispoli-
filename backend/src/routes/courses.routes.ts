@@ -18,7 +18,7 @@ const courseSchema = z.object({
   originalPrice:    z.number().positive().optional(),             // ARS original
   priceUSD:         z.number().positive().optional(),             // USD
   originalPriceUSD: z.number().positive().optional(),             // USD original
-  image:            z.string().url().optional(),
+  image:            z.string().optional(),
     previewVideo:     z.string().optional(), // puede ser una URL absoluta o una ruta relativa
   featured:         z.boolean().optional(),
   published:        z.boolean().optional(),
@@ -31,7 +31,7 @@ const courseSchema = z.object({
   targetAudience:     z.array(z.string()).optional(),
   instructorName:   z.string().optional(),
   instructorRole:   z.string().optional(),
-  instructorAvatar: z.string().url().optional(),
+  instructorAvatar: z.string().optional(),
   instructorBio:    z.string().optional(),
 });
 
