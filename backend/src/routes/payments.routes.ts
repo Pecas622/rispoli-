@@ -117,6 +117,11 @@ router.post(
         },
         success_url: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${course.id}`,
         cancel_url:  `${process.env.FRONTEND_URL}/cursos/${course.id}?payment=cancelled`,
+        // Managed Payments (activado por defecto en la cuenta) exige tax_code
+        // por producto, que no configuramos — lo desactivamos para esta sesión.
+        // Cast a `any`: el SDK de stripe instalado puede no tener el tipo
+        // todavía para este parámetro nuevo.
+        ...({ managed_payments: { enabled: false } } as any),
       });
 
       res.json({ url: session.url });
