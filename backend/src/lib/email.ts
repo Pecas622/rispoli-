@@ -13,9 +13,9 @@ function isBrevoReady(): boolean {
 const FROM_EMAIL = process.env.BREVO_FROM_EMAIL || 'noreply@gotravelacademy.com';
 const FROM_NAME  = process.env.BREVO_FROM_NAME  || 'GO Travel Academy';
 
-interface SendPayload { to: string; subject: string; html: string }
+interface SendPayload { to: string; subject: string; html: string; replyTo?: string }
 
-async function send({ to, subject, html }: SendPayload) {
+async function send({ to, subject, html, replyTo }: SendPayload) {
   if (!isBrevoReady()) {
     console.log('[Email - dev] Para:', to, '| Asunto:', subject);
     return;
@@ -31,6 +31,7 @@ async function send({ to, subject, html }: SendPayload) {
     body: JSON.stringify({
       sender:      { name: FROM_NAME, email: FROM_EMAIL },
       to:          [{ email: to }],
+      ...(replyTo && { replyTo: { email: replyTo } }),
       subject,
       htmlContent: html,
     }),
@@ -333,6 +334,59 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
       <tr>
         <td style="padding:20px 40px;border-top:1px solid #e8e7e3;background:#f4f3ef;">
           <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 GO Travel Academy</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+  });
+}
+
+// ── Formulario de contacto ────────────────────────────────────────────────────
+const CONTACT_INBOX = 'academygotravel@gmail.com';
+
+interface ContactMessage { name: string; email: string; subject: string; message: string }
+
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+}
+
+export async function sendContactEmail({ name, email, subject, message }: ContactMessage) {
+  name = escapeHtml(name);
+  subject = escapeHtml(subject);
+  const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
+  await send({
+    to:      CONTACT_INBOX,
+    replyTo: email,
+    subject: `[Contacto web] ${subject} — ${name}`,
+    html: `
+<!DOCTYPE html><html lang="es">
+<body style="margin:0;padding:0;background:#f4f3ef;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0"
+      style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e8e7e3;">
+      <tr>
+        <td style="background:#06043F;padding:28px 40px;">
+          <h1 style="margin:0;color:#fff;font-size:20px;font-weight:800;">Nuevo mensaje de contacto</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:32px 40px;">
+          <p style="margin:0 0 6px;font-size:12px;color:#8a8983;text-transform:uppercase;letter-spacing:0.06em;">De</p>
+          <p style="margin:0 0 20px;font-size:15px;color:#1e293b;">
+            <strong>${name}</strong> · <a href="mailto:${email}" style="color:#2E63D6;">${email}</a>
+          </p>
+          <p style="margin:0 0 6px;font-size:12px;color:#8a8983;text-transform:uppercase;letter-spacing:0.06em;">Asunto</p>
+          <p style="margin:0 0 20px;font-size:15px;color:#1e293b;">${subject}</p>
+          <p style="margin:0 0 6px;font-size:12px;color:#8a8983;text-transform:uppercase;letter-spacing:0.06em;">Mensaje</p>
+          <p style="margin:0;font-size:14px;color:#1e293b;line-height:1.7;">${safeMessage}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 40px;border-top:1px solid #e8e7e3;background:#f4f3ef;">
+          <p style="margin:0;color:#94a3b8;font-size:12px;">Respondé este email para contestarle directo a ${name}.</p>
         </td>
       </tr>
     </table>

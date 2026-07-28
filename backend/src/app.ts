@@ -16,6 +16,7 @@ import { paymentsRouter }    from './routes/payments.routes';
 import { trackRouter }       from './routes/track.routes';
 import { catalogRouter }     from './routes/catalog.routes';
 import { reviewsRouter }     from './routes/reviews.routes';
+import { contactRouter }     from './routes/contact.routes';
 import { errorMiddleware }   from './middleware/error.middleware';
 
 const app = express();
@@ -54,6 +55,13 @@ const passwordResetLimiter = rateLimit({
   legacyHeaders:   false,
   message: { message: 'Demasiados intentos. Esperá 15 minutos e intentá de nuevo.' },
 });
+const contactLimiter = rateLimit({
+  windowMs:        15 * 60 * 1000,
+  max:             5,               // evita que usen el form de contacto para spamear el mail
+  standardHeaders: true,
+  legacyHeaders:   false,
+  message: { message: 'Demasiados mensajes. Esperá unos minutos e intentá de nuevo.' },
+});
 
 // ── Stripe webhook needs raw body BEFORE express.json() ───
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
@@ -80,6 +88,7 @@ app.use('/api/auth/verify-email',   otpLimiter);
 app.use('/api/auth/resend-code',    otpLimiter);
 app.use('/api/auth/forgot-password', passwordResetLimiter);
 app.use('/api/auth/change-password', passwordResetLimiter);
+app.use('/api/contact',              contactLimiter);
 
 app.use('/api/auth',        authRouter);
 app.use('/api/users',       usersRouter);
@@ -103,6 +112,7 @@ app.use('/api/progress',    progressRouter);
 app.use('/api/payments',    paymentsRouter);
 app.use('/api/events',      trackRouter);
 app.use('/api/catalog',     catalogRouter);
+app.use('/api/contact',     contactRouter);
 
 // ── 404 ────────────────────────────────────────────────────
 app.use((_req, res) => {

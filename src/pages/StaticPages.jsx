@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useSEO } from '../hooks/useSEO';
+import { contactApi } from '../services/api';
 
 const PageShell = ({ label, title, lead, path, children }) => {
   useSEO({ title: `${title} — Go Travel Academy`, description: lead, path });
@@ -130,7 +132,25 @@ export function Blog() {
 
 export function Contacto() {
   const { showToast } = useApp();
-  const handleSubmit = e => { e.preventDefault(); showToast('Mensaje enviado. Te respondemos pronto'); e.target.reset(); };
+  const [form, setForm] = useState({ name: '', email: '', subject: 'Consulta sobre un curso', message: '' });
+  const [sending, setSending] = useState(false);
+
+  const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setSending(true);
+    try {
+      await contactApi.send(form);
+      showToast('Mensaje enviado. Te respondemos pronto');
+      setForm({ name: '', email: '', subject: 'Consulta sobre un curso', message: '' });
+    } catch (err) {
+      showToast(err.message || 'No se pudo enviar el mensaje. Probá de nuevo.', 'error');
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <PageShell path="/contacto" label="Contacto" title="Hablemos" lead="¿Tenés dudas? Nuestro equipo te responde en menos de 24 horas.">
       <div style={{maxWidth:560}}>
@@ -138,25 +158,27 @@ export function Contacto() {
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
             <div>
               <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>Nombre</label>
-              <input required className="input" type="text" placeholder="Tu nombre"/>
+              <input required className="input" type="text" placeholder="Tu nombre" value={form.name} onChange={set('name')}/>
             </div>
             <div>
               <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>Email</label>
-              <input required className="input" type="email" placeholder="tu@email.com"/>
+              <input required className="input" type="email" placeholder="tu@email.com" value={form.email} onChange={set('email')}/>
             </div>
           </div>
           <div>
             <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>Asunto</label>
-            <select className="input">
+            <select className="input" value={form.subject} onChange={set('subject')}>
               {['Consulta sobre un curso','Problemas técnicos','Facturación y pagos','Propuesta empresas','Otro'].map(o=><option key={o}>{o}</option>)}
             </select>
           </div>
           <div>
             <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>Mensaje</label>
-            <textarea required className="input" rows={5} placeholder="¿En qué podemos ayudarte?"/>
+            <textarea required className="input" rows={5} placeholder="¿En qué podemos ayudarte?" value={form.message} onChange={set('message')}/>
           </div>
           <div>
-            <button type="submit" className="btn btn-primary btn-lg">Enviar mensaje <ArrowRight size={15}/></button>
+            <button type="submit" className="btn btn-primary btn-lg" disabled={sending}>
+              {sending ? 'Enviando...' : <>Enviar mensaje <ArrowRight size={15}/></>}
+            </button>
           </div>
         </form>
       </div>

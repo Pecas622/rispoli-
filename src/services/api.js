@@ -112,3 +112,8 @@ export const paymentsApi = {
     return api.get(`/payments${qs ? `?${qs}` : ''}`);
   },
 };
+
+// ── Contacto ──────────────────────────────────────────────
+export const contactApi = {
+  send: (data) => api.post('/contact', data),
+};
