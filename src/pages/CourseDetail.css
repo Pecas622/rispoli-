@@ -30,10 +30,10 @@
 .detail-learn { grid-area: learn; }
 
 /* ── VIDEO DE PRESENTACIÓN ──────────────────────────────────────────────────── */
-.detail-video { grid-area: video; display: flex; justify-content: center; }
+.detail-video { grid-area: video; display: flex; justify-content: flex-start; }
 .detail-video-frame {
-  width: 100%; max-width: 300px;
-  aspect-ratio: 9 / 16;            /* el reel es vertical */
+  width: 100%;
+  aspect-ratio: 16 / 9;            /* video horizontal */
   border-radius: var(--r-lg);
   overflow: hidden;
   background: #000;
