@@ -84,6 +84,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   padding: 10px 18px;
   background: none;
   border: none;
@@ -92,7 +93,8 @@
   color: var(--text);
   text-align: left;
 }
-.learn-module-header svg { transition: transform 0.2s ease; color: var(--text-3); }
+.learn-module-header span { flex: 1; min-width: 0; }
+.learn-module-header svg { flex-shrink: 0; transition: transform 0.2s ease; color: var(--text-3); }
 .learn-module-header svg.rot { transform: rotate(-90deg); }
 
 .learn-lesson-list { list-style: none; padding-bottom: 8px; }
