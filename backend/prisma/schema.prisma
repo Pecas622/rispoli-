@@ -29,6 +29,7 @@ model User {
   enrollments Enrollment[]
   progress    LessonProgress[]
   passwordResetTokens PasswordResetToken[]
+  reviews     Review[]
 
   @@map("users")
 }
@@ -95,6 +96,7 @@ model Course {
 
   modules     Module[]
   enrollments Enrollment[]
+  reviews     Review[]
 
   @@map("courses")
 }
@@ -179,4 +181,20 @@ model LessonProgress {
 
   @@unique([userId, lessonId])
   @@map("lesson_progress")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  courseId  String   @map("course_id")
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("reviews")
 }

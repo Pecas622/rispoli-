@@ -53,6 +53,12 @@ export const coursesApi = {
   delete: (id)   => api.delete(`/courses/${id}`),
 };
 
+// ── Reviews ───────────────────────────────────────────────
+export const reviewsApi = {
+  list:   (courseId)       => api.get(`/courses/${courseId}/reviews`),
+  create: (courseId, data) => api.post(`/courses/${courseId}/reviews`, data),
+};
+
 // ── Content (modules & lessons) ───────────────────────────
 export const modulesApi = {
   list:    (courseId)        => api.get(`/courses/${courseId}/modules`),

@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Award, Lock } from 'lucide-react';
 import { courses as mockCourses, testimonials } from '../data/courses';
-import { coursesApi, progressApi, paymentsApi } from '../services/api';
+import { coursesApi, progressApi, paymentsApi, reviewsApi } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice, getCheckoutLabel } from '../utils/pricing';
 import { track } from '../lib/pixel';
@@ -40,6 +40,12 @@ export default function CourseDetail() {
   const [reviewIndex, setReviewIndex] = useState(0);
   const [reviewPages, setReviewPages] = useState(1);
 
+  // ── Reseñas reales de alumnos (backend) ─────────────────────────────────────
+  const [realReviews, setRealReviews] = useState([]);
+  const [myRating, setMyRating] = useState(0);
+  const [myComment, setMyComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   useEffect(() => {
     if (searchParams.get('payment') === 'cancelled') {
       showToast('Pago cancelado. Podés intentarlo de nuevo cuando quieras.', 'error');
@@ -74,6 +80,35 @@ export default function CourseDetail() {
     if (!USE_API || !enrolled || !course) return;
     progressApi.getCourse(course.id).then(setProgress).catch(() => {});
   }, [enrolled, course?.id]);
+
+  useEffect(() => {
+    if (!USE_API || !course) return;
+    reviewsApi.list(course.id).then(res => setRealReviews(res.reviews ?? [])).catch(() => {});
+  }, [course?.id]);
+
+  const myReview = user ? realReviews.find(r => r.user.id === user.id) : null;
+
+  useEffect(() => {
+    setMyRating(myReview?.rating ?? 0);
+    setMyComment(myReview?.comment ?? '');
+  }, [myReview?.id]);
+
+  const handleSubmitReview = async () => {
+    if (!myRating) { showToast('Elegí una calificación', 'error'); return; }
+    setSubmittingReview(true);
+    try {
+      const res = await reviewsApi.create(course.id, { rating: myRating, comment: myComment.trim() || undefined });
+      setRealReviews(prev => {
+        const exists = prev.some(r => r.id === res.review.id);
+        return exists ? prev.map(r => r.id === res.review.id ? res.review : r) : [res.review, ...prev];
+      });
+      showToast('¡Gracias por tu reseña!');
+    } catch (err) {
+      showToast(err.message || 'No se pudo guardar la reseña', 'error');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   // Carrusel de reseñas: recalcular la cantidad de páginas al cargar y al redimensionar
   useEffect(() => {
@@ -249,7 +284,7 @@ export default function CourseDetail() {
               )}
 
               <div className="detail-meta-row">
-                {courseReviews.length > 0 ? (
+                {course.reviews > 0 && (
                   <button
                     type="button"
                     className="detail-meta-item detail-meta-link"
@@ -259,11 +294,6 @@ export default function CourseDetail() {
                     <Star size={13} fill="#F59E0B" color="#F59E0B" />
                     <strong>{course.rating}</strong> ({course.reviews.toLocaleString()} reseñas)
                   </button>
-                ) : (
-                  <span className="detail-meta-item">
-                    <Star size={13} fill="#F59E0B" color="#F59E0B" />
-                    <strong>{course.rating}</strong> ({course.reviews.toLocaleString()} reseñas)
-                  </span>
                 )}
                 <span className="detail-meta-item"><Users size={13} /> {course.students.toLocaleString()} estudiantes</span>
                 {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
@@ -585,6 +615,73 @@ export default function CourseDetail() {
                           onClick={() => goToReviewPage(i)}
                           aria-label={`Página de reseñas ${i + 1}`}
                         />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {USE_API && (
+                <div className="detail-section">
+                  <h2 className="detail-section-title">{myReview ? 'Tu reseña' : 'Dejá tu reseña'}</h2>
+
+                  {enrolled ? (
+                    <div className="review-form">
+                      <div style={{display:'flex',gap:4,marginBottom:12}}>
+                        {[1,2,3,4,5].map(n => (
+                          <button
+                            key={n} type="button"
+                            onClick={() => setMyRating(n)}
+                            aria-label={`${n} estrellas`}
+                            style={{background:'none',border:'none',cursor:'pointer',padding:2}}
+                          >
+                            <Star size={24} fill={n <= myRating ? '#F59E0B' : 'none'} color="#F59E0B" />
+                          </button>
+                        ))}
+                      </div>
+                      <textarea
+                        className="input"
+                        rows={3}
+                        placeholder="Contanos tu experiencia con el curso (opcional)"
+                        value={myComment}
+                        onChange={e => setMyComment(e.target.value)}
+                      />
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={handleSubmitReview}
+                        disabled={submittingReview || !myRating}
+                        style={{marginTop:10}}
+                      >
+                        {submittingReview ? 'Guardando...' : myReview ? 'Actualizar reseña' : 'Publicar reseña'}
+                      </button>
+                    </div>
+                  ) : (
+                    <p style={{fontSize:13,color:'var(--text-3)'}}>Comprá el curso para poder dejar tu reseña.</p>
+                  )}
+
+                  {realReviews.length > 0 && (
+                    <div style={{marginTop:28,display:'flex',flexDirection:'column',gap:12}}>
+                      {realReviews.map(r => (
+                        <div key={r.id} className="review-card" style={{width:'auto'}}>
+                          <div className="review-stars">
+                            {[...Array(r.rating)].map((_, i) => (
+                              <Star key={i} size={13} fill="#F59E0B" color="#F59E0B" />
+                            ))}
+                          </div>
+                          {r.comment && <p className="review-text">"{r.comment}"</p>}
+                          <div className="review-footer">
+                            {r.user.avatar ? (
+                              <img src={r.user.avatar} alt={r.user.name} className="review-avatar" />
+                            ) : (
+                              <div className="review-avatar" style={{display:'flex',alignItems:'center',justifyContent:'center',background:'var(--violet-pale)',color:'var(--accent)',fontWeight:700,fontSize:12}}>
+                                {r.user.name?.[0]?.toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <div className="review-name">{r.user.name}</div>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}

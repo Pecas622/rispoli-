@@ -15,6 +15,7 @@ import { progressRouter }    from './routes/progress.routes';
 import { paymentsRouter }    from './routes/payments.routes';
 import { trackRouter }       from './routes/track.routes';
 import { catalogRouter }     from './routes/catalog.routes';
+import { reviewsRouter }     from './routes/reviews.routes';
 import { errorMiddleware }   from './middleware/error.middleware';
 
 const app = express();
@@ -83,6 +84,9 @@ app.use('/api/auth/change-password', passwordResetLimiter);
 app.use('/api/auth',        authRouter);
 app.use('/api/users',       usersRouter);
 app.use('/api/courses',     coursesRouter);
+
+// Nested: /api/courses/:courseId/reviews
+app.use('/api/courses/:courseId/reviews', reviewsRouter);
 
 // Nested: /api/courses/:courseId/modules
 app.use('/api/courses/:courseId/modules', modulesRouter);

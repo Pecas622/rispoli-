@@ -5,6 +5,13 @@ import { authenticate, requireAdmin, optionalAuth } from '../middleware/auth.mid
 
 const router = Router();
 
+// "Alumnos" mostrados públicamente = esta base + inscripciones pagas reales.
+const STUDENTS_BASE = 9830;
+
+function round1(n: number) {
+  return Math.round(n * 10) / 10;
+}
+
 const courseSchema = z.object({
   title:            z.string().min(3),
   subtitle:         z.string().optional(),
@@ -56,11 +63,34 @@ router.get('/', optionalAuth, async (req: Request, res: Response, next: NextFunc
       },
       orderBy: [{ featured: 'desc' }, { createdAt: 'asc' }],
       include: {
-        _count: { select: { modules: true, enrollments: true } },
+        _count: {
+          select: {
+            modules: true,
+            enrollments: { where: { paidAt: { not: null } } },
+          },
+        },
       },
     });
 
-    res.json({ courses });
+    const reviewStats = await prisma.review.groupBy({
+      by: ['courseId'],
+      where: { courseId: { in: courses.map(c => c.id) } },
+      _avg:   { rating: true },
+      _count: { _all: true },
+    });
+    const statsByCourseId = new Map(reviewStats.map(r => [r.courseId, r]));
+
+    const result = courses.map(c => {
+      const stats = statsByCourseId.get(c.id);
+      return {
+        ...c,
+        students: STUDENTS_BASE + c._count.enrollments,
+        rating:  stats ? round1(stats._avg.rating ?? 0) : 0,
+        reviews: stats?._count._all ?? 0,
+      };
+    });
+
+    res.json({ courses: result });
   } catch (err) {
     next(err);
   }
@@ -84,7 +114,7 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response, next: NextF
             },
           },
         },
-        _count: { select: { enrollments: true } },
+        _count: { select: { enrollments: { where: { paidAt: { not: null } } } } },
       },
     });
 
@@ -92,7 +122,21 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response, next: NextF
     if (!course.published && req.user?.role !== 'ADMIN') {
       return res.status(404).json({ message: 'Curso no encontrado' });
     }
-    res.json({ course });
+
+    const reviewAgg = await prisma.review.aggregate({
+      where:  { courseId: course.id },
+      _avg:   { rating: true },
+      _count: true,
+    });
+
+    res.json({
+      course: {
+        ...course,
+        students: STUDENTS_BASE + course._count.enrollments,
+        rating:  reviewAgg._count > 0 ? round1(reviewAgg._avg.rating ?? 0) : 0,
+        reviews: reviewAgg._count,
+      },
+    });
   } catch (err) {
     next(err);
   }
