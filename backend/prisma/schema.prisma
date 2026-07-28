@@ -94,9 +94,9 @@ model Course {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  modules     Module[]
-  enrollments Enrollment[]
-  reviews     Review[]
+  modules       Module[]
+  enrollments   Enrollment[]
+  courseReviews Review[]
 
   @@map("courses")
 }
