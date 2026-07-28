@@ -14,6 +14,7 @@ async function request(endpoint, options = {}) {
     err.code    = data.code;
     err.email   = data.email;
     err.devCode = data.devCode;
+    err.errors  = data.errors;
     throw err;
   }
   return data;

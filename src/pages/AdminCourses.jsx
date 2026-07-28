@@ -127,7 +127,8 @@ export default function AdminCourses() {
       }
       setModal(null);
     } catch (err) {
-      showToast(err.message || 'Error al guardar el curso', 'error');
+      const detail = err.errors?.map(e => `${e.field}: ${e.message}`).join(' · ');
+      showToast(detail || err.message || 'Error al guardar el curso', 'error');
     } finally {
       setSaving(false);
     }
