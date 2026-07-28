@@ -370,7 +370,7 @@
 
 /* ── ALIANZAS PROFESIONALES (cinta dinámica) ─────────────── */
 .allies-bar {
-  padding: 46px 0 52px;
+  padding: 44px 0;
   background: #EDEFF3;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
