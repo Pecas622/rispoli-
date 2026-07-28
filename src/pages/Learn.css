@@ -7,6 +7,7 @@
 
 .learn-page {
   min-height: 100vh;
+  padding-top: 60px;
   background: var(--bg-2);
 }
 
@@ -18,7 +19,7 @@
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   position: sticky;
-  top: 0;
+  top: 60px;
   z-index: 10;
 }
 .learn-topbar-title {
@@ -52,10 +53,10 @@
 .learn-sidebar {
   background: var(--bg);
   border-right: 1px solid var(--border);
-  min-height: calc(100vh - 57px);
+  min-height: calc(100vh - 117px);
   padding: 16px 0;
   position: sticky;
-  top: 57px;
+  top: 117px;
 }
 
 .learn-sidebar-progress {
