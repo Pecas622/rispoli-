@@ -20,9 +20,29 @@
   grid-template-areas: "info checkout" "learn checkout";
   gap: 60px; align-items: start;
 }
+/* Solo se agrega la fila del video si el curso tiene uno: si no, la fila
+   vacía dejaría un hueco del tamaño del gap. */
+.detail-layout.has-video {
+  grid-template-areas: "info checkout" "video checkout" "learn checkout";
+}
 .detail-info { grid-area: info; }
 .detail-checkout { grid-area: checkout; }
 .detail-learn { grid-area: learn; }
+
+/* ── VIDEO DE PRESENTACIÓN ──────────────────────────────────────────────────── */
+.detail-video { grid-area: video; display: flex; justify-content: center; }
+.detail-video-frame {
+  width: 100%; max-width: 300px;
+  aspect-ratio: 9 / 16;            /* el reel es vertical */
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 14px 36px rgba(6, 4, 63, 0.16);
+}
+.detail-video-frame iframe,
+.detail-video-frame video {
+  width: 100%; height: 100%; display: block; border: none; object-fit: cover;
+}
 
 .detail-badges { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 18px; }
 
@@ -335,6 +355,10 @@
     grid-template-columns: 1fr;
     grid-template-areas: "info" "checkout" "learn";
     gap: 32px;
+  }
+  /* Mobile: el video queda entre el cuadro de pago y "Con este curso aprenderás" */
+  .detail-layout.has-video {
+    grid-template-areas: "info" "checkout" "video" "learn";
   }
   .enroll-card, .progress-card { position: static; }
   .detail-cols { grid-template-columns: 1fr; }
