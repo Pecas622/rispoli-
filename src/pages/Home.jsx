@@ -12,9 +12,8 @@ import './Home.css';
 const USE_API = import.meta.env.VITE_USE_API === 'true';
 
 const ALLIES = [
-  { name: 'Rispoli Viajes', src: '/alianzas/rispoli-viajes.png', color: '#FF2F00' },
   { name: 'Universidad del Aconcagua', src: '/alianzas/aconcagua.png', color: '#3F9BC4', plain: true },
-  { name: 'Rispoli Teens', src: '/alianzas/rispoli-teens.png', color: '#F3769E' },
+  { name: 'Go Travel Academy', src: '/logoo.png', color: '#2E63D6', plain: true },
 ];
 
 const LEARN = [
@@ -57,8 +56,10 @@ export default function Home() {
   }, []);
 
   // Carrusel de cursos: los cursos reales en venta + el próximo a lanzar. Central + laterales, bucle infinito.
-  const carouselCourses = ['Agente de Viajes', 'Florida al completo']
-    .map(title => courses.find(c => c.title === title))
+  // El match ignora mayúsculas/minúsculas: los títulos vienen de la base y
+  // pueden cambiar de capitalización sin que el curso se caiga del carrusel.
+  const carouselCourses = ['agente de viajes', 'florida al completo']
+    .map(title => courses.find(c => c.title?.toLowerCase().trim() === title))
     .filter(Boolean);
   const comingSoon = courses.find(c => c.price === 0);
   const slides = [
@@ -140,7 +141,7 @@ export default function Home() {
           </div>
 
           <h1 className="hero-title">
-            Convertite en <span className="hero-title-accent">agente de viajes</span> con clases 100% online
+            Convertite en <span className="hero-title-accent">Agente de Viajes</span> con clases 100% online
           </h1>
 
           <p className="hero-desc">
@@ -226,9 +227,6 @@ export default function Home() {
 
       {/* ── ALIANZAS PROFESIONALES (cinta dinámica de logos) ─── */}
       <div className="allies-bar">
-        <div className="container">
-          <p className="allies-label">Alianzas profesionales</p>
-        </div>
         <div className="allies-marquee">
           <div className="allies-track">
             {Array.from({ length: 8 }).flatMap((_, g) =>

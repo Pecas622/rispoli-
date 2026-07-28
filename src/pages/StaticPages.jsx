@@ -57,7 +57,7 @@ export function Nosotros() {
     <PageShell
       path="/nosotros"
       label="Nuestra historia"
-      title="La escuela de agentes de viajes de Rispoli"
+      title="La escuela de agentes de viajes de Lucio Rispoli"
       lead="Formación creada por una de las agencias más reconocidas de Argentina. 100% práctica y enfocada en los destinos que de verdad cuesta vender."
     >
       {/* ── El fundador ── */}

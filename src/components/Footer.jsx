@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Mail, Phone } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 const SLink = ({ href, label, children }) => (
   <a href={href} aria-label={label} target="_blank" rel="noopener noreferrer"
@@ -38,7 +38,7 @@ export default function Footer() {
 
           <div>
             <p style={{fontSize:12,fontWeight:600,color:'var(--text-3)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:14}}>Cursos</p>
-            {['Agente de Viajes','Florida al completo','Europa esencial'].map(item=>(
+            {['Agente de Viajes','Florida al Completo','Europa Esencial'].map(item=>(
               <Link key={item} to="/cursos" style={{display:'block',fontSize:13,color:'var(--text-3)',marginBottom:9,transition:'color 0.15s'}}
                 onMouseEnter={e=>e.currentTarget.style.color='var(--text)'}
                 onMouseLeave={e=>e.currentTarget.style.color='var(--text-3)'}>
@@ -60,7 +60,7 @@ export default function Footer() {
 
           <div>
             <p style={{fontSize:12,fontWeight:600,color:'var(--text-3)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:14}}>Contacto</p>
-            {[{I:Mail,t:'academygotravel@gmail.com'},{I:Phone,t:'+54 9 2616 65-0766'}].map(({I,t})=>(
+            {[{I:Mail,t:'academygotravel@gmail.com'}].map(({I,t})=>(
               <div key={t} style={{display:'flex',alignItems:'center',gap:9,fontSize:13,color:'var(--text-3)',marginBottom:10}}>
                 <I size={13} style={{flexShrink:0}}/>{t}
               </div>
