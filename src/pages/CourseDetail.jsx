@@ -457,7 +457,7 @@ export default function CourseDetail() {
                         <div className={`module-num ${modDone ? 'num-done' : modInProgress ? 'num-active' : ''}`}>
                           {modDone ? <CheckCircle size={13} /> : String(i+1).padStart(2,'0')}
                         </div>
-                        <div style={{flex:1}}>
+                        <div style={{flex:1,minWidth:0}}>
                           <div className="module-label">{mod.week}</div>
                           <div className="module-name">{mod.title}</div>
                         </div>

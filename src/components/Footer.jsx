@@ -1,5 +1,15 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail } from 'lucide-react';
+import { coursesApi } from '../services/api';
+import { courses as mockCourses } from '../data/courses';
+
+const USE_API = import.meta.env.VITE_USE_API === 'true';
+const FOOTER_COURSE_TITLES = ['Agente de Viajes', 'Florida al Completo', 'Europa Esencial'];
+
+function normalizeTitle(s = '') {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
 
 const SLink = ({ href, label, children }) => (
   <a href={href} aria-label={label} target="_blank" rel="noopener noreferrer"
@@ -11,6 +21,22 @@ const SLink = ({ href, label, children }) => (
 );
 
 export default function Footer() {
+  const [courses, setCourses] = useState(USE_API ? [] : mockCourses);
+
+  useEffect(() => {
+    if (!USE_API) return;
+    coursesApi.list().then(res => setCourses(res.courses ?? [])).catch(() => {});
+  }, []);
+
+  const courseLink = (title) => {
+    const a = normalizeTitle(title);
+    const match = courses.find(c => {
+      const b = normalizeTitle(c.title);
+      return a === b || a.includes(b) || b.includes(a);
+    });
+    return match ? `/cursos/${match.id}` : '/cursos';
+  };
+
   return (
     <footer style={{borderTop:'1px solid var(--border)',paddingTop:56,paddingBottom:32,background:'var(--bg-2)'}}>
       <div className="container">
@@ -38,8 +64,8 @@ export default function Footer() {
 
           <div>
             <p style={{fontSize:12,fontWeight:600,color:'var(--text-3)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:14}}>Cursos</p>
-            {['Agente de Viajes','Florida al Completo','Europa Esencial'].map(item=>(
-              <Link key={item} to="/cursos" style={{display:'block',fontSize:13,color:'var(--text-3)',marginBottom:9,transition:'color 0.15s'}}
+            {FOOTER_COURSE_TITLES.map(item=>(
+              <Link key={item} to={courseLink(item)} style={{display:'block',fontSize:13,color:'var(--text-3)',marginBottom:9,transition:'color 0.15s'}}
                 onMouseEnter={e=>e.currentTarget.style.color='var(--text)'}
                 onMouseLeave={e=>e.currentTarget.style.color='var(--text-3)'}>
                 {item}
