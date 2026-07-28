@@ -243,8 +243,15 @@ export default function CourseDetail() {
       }
       return;
     }
-    // Pagos internacionales (Stripe, USD) — todavía no disponibles en producción.
-    showToast('Los pagos internacionales todavía no están disponibles. Muy pronto vas a poder pagar con tarjeta en dólares.', 'info');
+    // Pagos internacionales (Stripe, USD)
+    setEnrolling(true);
+    try {
+      const { url } = await paymentsApi.checkout(course.id);
+      window.location.href = url;
+    } catch (err) {
+      showToast(err.message || 'No se pudo iniciar el pago. Probá de nuevo en unos minutos.', 'error');
+      setEnrolling(false);
+    }
   };
 
   const handleEnrollTransfer = async () => {
@@ -354,24 +361,14 @@ export default function CourseDetail() {
                           </div>
                         </div>
                       ) : (
-                        <>
-                          <button
-                            onClick={handleEnroll}
-                            className="btn btn-primary"
-                            style={{width:'100%',justifyContent:'center',padding:'13px',marginTop:16}}
-                            disabled={enrolling || region !== 'AR'}
-                            title={region !== 'AR' ? 'Pagos internacionales próximamente' : undefined}
-                          >
-                            {enrolling
-                              ? <><div className="spinner" /> Procesando...</>
-                              : region !== 'AR' ? 'Próximamente' : checkoutLabel}
-                          </button>
-                          {region !== 'AR' && (
-                            <p style={{fontSize:11,color:'var(--text-3)',marginTop:8,textAlign:'center'}}>
-                              Estamos habilitando el pago con tarjeta en dólares. Muy pronto vas a poder inscribirte.
-                            </p>
-                          )}
-                        </>
+                        <button
+                          onClick={handleEnroll}
+                          className="btn btn-primary"
+                          style={{width:'100%',justifyContent:'center',padding:'13px',marginTop:16}}
+                          disabled={enrolling}
+                        >
+                          {enrolling ? <><div className="spinner" /> Procesando...</> : checkoutLabel}
+                        </button>
                       )}
                     </>
                   )}
