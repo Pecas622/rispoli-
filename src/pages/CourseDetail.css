@@ -33,7 +33,7 @@
 .detail-video { grid-area: video; display: flex; justify-content: flex-start; }
 .detail-video-frame {
   width: 100%;
-  aspect-ratio: 16 / 9;            /* video horizontal */
+  aspect-ratio: 4 / 3;             /* proporción real del video (1920x1440) */
   border-radius: var(--r-lg);
   overflow: hidden;
   background: #000;
