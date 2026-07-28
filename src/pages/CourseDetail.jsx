@@ -397,7 +397,7 @@ export default function CourseDetail() {
                 <div className="detail-video-frame">
                   {extractVimeoId(course.previewVideo) ? (
                     <iframe
-                      src={`https://player.vimeo.com/video/${extractVimeoId(course.previewVideo)}?title=0&byline=0&portrait=0`}
+                      src={`https://player.vimeo.com/video/${extractVimeoId(course.previewVideo)}?title=0&byline=0&portrait=0&sidedock=0`}
                       title={`Presentación de ${course.title}`}
                       allow="autoplay; fullscreen; picture-in-picture"
                       allowFullScreen
