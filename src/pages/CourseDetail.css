@@ -252,6 +252,48 @@
 .req-item:first-child { border-top: 1px solid var(--border); }
 .req-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-2); flex-shrink: 0; margin-top: 6px; }
 
+/* ── RESEÑAS DE ALUMNOS ─────────────────────────────────────────────────────── */
+.reviews-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+.reviews-head .detail-section-title { margin-bottom: 0; }
+.reviews-summary {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 13px; color: var(--text-3);
+}
+.reviews-summary strong { font-size: 14px; color: var(--text); }
+
+.reviews-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+  margin-top: 18px;
+}
+
+.review-card {
+  padding: 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: flex; flex-direction: column; gap: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: var(--transition);
+}
+.review-card:hover {
+  border-color: var(--border-2);
+  box-shadow: 0 8px 22px rgba(6, 4, 63, 0.08);
+}
+
+.review-stars { display: flex; gap: 2px; }
+.review-text { font-size: 13.5px; line-height: 1.7; color: var(--text-2); flex: 1; }
+
+.review-footer {
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid var(--border); padding-top: 12px;
+}
+.review-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.review-name { font-size: 12.5px; font-weight: 650; color: var(--text); }
+.review-role { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+
 /* ── RESPONSIVE ─────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .detail-layout { grid-template-columns: 1fr 320px; gap: 40px; }
@@ -267,6 +309,7 @@
   .enroll-card, .progress-card { position: static; }
   .detail-cols { grid-template-columns: 1fr; }
   .detail-title { font-size: 26px; }
+  .reviews-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {

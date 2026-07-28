@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, Award, Lock } from 'lucide-react';
-import { courses as mockCourses } from '../data/courses';
+import { courses as mockCourses, testimonials } from '../data/courses';
 import { coursesApi, progressApi, paymentsApi } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice, getCheckoutLabel } from '../utils/pricing';
@@ -16,6 +16,11 @@ const levelBadge = {
 };
 const EMPTY_PROGRESS = { percent: 0, completed: 0, total: 0, completedLessonIds: [] };
 const MOCK_PROGRESS = { 1: 68, 2: 35, 3: 100, 4: 12, 5: 0, 6: 55 }; // solo para el fallback sin backend
+
+// Normaliza títulos para comparar reseñas con cursos: sin acentos, minúsculas.
+function normalizeTitle(s = '') {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
 
 function extractVimeoId(url = '') {
   return url.match(/vimeo\.com\/(?:video\/)?(\d+)/)?.[1] ?? '';
@@ -108,6 +113,14 @@ export default function CourseDetail() {
     bio:    course.instructorBio    ?? course.instructor?.bio    ?? '',
   };
   const requirements     = course.requirements ?? [];
+  // Reseñas reales de alumnos, filtradas por curso (las mismas que en la home).
+  // El match es tolerante para que no se pierdan si el título cambia levemente
+  // en la base (ej. "Agente de Viajes" → "Agente de Viajes Profesional").
+  const courseReviews    = testimonials.filter(t => {
+    const a = normalizeTitle(t.course);
+    const b = normalizeTitle(course.title);
+    return a === b || a.includes(b) || b.includes(a);
+  });
   const includes         = course.includes ?? [];
   const learningObjectives = course.learningObjectives ?? [];
   const targetAudience     = course.targetAudience ?? [];
@@ -441,6 +454,40 @@ export default function CourseDetail() {
                   </div>
                 ))}
               </div>
+
+              {/* ── Reseñas de alumnos ── */}
+              {courseReviews.length > 0 && (
+                <div className="detail-section">
+                  <div className="reviews-head">
+                    <h2 className="detail-section-title">Reseñas de alumnos</h2>
+                    <div className="reviews-summary">
+                      <Star size={15} fill="#F59E0B" color="#F59E0B" />
+                      <strong>{course.rating}</strong>
+                      <span>· {courseReviews.length} reseñas</span>
+                    </div>
+                  </div>
+
+                  <div className="reviews-grid">
+                    {courseReviews.map(t => (
+                      <div key={t.id} className="review-card">
+                        <div className="review-stars">
+                          {[...Array(t.rating)].map((_, i) => (
+                            <Star key={i} size={13} fill="#F59E0B" color="#F59E0B" />
+                          ))}
+                        </div>
+                        <p className="review-text">"{t.text}"</p>
+                        <div className="review-footer">
+                          <img src={t.avatar} alt={t.name} className="review-avatar" />
+                          <div>
+                            <div className="review-name">{t.name}</div>
+                            <div className="review-role">{t.role}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div />
