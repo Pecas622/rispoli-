@@ -25,9 +25,9 @@
 .detail-layout.has-video {
   grid-template-areas: "info checkout" "video checkout" "learn checkout";
 }
-.detail-info { grid-area: info; }
-.detail-checkout { grid-area: checkout; }
-.detail-learn { grid-area: learn; }
+.detail-info { grid-area: info; min-width: 0; }
+.detail-checkout { grid-area: checkout; min-width: 0; }
+.detail-learn { grid-area: learn; min-width: 0; }
 
 /* ── VIDEO DE PRESENTACIÓN ──────────────────────────────────────────────────── */
 .detail-video { grid-area: video; display: flex; justify-content: flex-start; }
@@ -168,6 +168,7 @@
 /* ── CONTENT ────────────────────────────────────────────────────────────────── */
 .detail-content { padding: 56px 0 96px; }
 .detail-cols { display: grid; grid-template-columns: 1fr 360px; gap: 60px; }
+.detail-cols > * { min-width: 0; }
 .detail-section { margin-bottom: 48px; }
 .detail-section-title { font-size: 18px; font-weight: 700; margin-bottom: 18px; letter-spacing: -0.02em; }
 

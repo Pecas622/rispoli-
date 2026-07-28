@@ -49,6 +49,7 @@
   margin: 0 auto;
   align-items: start;
 }
+.learn-layout > * { min-width: 0; }
 
 .learn-sidebar {
   background: var(--bg);
