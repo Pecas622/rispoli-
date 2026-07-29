@@ -77,7 +77,7 @@ export default function VideoSelector({ value, onChange }) {
           {extractVimeoId(value.url) ? (
             <div className="vs-preview">
               <iframe
-                src={`https://player.vimeo.com/video/${extractVimeoId(value.url)}?badge=0&byline=0&portrait=0&title=0`}
+                src={`https://player.vimeo.com/video/${extractVimeoId(value.url)}?badge=0&byline=0&portrait=0&title=0&sidedock=0`}
                 title="Vista previa Vimeo"
                 allowFullScreen
               />

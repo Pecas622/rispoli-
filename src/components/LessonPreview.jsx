@@ -43,7 +43,7 @@ function VideoPlayer({ video }) {
     return (
       <div className="lp-video-wrap" onContextMenu={noDownload}>
         <iframe
-          src={`https://player.vimeo.com/video/${id}?badge=0&byline=0&portrait=0&title=0&dnt=1`}
+          src={`https://player.vimeo.com/video/${id}?badge=0&byline=0&portrait=0&title=0&sidedock=0&dnt=1`}
           title="Video clase"
           allowFullScreen
         />
