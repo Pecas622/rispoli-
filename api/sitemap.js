@@ -2,24 +2,27 @@
 // publicado, consultando el backend público (GET /api/courses) en vez de
 // conectarse directo a la base — así no depende de credenciales nuevas y
 // funciona apenas el backend de Railway esté arriba.
+//
+// Nota: se llama a la URL absoluta del propio sitio (que Vercel ya reescribe
+// a Railway, ver vercel.json) en vez de usar VITE_API_URL — esa variable es
+// para el navegador (puede ser una ruta relativa como "/api") y no sirve
+// desde una función serverless, que no tiene un origen contra el cual
+// resolverla.
 const SITE_URL = 'https://gotravelacademy.com';
 
-const STATIC_PATHS = ['/', '/cursos', '/nosotros', '/contacto', '/empresas'];
+const STATIC_PATHS = ['/', '/cursos', '/nosotros', '/empresas', '/blog', '/contacto'];
 
 export default async function handler(req, res) {
   let courses = [];
-  const apiUrl = process.env.VITE_API_URL;
 
-  if (apiUrl) {
-    try {
-      const r = await fetch(`${apiUrl}/courses`);
-      if (r.ok) {
-        const data = await r.json();
-        courses = (data.courses ?? []).filter(c => c.published !== false);
-      }
-    } catch (err) {
-      console.error('[sitemap] no se pudo consultar el backend:', err.message);
+  try {
+    const r = await fetch(`${SITE_URL}/api/courses`);
+    if (r.ok) {
+      const data = await r.json();
+      courses = (data.courses ?? []).filter(c => c.published !== false);
     }
+  } catch (err) {
+    console.error('[sitemap] no se pudo consultar el backend:', err.message);
   }
 
   const urlTags = [
