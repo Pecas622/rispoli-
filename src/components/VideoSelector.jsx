@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { CirclePlay, Video, Upload, Ban, Link2, ShieldOff } from 'lucide-react';
+import { CirclePlay, Video, Ban, Link2, ShieldOff } from 'lucide-react';
 
 function extractYouTubeId(url) {
   const m = url.match(/(?:v=|youtu\.be\/)([^&\s]+)/);
@@ -11,45 +10,16 @@ function extractVimeoId(url) {
   return m ? m[1] : '';
 }
 
-function fmtSize(bytes) {
-  if (!bytes) return '';
-  return bytes > 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`;
-}
-
 const TYPES = [
   { key: 'youtube', label: 'YouTube',       Icon: CirclePlay },
   { key: 'vimeo',   label: 'Vimeo',         Icon: Video      },
   { key: 'url',     label: 'URL directa',   Icon: Link2      },
-  { key: 'upload',  label: 'Subir archivo', Icon: Upload     },
   { key: 'none',    label: 'Sin video',     Icon: Ban        },
 ];
 
 export default function VideoSelector({ value, onChange }) {
-  const [localFile, setLocalFile] = useState(null);
-  const [localUrl,  setLocalUrl]  = useState('');
-
-  const setType = (type) => {
-    setLocalFile(null);
-    setLocalUrl('');
-    onChange({ type, url: '' });
-  };
-  const setUrl = (url) => onChange({ ...value, url });
-
-  const handleFileChange = (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    const blobUrl = URL.createObjectURL(f);
-    setLocalFile(f);
-    setLocalUrl(blobUrl);
-    onChange({ ...value, url: f.name, _blobUrl: blobUrl });
-  };
-
-  const removeFile = () => {
-    if (localUrl) URL.revokeObjectURL(localUrl);
-    setLocalFile(null);
-    setLocalUrl('');
-    onChange({ ...value, url: '', _blobUrl: undefined });
-  };
+  const setType = (type) => onChange({ type, url: '' });
+  const setUrl  = (url)  => onChange({ ...value, url });
 
   return (
     <div className="video-selector">
@@ -68,6 +38,9 @@ export default function VideoSelector({ value, onChange }) {
           </button>
         ))}
       </div>
+      <p className="vs-url-hint">
+        Subí el video como "no listado" a Vimeo o YouTube y pegá el link acá — evita depender de hosting propio para archivos pesados.
+      </p>
 
       {/* ── YouTube ── */}
       {value.type === 'youtube' && (
@@ -143,49 +116,6 @@ export default function VideoSelector({ value, onChange }) {
           <div className="vs-tip">
             <ShieldOff size={12} />
             Los videos con URL directa tienen descarga bloqueada a nivel del reproductor.
-          </div>
-        </div>
-      )}
-
-      {/* ── Subir archivo ── */}
-      {value.type === 'upload' && (
-        <div className="vs-input-wrap">
-          {localFile ? (
-            <div className="vs-uploaded">
-              <div className="vs-preview" onContextMenu={e => e.preventDefault()}>
-                <video
-                  src={localUrl}
-                  controls
-                  controlsList="nodownload"
-                  disablePictureInPicture
-                  onContextMenu={e => e.preventDefault()}
-                  style={{ width: '100%', height: '100%' }}
-                />
-              </div>
-              <div className="vs-file-info">
-                <span className="vs-file-chosen">{localFile.name}</span>
-                <span className="vs-file-size">{fmtSize(localFile.size)}</span>
-                <button type="button" className="btn btn-outline btn-sm" onClick={removeFile}>
-                  Cambiar video
-                </button>
-              </div>
-            </div>
-          ) : (
-            <label className="vs-upload-zone">
-              <Upload size={28} className="vs-upload-icon" />
-              <p className="vs-upload-hint">Hacé click o arrastrá un archivo de video</p>
-              <p className="vs-upload-formats">MP4, MOV, AVI, MKV · máx. 2 GB</p>
-              <input
-                type="file"
-                accept="video/*"
-                className="vs-file-input"
-                onChange={handleFileChange}
-              />
-            </label>
-          )}
-          <div className="vs-tip">
-            <ShieldOff size={12} />
-            La descarga está bloqueada en el reproductor. Para máxima protección, usá un CDN privado con firma de URLs.
           </div>
         </div>
       )}
