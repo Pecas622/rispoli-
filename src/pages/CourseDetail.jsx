@@ -298,7 +298,7 @@ export default function CourseDetail() {
                   title="Ver las reseñas de los alumnos"
                 >
                   <Star size={13} fill="#F59E0B" color="#F59E0B" />
-                  <strong>{course.reviews > 0 ? course.rating : 4.8}</strong>{' '}
+                  <strong>{course.reviews > 0 ? course.rating : 5}</strong>{' '}
                   ({(course.reviews > 0 ? course.reviews : Math.max(40, Math.round(course.students / 25))).toLocaleString()} reseñas)
                 </button>
                 <span className="detail-meta-item"><Users size={13} /> +{course.students.toLocaleString()} estudiantes</span>
