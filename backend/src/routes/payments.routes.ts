@@ -5,7 +5,7 @@ import { getStripe, isStripeReady } from '../lib/stripe';
 import { isMercadoPagoReady } from '../lib/mercadopago';
 import { prisma } from '../lib/prisma';
 import { sendPurchaseConfirmationEmail } from '../lib/email';
-import { sendMetaEvent } from '../lib/capi';
+import { sendMetaEvent, capiConfigStatus } from '../lib/capi';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -400,6 +400,41 @@ router.get('/status', (_req: Request, res: Response) => {
     stripe:       isStripeReady(),
     mercadopago:  isMercadoPagoReady(),
     currency:     process.env.STRIPE_CURRENCY ?? 'usd',
+  });
+});
+
+// ── Diagnóstico de configuración ──────────────────────────────────────────────
+// GET /api/payments/diagnostics  (solo admin)
+//
+// Sirve para confirmar, sin adivinar, que el servidor que atiende el dominio
+// tiene cargadas las variables que hacen falta para que el evento Purchase
+// llegue a Meta. Devuelve SOLO banderas y URLs públicas: nunca claves ni tokens.
+router.get('/diagnostics', authenticate, requireAdmin, (_req: Request, res: Response) => {
+  const backendUrl = process.env.BACKEND_URL ?? '';
+  const capi = capiConfigStatus();
+
+  res.json({
+    meta: {
+      pixelIdConfigurado:   capi.pixelIdSet,
+      capiTokenConfigurado: capi.tokenSet,
+      // Debe ser false en producción: con el código de prueba activo los
+      // eventos no cuentan como conversiones reales.
+      modoPruebaActivo:     capi.testMode,
+    },
+    mercadopago: {
+      configurado:              isMercadoPagoReady(),
+      webhookSecretConfigurado: Boolean(process.env.MP_WEBHOOK_SECRET),
+      // Es la URL que le avisamos a Mercado Pago en cada pago: sale de BACKEND_URL.
+      urlDeNotificacion: backendUrl ? `${backendUrl}/api/payments/mercadopago/webhook` : null,
+    },
+    stripe: {
+      configurado:              isStripeReady(),
+      webhookSecretConfigurado: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
+    },
+    urls: {
+      backendUrl:  backendUrl || null,
+      frontendUrl: process.env.FRONTEND_URL ?? null,
+    },
   });
 });
 

@@ -20,6 +20,16 @@ export function isCapiReady(): boolean {
   return Boolean(PIXEL_ID && CAPI_TOKEN);
 }
 
+// Estado de la configuración para diagnóstico. Solo devuelve banderas:
+// nunca el token ni el ID, para no filtrar nada.
+export function capiConfigStatus() {
+  return {
+    pixelIdSet: Boolean(PIXEL_ID),
+    tokenSet:   Boolean(CAPI_TOKEN),
+    testMode:   Boolean(TEST_EVENT_CODE),
+  };
+}
+
 // Meta exige la info personal (email, id) hasheada en SHA-256, normalizada
 // (minúsculas y sin espacios alrededor).
 function hash(value?: string | null): string | undefined {
