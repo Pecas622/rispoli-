@@ -100,7 +100,8 @@ export default function CourseContent() {
         showToast(moduleModal && moduleModal !== 'new' ? 'Módulo actualizado' : 'Módulo creado');
       }
     } catch (err) {
-      showToast(err.message || 'Error al guardar el módulo', 'error');
+      const detail = err.errors?.map(e => `${e.field}: ${e.message}`).join(' · ');
+      showToast(detail || err.message || 'Error al guardar el módulo', 'error');
     } finally {
       setSaving(false);
       setModuleModal(null);
@@ -179,7 +180,8 @@ export default function CourseContent() {
         showToast(lesson ? 'Clase actualizada' : 'Clase creada');
       }
     } catch (err) {
-      showToast(err.message || 'Error al guardar la clase', 'error');
+      const detail = err.errors?.map(e => `${e.field}: ${e.message}`).join(' · ');
+      showToast(detail || err.message || 'Error al guardar la clase', 'error');
     } finally {
       setSaving(false);
       setLessonModal(null);

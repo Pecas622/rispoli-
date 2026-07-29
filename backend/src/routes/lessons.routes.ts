@@ -25,18 +25,18 @@ function maskLesson<T extends { isPreview: boolean; videoUrl: string | null; con
 const resourceSchema = z.object({
   name: z.string(),
   type: z.string(),
-  size: z.string().optional(),
-  url:  z.string().optional(),
+  size: z.string().nullable().optional(),
+  url:  z.string().nullable().optional(),
 });
 
 const lessonSchema = z.object({
   title:       z.string().min(2),
-  description: z.string().optional(),
-  duration:    z.string().optional(),
-  videoType:   z.enum(['youtube', 'vimeo', 'upload', 'url', 'none']).optional(),
-  videoUrl:    z.string().optional(),
-  contentType: z.enum(['video', 'text', 'both']).optional(),
-  content:     z.string().optional(),
+  description: z.string().nullable().optional(),
+  duration:    z.string().nullable().optional(),
+  videoType:   z.enum(['youtube', 'vimeo', 'upload', 'url', 'none']).nullable().optional(),
+  videoUrl:    z.string().nullable().optional(),
+  contentType: z.enum(['video', 'text', 'both']).nullable().optional(),
+  content:     z.string().nullable().optional(),
   isPreview:   z.boolean().optional(),
   order:       z.number().int().positive(),
   resources:   z.array(resourceSchema).optional(),

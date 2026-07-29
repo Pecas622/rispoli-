@@ -92,7 +92,8 @@ function TextContent({ content }) {
 }
 
 export default function LessonPreview({ lesson, onClose }) {
-  const hasVideo = lesson.video?.type !== 'none' && lesson.video?.url &&
+  const video    = { type: lesson.videoType, url: lesson.videoUrl };
+  const hasVideo = video.type && video.type !== 'none' && video.url &&
     (lesson.contentType === 'video' || lesson.contentType === 'both' || !lesson.contentType);
   const hasText  = lesson.content?.trim() &&
     (lesson.contentType === 'text' || lesson.contentType === 'both');
@@ -113,7 +114,7 @@ export default function LessonPreview({ lesson, onClose }) {
           </button>
         </div>
 
-        {hasVideo && <VideoPlayer video={lesson.video} />}
+        {hasVideo && <VideoPlayer video={video} />}
 
         {hasText && <TextContent content={lesson.content} />}
 

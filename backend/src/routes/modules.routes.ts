@@ -28,7 +28,7 @@ function maskLesson<T extends { isPreview: boolean; videoUrl: string | null; con
 
 const moduleSchema = z.object({
   title:       z.string().min(2),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   order:       z.number().int().positive(),
 });
 

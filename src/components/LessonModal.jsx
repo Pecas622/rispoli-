@@ -9,7 +9,8 @@ const EMPTY = {
   content: '',
   contentType: 'video',
   duration: '',
-  video: { type: 'none', url: '' },
+  videoType: 'none',
+  videoUrl: '',
   resources: [],
   isPreview: false,
   order: 1,
@@ -33,7 +34,21 @@ export default function LessonModal({ lesson, nextOrder, onSave, onClose }) {
   const [active, setActive] = useState('basic');
 
   useEffect(() => {
-    setForm(lesson ? { ...EMPTY, ...lesson } : { ...EMPTY, order: nextOrder });
+    // Los campos opcionales vienen `null` desde la base para clases viejas
+    // (no `undefined`) — hay que normalizarlos a los valores por defecto del
+    // form, si no React tira warnings de input controlado/no controlado y
+    // el guardado puede fallar la validación del backend.
+    setForm(lesson ? {
+      ...EMPTY,
+      ...lesson,
+      description: lesson.description ?? '',
+      content:     lesson.content ?? '',
+      contentType: lesson.contentType ?? 'video',
+      duration:    lesson.duration ?? '',
+      videoType:   lesson.videoType ?? 'none',
+      videoUrl:    lesson.videoUrl ?? '',
+      resources:   lesson.resources ?? [],
+    } : { ...EMPTY, order: nextOrder });
     setActive('basic');
   }, [lesson, nextOrder]);
 
@@ -152,8 +167,8 @@ export default function LessonModal({ lesson, nextOrder, onSave, onClose }) {
           {/* ── Video ── */}
           {active === 'video' && (
             <VideoSelector
-              value={form.video}
-              onChange={v => setForm(p => ({ ...p, video: v }))}
+              value={{ type: form.videoType, url: form.videoUrl }}
+              onChange={v => setForm(p => ({ ...p, videoType: v.type, videoUrl: v.url }))}
             />
           )}
 
