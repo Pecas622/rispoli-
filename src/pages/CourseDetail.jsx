@@ -179,6 +179,13 @@ export default function CourseDetail() {
     const b = normalizeTitle(course.title);
     return a === b || a.includes(b) || b.includes(a);
   });
+  // Rating/cantidad que se muestran arriba y en la sección de reseñas: si hay
+  // testimonios curados para este curso, se usan esos (mismo número en los dos lados);
+  // si no, se cae a las reseñas reales del backend o a un número genérico.
+  const reviewsCount  = courseReviews.length || (course.reviews > 0 ? course.reviews : Math.max(40, Math.round(course.students / 25)));
+  const reviewsRating = courseReviews.length > 0
+    ? Math.round((courseReviews.reduce((a, t) => a + t.rating, 0) / courseReviews.length) * 10) / 10
+    : (course.reviews > 0 ? course.rating : 5);
 
   // ── Carrusel de reseñas ─────────────────────────────────────────────────────
   // El track scrollea con scroll-snap: en mobile se desliza con el dedo y en
@@ -298,8 +305,8 @@ export default function CourseDetail() {
                   title="Ver las reseñas de los alumnos"
                 >
                   <Star size={13} fill="#F59E0B" color="#F59E0B" />
-                  <strong>{course.reviews > 0 ? course.rating : 5}</strong>{' '}
-                  ({(course.reviews > 0 ? course.reviews : Math.max(40, Math.round(course.students / 25))).toLocaleString()} reseñas)
+                  <strong>{reviewsRating}</strong>{' '}
+                  ({reviewsCount.toLocaleString()} reseñas)
                 </button>
                 <span className="detail-meta-item"><Users size={13} /> +{course.students.toLocaleString()} estudiantes</span>
                 {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
@@ -544,8 +551,8 @@ export default function CourseDetail() {
                     <h2 className="detail-section-title">Reseñas de alumnos</h2>
                     <div className="reviews-summary">
                       <Star size={15} fill="#F59E0B" color="#F59E0B" />
-                      <strong>{course.rating}</strong>
-                      <span>· {courseReviews.length} reseñas</span>
+                      <strong>{reviewsRating}</strong>
+                      <span>· {reviewsCount} reseñas</span>
                     </div>
                   </div>
 
