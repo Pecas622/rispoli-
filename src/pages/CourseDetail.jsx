@@ -302,7 +302,7 @@ export default function CourseDetail() {
                     <strong>{course.rating}</strong> ({course.reviews.toLocaleString()} reseñas)
                   </button>
                 )}
-                <span className="detail-meta-item"><Users size={13} /> {course.students.toLocaleString()} estudiantes</span>
+                <span className="detail-meta-item"><Users size={13} /> +{course.students.toLocaleString()} estudiantes</span>
                 {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
                 {course.hours && <span className="detail-meta-item"><BookOpen size={13} /> {course.hours}h de contenido</span>}
               </div>

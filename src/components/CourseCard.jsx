@@ -55,17 +55,19 @@ export default function CourseCard({ course }) {
         )}
 
         {/* Rating */}
-        <div className="cc-rating">
-          <Star size={12} fill="#F59E0B" color="#F59E0B" />
-          <strong>{course.rating}</strong>
-          <span className="cc-rating-count">({course.reviews.toLocaleString()} reseñas)</span>
-        </div>
+        {course.reviews > 0 && (
+          <div className="cc-rating">
+            <Star size={12} fill="#F59E0B" color="#F59E0B" />
+            <strong>{course.rating}</strong>
+            <span className="cc-rating-count">({course.reviews.toLocaleString()} reseñas)</span>
+          </div>
+        )}
 
         {/* Meta */}
         <div className="cc-meta">
           {course.duration && <span className="cc-meta-item"><Clock size={11} /> {course.duration}</span>}
           {course.hours    && <span className="cc-meta-item"><BookOpen size={11} /> {course.hours}h</span>}
-          <span className="cc-meta-item"><Users size={11} /> {course.students.toLocaleString()}</span>
+          <span className="cc-meta-item"><Users size={11} /> +{course.students.toLocaleString()}</span>
         </div>
       </div>
 

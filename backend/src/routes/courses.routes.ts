@@ -6,7 +6,7 @@ import { authenticate, requireAdmin, optionalAuth } from '../middleware/auth.mid
 const router = Router();
 
 // "Alumnos" mostrados públicamente = esta base + inscripciones pagas reales.
-const STUDENTS_BASE = 9830;
+const STUDENTS_BASE = 3450;
 
 function round1(n: number) {
   return Math.round(n * 10) / 10;
