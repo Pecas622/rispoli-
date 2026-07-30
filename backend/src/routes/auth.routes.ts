@@ -154,7 +154,7 @@ router.post('/verify-email', async (req: Request, res: Response, next: NextFunct
     const user = await prisma.user.update({
       where: { email },
       data:  { emailVerified: true },
-      select: { id: true, name: true, email: true, role: true, avatar: true, emailVerified: true },
+      select: { id: true, name: true, email: true, phone: true, role: true, avatar: true, emailVerified: true },
     });
 
     await prisma.verificationCode.deleteMany({ where: { email } });
@@ -349,7 +349,7 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
   try {
     const user = await prisma.user.findFirst({
       where:  { id: req.user!.userId, deletedAt: null },
-      select: { id: true, name: true, email: true, role: true, avatar: true, createdAt: true },
+      select: { id: true, name: true, email: true, phone: true, role: true, avatar: true, createdAt: true },
     });
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
     res.json({ user });

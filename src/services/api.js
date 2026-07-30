@@ -118,6 +118,23 @@ export const paymentsApi = {
   },
 };
 
+// ── Subida de archivos (material de las clases) ───────────
+// El archivo va como cuerpo crudo y el nombre por query: así el backend no
+// necesita una librería de multipart.
+export const uploadsApi = {
+  upload: async (file) => {
+    const res = await fetch(`${BASE_URL}/uploads?name=${encodeURIComponent(file.name)}`, {
+      method:      'POST',
+      credentials: 'include',
+      headers:     { 'Content-Type': file.type || 'application/octet-stream' },
+      body:        file,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || 'No se pudo subir el archivo');
+    return data; // { url, name, size }
+  },
+};
+
 // ── Contacto ──────────────────────────────────────────────
 export const contactApi = {
   send: (data) => api.post('/contact', data),
