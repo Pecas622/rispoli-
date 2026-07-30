@@ -102,14 +102,17 @@ function metaTrackingContext(req: Request): Record<string, string> {
 // usuario. Cuantas más señales, mejor atribuye Meta la venta a la campaña.
 function purchaseUserData(
   meta: Record<string, any> | null | undefined,
-  user: { name?: string | null; email: string },
+  user: { name?: string | null; firstName?: string | null; lastName?: string | null; phone?: string | null; email: string },
   userId: string,
 ) {
+  // Desde el registro nuevo el nombre viene separado; para las cuentas viejas
+  // se parte el nombre completo como aproximación.
   const partes = (user.name ?? '').trim().split(/\s+/).filter(Boolean);
   return {
     email:           user.email,
-    firstName:       partes[0],
-    lastName:        partes.length > 1 ? partes.slice(1).join(' ') : undefined,
+    phone:           user.phone ?? undefined,
+    firstName:       user.firstName ?? partes[0],
+    lastName:        user.lastName ?? (partes.length > 1 ? partes.slice(1).join(' ') : undefined),
     externalId:      userId,
     fbp:             meta?.fbp || undefined,
     fbc:             meta?.fbc || undefined,
@@ -245,7 +248,7 @@ router.post(
         });
 
         const [user, course] = await Promise.all([
-          prisma.user.findUnique({ where: { id: userId },   select: { name: true, email: true } }),
+          prisma.user.findUnique({ where: { id: userId },   select: { name: true, firstName: true, lastName: true, phone: true, email: true } }),
           prisma.course.findUnique({ where: { id: courseId }, select: { title: true, price: true } }),
         ]);
         if (user && course) {
@@ -347,7 +350,7 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
         });
 
         const [user, course] = await Promise.all([
-          prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
+          prisma.user.findUnique({ where: { id: userId }, select: { name: true, firstName: true, lastName: true, phone: true, email: true } }),
           prisma.course.findUnique({ where: { id: courseId }, select: { title: true, price: true } }),
         ]);
         if (user && course) {

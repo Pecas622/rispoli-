@@ -31,7 +31,7 @@ export const api = {
 
 // ── Auth ──────────────────────────────────────────────────
 export const authApi = {
-  register:       (name, email, password) => api.post('/auth/register', { name, email, password }),
+  register:       (datos) => api.post('/auth/register', datos),
   login:          (email, password)       => api.post('/auth/login', { email, password }),
   google:         (credential)            => api.post('/auth/google', { credential }),
   verifyEmail:    (email, code)           => api.post('/auth/verify-email', { email, code }),

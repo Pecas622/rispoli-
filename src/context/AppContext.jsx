@@ -113,12 +113,13 @@ export function AppProvider({ children }) {
     }
   };
 
-  const register = async (name, email, password) => {
+  const register = async (datos) => {
     try {
-      const data = await authApi.register(name, email, password);
+      const data = await authApi.register(datos);
       // Lead: el servidor ya lo mandó por CAPI con `leadEventId`. Disparamos el
       // Pixel con el mismo id para que Meta deduplique.
       pixelTrack('Lead', {}, data.leadEventId);
+      const { email, firstName } = datos;
       if (data.requiresVerification) {
         setPendingVerification({ email, type: 'registration', devCode: data.devCode });
         showDevCode(data.devCode);
@@ -128,7 +129,7 @@ export function AppProvider({ children }) {
       // Fallback por si el backend devuelve el usuario directo (sin verificación)
       const normalized = { ...data.user, role: data.user.role.toLowerCase() };
       setUser(normalized);
-      showToast(`Cuenta creada. Bienvenido, ${name.split(' ')[0]}!`);
+      showToast(`Cuenta creada. Bienvenido, ${firstName}!`);
       setAuthModal(null);
       return { success: true };
     } catch (err) {

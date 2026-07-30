@@ -13,9 +13,13 @@ const router = Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const registerSchema = z.object({
-  name:     z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  email:    z.string().email('Email inválido'),
-  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
+  firstName: z.string().trim().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  lastName:  z.string().trim().min(2, 'El apellido debe tener al menos 2 caracteres'),
+  email:     z.string().email('Email inválido'),
+  // Se piden al menos 8 dígitos para descartar tipeos; el formato exacto varía
+  // por país, así que no lo forzamos más allá de eso.
+  phone:     z.string().trim().refine(v => v.replace(/\D/g, '').length >= 8, 'Teléfono inválido'),
+  password:  z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
 });
 
 const loginSchema = z.object({
@@ -76,7 +80,8 @@ function devPayload(code: string) {
 // POST /api/auth/register
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, password } = registerSchema.parse(req.body);
+    const { firstName, lastName, email, phone, password } = registerSchema.parse(req.body);
+    const name = `${firstName} ${lastName}`;
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing && !existing.deletedAt) {
@@ -95,9 +100,9 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     const newUser = existing
       ? await prisma.user.update({
           where: { email },
-          data:  { name, passwordHash, deletedAt: null, isBlocked: false, emailVerified: false },
+          data:  { name, firstName, lastName, phone, passwordHash, deletedAt: null, isBlocked: false, emailVerified: false },
         })
-      : await prisma.user.create({ data: { name, email, passwordHash } });
+      : await prisma.user.create({ data: { name, firstName, lastName, email, phone, passwordHash } });
 
     const code = await createAndSendCode(email);
 
@@ -110,6 +115,9 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       eventId:   leadEventId,
       userData: {
         email,
+        phone,
+        firstName,
+        lastName,
         externalId:      newUser.id,
         clientIpAddress: (req.headers['x-forwarded-for'] as string || '').split(',')[0].trim() || undefined,
         clientUserAgent: req.headers['user-agent'],

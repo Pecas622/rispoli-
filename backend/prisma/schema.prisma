@@ -15,8 +15,13 @@ enum Role {
 
 model User {
   id            String   @id @default(cuid())
+  // `name` se mantiene como nombre completo: lo usan los emails, el panel y
+  // las reseñas. Se arma juntando firstName + lastName.
   name          String
+  firstName     String?  @map("first_name")
+  lastName      String?  @map("last_name")
   email         String   @unique
+  phone         String?
   passwordHash  String?  @map("password_hash")
   role          Role     @default(STUDENT)
   avatar        String?

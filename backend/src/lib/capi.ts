@@ -31,6 +31,7 @@ function hash(value?: string | null): string | undefined {
 
 export interface CapiUserData {
   email?: string | null;
+  phone?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   externalId?: string | null;   // userId (identifica a la persona sin exponerla)
@@ -57,6 +58,10 @@ export async function sendMetaEvent(event: CapiEvent): Promise<void> {
   const user_data: Record<string, unknown> = {};
   const em = hash(event.userData.email);
   if (em) user_data.em = [em];
+  // Meta espera el teléfono solo con dígitos e incluyendo el código de país.
+  const tel = event.userData.phone ? String(event.userData.phone).replace(/\D/g, '') : '';
+  const ph = tel.length >= 8 ? hash(tel) : undefined;
+  if (ph) user_data.ph = [ph];
   const fn = hash(event.userData.firstName);
   if (fn) user_data.fn = [fn];
   const ln = hash(event.userData.lastName);

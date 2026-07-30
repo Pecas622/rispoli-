@@ -23,7 +23,7 @@ function waitForGoogleScript(timeoutMs = 8000) {
 export default function AuthModal() {
   const { authModal, setAuthModal, login, loginWithGoogle, register, forgotPassword } = useApp();
   const googleBtnRef = useRef(null);
-  const [form, setForm] = useState({ name:'', email:'', password:'' });
+  const [form, setForm] = useState({ firstName:'', lastName:'', email:'', phone:'', password:'' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -59,7 +59,12 @@ export default function AuthModal() {
 
   const validate = () => {
     const e = {};
-    if (!isLogin && !form.name.trim()) e.name = 'Requerido';
+    if (!isLogin) {
+      if (!form.firstName.trim()) e.firstName = 'Requerido';
+      if (!form.lastName.trim())  e.lastName  = 'Requerido';
+      if (!form.phone.trim()) e.phone = 'Requerido';
+      else if (form.phone.replace(/\D/g, '').length < 8) e.phone = 'Teléfono inválido';
+    }
     if (!form.email.trim()) e.email = 'Requerido';
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Email inválido';
     if (!form.password) e.password = 'Requerido';
@@ -72,7 +77,7 @@ export default function AuthModal() {
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
-    await (isLogin ? login(form.email, form.password) : register(form.name, form.email, form.password));
+    await (isLogin ? login(form.email, form.password) : register(form));
     setLoading(false);
   };
 
@@ -149,10 +154,17 @@ export default function AuthModal() {
 
         <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:14}}>
           {!isLogin && (
-            <div>
-              <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>Nombre completo</label>
-              <input className="input" type="text" placeholder="Tu nombre" value={form.name} onChange={set('name')} />
-              <FieldErr k="name" />
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+              <div>
+                <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>Nombre</label>
+                <input className="input" type="text" placeholder="Juan" autoComplete="given-name" value={form.firstName} onChange={set('firstName')} />
+                <FieldErr k="firstName" />
+              </div>
+              <div>
+                <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>Apellido</label>
+                <input className="input" type="text" placeholder="Pérez" autoComplete="family-name" value={form.lastName} onChange={set('lastName')} />
+                <FieldErr k="lastName" />
+              </div>
             </div>
           )}
           <div>
@@ -160,6 +172,13 @@ export default function AuthModal() {
             <input className="input" type="email" placeholder="tu@email.com" value={form.email} onChange={set('email')} />
             <FieldErr k="email" />
           </div>
+          {!isLogin && (
+            <div>
+              <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>Teléfono</label>
+              <input className="input" type="tel" placeholder="+54 9 261 555 5555" autoComplete="tel" value={form.phone} onChange={set('phone')} />
+              <FieldErr k="phone" />
+            </div>
+          )}
           <div>
             <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>Contraseña</label>
             <div style={{position:'relative'}}>
