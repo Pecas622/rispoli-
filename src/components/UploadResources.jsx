@@ -1,4 +1,6 @@
 import { Paperclip, X, FileText, Archive, Image, Code, File } from 'lucide-react';
+import { useState } from 'react';
+import { uploadsApi } from '../services/api';
 
 const EXT_TYPE = {
   pdf:  'pdf',
@@ -22,24 +24,44 @@ function fmtSize(bytes) {
 }
 
 export default function UploadResources({ resources, onChange }) {
-  const addFiles = (e) => {
-    const added = Array.from(e.target.files).map(f => ({
-      id: `res_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-      name: f.name,
-      type: fileType(f.name),
-      size: fmtSize(f.size),
-    }));
-    onChange([...resources, ...added]);
+  const [subiendo, setSubiendo] = useState(false);
+  const [error, setError] = useState('');
+
+  // Cada archivo se sube antes de sumarlo a la lista: sin `url` el alumno vería
+  // el nombre pero no podría descargarlo.
+  const addFiles = async (e) => {
+    const files = Array.from(e.target.files);
     e.target.value = '';
+    if (!files.length) return;
+
+    setSubiendo(true);
+    setError('');
+    const subidos = [];
+    for (const f of files) {
+      try {
+        const { url } = await uploadsApi.upload(f);
+        subidos.push({
+          id: `res_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          name: f.name,
+          type: fileType(f.name),
+          size: fmtSize(f.size),
+          url,
+        });
+      } catch (err) {
+        setError(`${f.name}: ${err.message}`);
+      }
+    }
+    if (subidos.length) onChange([...resources, ...subidos]);
+    setSubiendo(false);
   };
 
   const remove = (id) => onChange(resources.filter(r => r.id !== id));
 
   return (
     <div className="upload-resources">
-      <label className="ur-add-btn">
+      <label className="ur-add-btn" style={subiendo ? { opacity: 0.6, pointerEvents: 'none' } : undefined}>
         <Paperclip size={14} />
-        Agregar archivos
+        {subiendo ? 'Subiendo…' : 'Agregar archivos'}
         <input
           type="file"
           multiple
@@ -48,6 +70,9 @@ export default function UploadResources({ resources, onChange }) {
           hidden
         />
       </label>
+      {error && (
+        <p style={{ fontSize: 12, color: 'var(--red)', marginTop: 6 }}>{error}</p>
+      )}
 
       {resources.length > 0 ? (
         <ul className="ur-list">

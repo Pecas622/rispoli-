@@ -15,6 +15,7 @@ import { progressRouter }    from './routes/progress.routes';
 import { paymentsRouter }    from './routes/payments.routes';
 import { trackRouter }       from './routes/track.routes';
 import { catalogRouter }     from './routes/catalog.routes';
+import { uploadsRouter }     from './routes/uploads.routes';
 import { reviewsRouter }     from './routes/reviews.routes';
 import { contactRouter }     from './routes/contact.routes';
 import { errorMiddleware }   from './middleware/error.middleware';
@@ -112,6 +113,7 @@ app.use('/api/progress',    progressRouter);
 app.use('/api/payments',    paymentsRouter);
 app.use('/api/events',      trackRouter);
 app.use('/api/catalog',     catalogRouter);
+app.use('/api/uploads',     uploadsRouter);
 app.use('/api/contact',     contactRouter);
 
 // ── 404 ────────────────────────────────────────────────────
