@@ -13,7 +13,7 @@ const updateSchema = z.object({
 });
 
 const USER_SELECT = {
-  id: true, name: true, email: true,
+  id: true, name: true, email: true, phone: true,
   role: true, avatar: true, isBlocked: true, createdAt: true,
   _count: { select: { enrollments: true } },
 } as const;

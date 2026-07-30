@@ -113,9 +113,9 @@ export function AppProvider({ children }) {
     }
   };
 
-  const register = async (name, email, password) => {
+  const register = async (name, email, phone, password) => {
     try {
-      const data = await authApi.register(name, email, password);
+      const data = await authApi.register(name, email, phone, password);
       // Lead: el servidor ya lo mandó por CAPI con `leadEventId`. Disparamos el
       // Pixel con el mismo id para que Meta deduplique.
       pixelTrack('Lead', {}, data.leadEventId);

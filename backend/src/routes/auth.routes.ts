@@ -15,6 +15,7 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const registerSchema = z.object({
   name:     z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   email:    z.string().email('Email inválido'),
+  phone:    z.string().min(6, 'Teléfono inválido'),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
 });
 
@@ -76,7 +77,7 @@ function devPayload(code: string) {
 // POST /api/auth/register
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, password } = registerSchema.parse(req.body);
+    const { name, email, phone, password } = registerSchema.parse(req.body);
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing && !existing.deletedAt) {
@@ -95,9 +96,9 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     const newUser = existing
       ? await prisma.user.update({
           where: { email },
-          data:  { name, passwordHash, deletedAt: null, isBlocked: false, emailVerified: false },
+          data:  { name, phone, passwordHash, deletedAt: null, isBlocked: false, emailVerified: false },
         })
-      : await prisma.user.create({ data: { name, email, passwordHash } });
+      : await prisma.user.create({ data: { name, email, phone, passwordHash } });
 
     const code = await createAndSendCode(email);
 
