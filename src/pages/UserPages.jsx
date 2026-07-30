@@ -181,6 +181,7 @@ export function Perfil() {
   if (!user) return <Navigate to="/" />;
 
   const [name, setName] = useState(user.name);
+  const [phone, setPhone] = useState(user.phone ?? '');
   const [saving, setSaving] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -189,8 +190,12 @@ export function Perfil() {
 
   const handleSave = async e => {
     e.preventDefault();
+    if (phone.trim() && phone.replace(/\D/g, '').length < 8) {
+      showToast('Revisá el teléfono: falta el código de país o faltan dígitos', 'error');
+      return;
+    }
     setSaving(true);
-    await updateProfile({ name });
+    await updateProfile(phone.trim() ? { name, phone: phone.trim() } : { name });
     setSaving(false);
   };
 
@@ -234,6 +239,16 @@ export function Perfil() {
               <label>Nombre completo</label>
               <input className="input" type="text" value={name} onChange={e => setName(e.target.value)} required />
             </div>
+            <div className="perfil-field">
+              <label>Teléfono</label>
+              <input
+                className="input" type="tel" value={phone}
+                onChange={e => setPhone(e.target.value)}
+                placeholder="+54 9 261 555 5555"
+              />
+              <p className="perfil-field-note">Incluí el código de país (por ejemplo +54).</p>
+            </div>
+
             <div className="perfil-field">
               <label>Email</label>
               <input className="input" type="email" value={user.email} disabled style={{ opacity: 0.65, cursor: 'not-allowed' }} />
