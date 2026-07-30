@@ -216,7 +216,17 @@ export function Perfil() {
 
         {/* Avatar card */}
         <div className="perfil-avatar-card">
-          <img src={user.avatar} alt={user.name} className="perfil-avatar" />
+          {user.avatar ? (
+            <img
+              src={user.avatar}
+              alt={user.name}
+              className="perfil-avatar"
+              onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'flex'; }}
+            />
+          ) : null}
+          <div className="perfil-avatar perfil-avatar-fallback" style={{ display: user.avatar ? 'none' : 'flex' }}>
+            <User size={32} />
+          </div>
           <div className="perfil-name">{user.name}</div>
           <div className="perfil-role">Agente de viajes</div>
           {[
