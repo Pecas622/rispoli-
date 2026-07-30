@@ -31,6 +31,8 @@ function hash(value?: string | null): string | undefined {
 
 export interface CapiUserData {
   email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   externalId?: string | null;   // userId (identifica a la persona sin exponerla)
   clientIpAddress?: string;
   clientUserAgent?: string;
@@ -55,6 +57,10 @@ export async function sendMetaEvent(event: CapiEvent): Promise<void> {
   const user_data: Record<string, unknown> = {};
   const em = hash(event.userData.email);
   if (em) user_data.em = [em];
+  const fn = hash(event.userData.firstName);
+  if (fn) user_data.fn = [fn];
+  const ln = hash(event.userData.lastName);
+  if (ln) user_data.ln = [ln];
   const extId = hash(event.userData.externalId);
   if (extId) user_data.external_id = [extId];
   if (event.userData.clientIpAddress) user_data.client_ip_address = event.userData.clientIpAddress;
