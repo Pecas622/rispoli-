@@ -10,24 +10,34 @@ import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Valida la firma del webhook IPN de Mercado Pago.
+// Webhooks de Mercado Pago.
 // Doc: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
-// Header "x-signature": "ts=<timestamp>,v1=<hash>"
-// manifest = "id:<data.id>;request-id:<x-request-id>;ts:<ts>;"
-// hash esperado = HMAC-SHA256(manifest, MP_WEBHOOK_SECRET) en hex
-function isValidMPSignature(req: Request): boolean {
+
+// El id del recurso según el formato del aviso: MP manda varias variantes
+//   ?data.id=123&type=payment   (WebHook v1.0)
+//   ?id=123&topic=payment       (Feed v2.0)
+//   { data: { id: 123 } }       (en el cuerpo)
+function mpResourceId(req: Request): string | undefined {
+  return (req.query['data.id'] as string | undefined)
+      ?? (req.query.id as string | undefined)
+      ?? (req.body?.data?.id != null ? String(req.body.data.id) : undefined);
+}
+
+// Valida la firma del webhook de Mercado Pago.
+// Devuelve el motivo del rechazo para poder diagnosticarlo desde los logs:
+// un 401 mudo no dice si falta la firma o si la clave no coincide.
+function checkMPSignature(req: Request): { ok: boolean; reason?: string } {
   const secret = process.env.MP_WEBHOOK_SECRET;
   if (!secret) {
-    // Sin secreto configurado no podemos validar — lo dejamos pasar en dev,
-    // pero queda registrado para que se configure antes de ir a producción.
     console.warn('[MP Webhook] MP_WEBHOOK_SECRET no configurado: la firma no se está validando.');
-    return true;
+    return { ok: true };
   }
 
   const signatureHeader = req.headers['x-signature'] as string | undefined;
-  const requestId = req.headers['x-request-id'] as string | undefined;
-  const dataId = (req.query['data.id'] as string | undefined) ?? req.body?.data?.id;
-  if (!signatureHeader || !dataId) return false;
+  if (!signatureHeader) return { ok: false, reason: 'no llegó el header x-signature' };
+
+  const dataId = mpResourceId(req);
+  if (!dataId) return { ok: false, reason: 'no se pudo determinar el id del recurso' };
 
   const parts = Object.fromEntries(
     signatureHeader.split(',').map(p => {
@@ -35,18 +45,32 @@ function isValidMPSignature(req: Request): boolean {
       return [k?.trim(), v?.trim()];
     }),
   );
-  const ts = parts.ts;
-  const v1 = parts.v1;
-  if (!ts || !v1) return false;
+  const { ts, v1 } = parts;
+  if (!ts || !v1) return { ok: false, reason: `x-signature con formato inesperado: "${signatureHeader}"` };
 
-  const manifest = `id:${dataId};request-id:${requestId ?? ''};ts:${ts};`;
+  // Mercado Pago arma el manifest con la plantilla
+  //   id:<data.id>;request-id:<x-request-id>;ts:<ts>;
+  // pero las partes cuyo valor no llega en el aviso deben OMITIRSE por
+  // completo. Dejarlas vacías (request-id:;) genera otra firma y el aviso
+  // se rechaza aunque la clave sea la correcta.
+  const requestId = req.headers['x-request-id'] as string | undefined;
+  const manifest = [
+    `id:${String(dataId).toLowerCase()};`,
+    requestId ? `request-id:${requestId};` : '',
+    `ts:${ts};`,
+  ].join('');
+
   const expected = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
 
-  try {
-    return crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(v1, 'hex'));
-  } catch {
-    return false;
+  const a = Buffer.from(expected, 'hex');
+  const b = Buffer.from(v1, 'hex');
+  const iguales = a.length === b.length && crypto.timingSafeEqual(a, b);
+  if (!iguales) {
+    // El manifest no es secreto (la clave no se puede deducir de él): loguearlo
+    // permite ver si el problema es el formato o la clave.
+    return { ok: false, reason: `la firma no coincide — revisar MP_WEBHOOK_SECRET (manifest: "${manifest}")` };
   }
+  return { ok: true };
 }
 
 // ── Guards ────────────────────────────────────────────────────────────────────
@@ -278,17 +302,34 @@ router.post(
 // Verificar firma: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
 router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
   try {
-    if (!isValidMPSignature(req)) {
-      console.warn('[MP Webhook] Firma inválida — notificación rechazada');
+    // Mercado Pago avisa de varios temas (payment, merchant_order, etc.) y en
+    // distintos formatos. Solo procesamos los de pago; el resto los damos por
+    // recibidos con 200 para que MP no los marque como fallidos ni los reintente.
+    const { type, data } = (req.body ?? {}) as { type?: string; data?: { id?: string } };
+    const topic = (req.query.topic as string | undefined)
+               ?? (req.query.type as string | undefined)
+               ?? type;
+
+    if (topic !== 'payment') {
+      return res.json({ received: true, ignored: topic ?? 'desconocido' });
+    }
+
+    const check = checkMPSignature(req);
+    if (!check.ok) {
+      console.warn('[MP Webhook] Notificación rechazada:', check.reason);
       return res.status(401).json({ message: 'Firma inválida' });
     }
 
-    const { type, data } = req.body as { type: string; data: { id: string } };
+    const paymentId = mpResourceId(req);
+    if (!paymentId) {
+      console.warn('[MP Webhook] Aviso de pago sin id de recurso');
+      return res.json({ received: true });
+    }
 
-    if (type === 'payment') {
+    {
       const { getMPClient, Payment } = await import('../lib/mercadopago');
       const paymentApi = new Payment(getMPClient());
-      const payment = await paymentApi.get({ id: Number(data.id) });
+      const payment = await paymentApi.get({ id: Number(paymentId) });
 
       if (payment.status === 'approved' && payment.metadata) {
         const { user_id: userId, course_id: courseId } = payment.metadata;
@@ -296,8 +337,8 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
 
         await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
-          update: { paidAt: new Date(), mpPaymentId: data.id, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
-          create: { userId, courseId, mpPaymentId: data.id, paidAt: new Date(), amount, paymentProvider: 'mercadopago', currency: 'ARS' },
+          update: { paidAt: new Date(), mpPaymentId: paymentId, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
+          create: { userId, courseId, mpPaymentId: paymentId, paidAt: new Date(), amount, paymentProvider: 'mercadopago', currency: 'ARS' },
         });
 
         await prisma.course.update({
@@ -316,7 +357,7 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
           // Meta CAPI: Purchase server-side (Mercado Pago, ARS).
           sendMetaEvent({
             eventName:      'Purchase',
-            eventId:        `purchase_${data.id}`,
+            eventId:        `purchase_${paymentId}`,
             eventSourceUrl: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${courseId}`,
             userData:       { email: user.email, externalId: userId },
             customData: {
@@ -330,7 +371,7 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
         }
       }
 
-      console.log('[MP Webhook] Payment notification received:', data.id);
+      console.log('[MP Webhook] Payment notification received:', paymentId);
     }
 
     res.json({ received: true });
