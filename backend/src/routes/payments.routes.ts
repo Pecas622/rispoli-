@@ -231,75 +231,16 @@ router.post(
   },
 );
 
-// ── Mercado Pago — checkout ARS ───────────────────────────────────────────────
-// POST /api/payments/mercadopago/:courseId
-//
-// Para activar:
-//   1. npm install mercadopago
-//   2. Agregar MP_ACCESS_TOKEN al .env
-//   3. Descomentar el bloque de código de abajo
-router.post(
-  '/mercadopago/:courseId',
-  authenticate,
-  requireMercadoPago,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const course = await prisma.course.findUnique({ where: { id: req.params.courseId } });
-      if (!course) return res.status(404).json({ message: 'Curso no encontrado' });
-
-      const existing = await prisma.enrollment.findUnique({
-        where: { userId_courseId: { userId: req.user!.userId, courseId: course.id } },
-      });
-      if (existing?.paidAt) {
-        return res.status(400).json({ message: 'Ya estás inscripto en este curso' });
-      }
-
-      const applyTransferDiscount = !!req.body?.transferDiscount && !!course.transferCode;
-      const unitPrice = applyTransferDiscount ? Math.round(course.price * 0.9) : course.price;
-      // Pago por transferencia = pago único; compra normal = hasta 6 cuotas (elegidas por el usuario).
-      const installments = applyTransferDiscount ? 1 : Math.min(6, Math.max(1, Number(req.body?.installments) || 1));
-
-      const { getMPClient, Preference } = await import('../lib/mercadopago');
-      const preference = new Preference(getMPClient());
-
-      const response = await preference.create({
-        body: {
-          items: [{
-            id:         course.id,
-            title:      applyTransferDiscount ? `${course.title} (10% OFF transferencia)` : course.title,
-            quantity:   1,
-            unit_price: unitPrice,   // precio en ARS, con descuento por transferencia si aplica
-            currency_id: 'ARS',
-          }],
-          payer: {},
-          payment_methods: { installments, default_installments: installments },
-          metadata: {
-            userId:   req.user!.userId,
-            courseId: course.id,
-          },
-          back_urls: {
-            success: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${course.id}`,
-            failure: `${process.env.FRONTEND_URL}/cursos/${course.id}?payment=failed`,
-            pending: `${process.env.FRONTEND_URL}/dashboard?payment=pending`,
-          },
-          auto_return:      'approved',
-          notification_url: `${process.env.BACKEND_URL}/api/payments/mercadopago/webhook`,
-          statement_descriptor: 'GO TRAVEL ACADEMY',
-        },
-      });
-
-      res.json({ url: response.init_point });
-    } catch (err) {
-      next(err);
-    }
-  },
-);
-
 // ── Mercado Pago — webhook ────────────────────────────────────────────────────
 // POST /api/payments/mercadopago/webhook
 //
 // MP envía notificaciones IPN a este endpoint.
 // Verificar firma: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
+//
+// IMPORTANTE: esta ruta va SÍ O SÍ antes de '/mercadopago/:courseId'. Express
+// resuelve por orden de registro, así que si el checkout va primero atrapa esta
+// URL tomando "webhook" como courseId, exige sesión y responde 401 a Mercado
+// Pago. El handler de abajo no llega a ejecutarse nunca.
 router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
   try {
     // Mercado Pago avisa de varios temas (payment, merchant_order, etc.) y en
@@ -380,6 +321,71 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 });
+
+// ── Mercado Pago — checkout ARS ───────────────────────────────────────────────
+// POST /api/payments/mercadopago/:courseId
+//
+// Para activar:
+//   1. npm install mercadopago
+//   2. Agregar MP_ACCESS_TOKEN al .env
+//   3. Descomentar el bloque de código de abajo
+router.post(
+  '/mercadopago/:courseId',
+  authenticate,
+  requireMercadoPago,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const course = await prisma.course.findUnique({ where: { id: req.params.courseId } });
+      if (!course) return res.status(404).json({ message: 'Curso no encontrado' });
+
+      const existing = await prisma.enrollment.findUnique({
+        where: { userId_courseId: { userId: req.user!.userId, courseId: course.id } },
+      });
+      if (existing?.paidAt) {
+        return res.status(400).json({ message: 'Ya estás inscripto en este curso' });
+      }
+
+      const applyTransferDiscount = !!req.body?.transferDiscount && !!course.transferCode;
+      const unitPrice = applyTransferDiscount ? Math.round(course.price * 0.9) : course.price;
+      // Pago por transferencia = pago único; compra normal = hasta 6 cuotas (elegidas por el usuario).
+      const installments = applyTransferDiscount ? 1 : Math.min(6, Math.max(1, Number(req.body?.installments) || 1));
+
+      const { getMPClient, Preference } = await import('../lib/mercadopago');
+      const preference = new Preference(getMPClient());
+
+      const response = await preference.create({
+        body: {
+          items: [{
+            id:         course.id,
+            title:      applyTransferDiscount ? `${course.title} (10% OFF transferencia)` : course.title,
+            quantity:   1,
+            unit_price: unitPrice,   // precio en ARS, con descuento por transferencia si aplica
+            currency_id: 'ARS',
+          }],
+          payer: {},
+          payment_methods: { installments, default_installments: installments },
+          metadata: {
+            userId:   req.user!.userId,
+            courseId: course.id,
+          },
+          back_urls: {
+            success: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${course.id}`,
+            failure: `${process.env.FRONTEND_URL}/cursos/${course.id}?payment=failed`,
+            pending: `${process.env.FRONTEND_URL}/dashboard?payment=pending`,
+          },
+          auto_return:      'approved',
+          notification_url: `${process.env.BACKEND_URL}/api/payments/mercadopago/webhook`,
+          statement_descriptor: 'GO TRAVEL ACADEMY',
+        },
+      });
+
+      res.json({ url: response.init_point });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 
 // ── Pagos (admin) ──────────────────────────────────────────────────────────────
 // GET /api/payments — solo pagos aprobados (lo único que se persiste hoy)
