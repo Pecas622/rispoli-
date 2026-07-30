@@ -237,12 +237,29 @@ export default function CourseDetail() {
     return { ...mod, startIdx, endIdx: runningIdx };
   });
 
+  // Datos del curso que acompañan a los eventos de Meta (Pixel + CAPI).
+  // La moneda sigue a la región, igual que el cobro: ARS por Mercado Pago,
+  // USD por Stripe.
+  const checkoutEventData = (value) => ({
+    content_type: 'product',
+    content_ids:  [String(course.id)],
+    content_name: course.title,
+    value,
+    currency: region === 'AR' ? 'ARS' : 'USD',
+  });
+
   const handleEnroll = async () => {
+    // AddToCart = intención de compra. Se dispara aunque el usuario no haya
+    // iniciado sesión: el clic en "Comprar" ya es una señal válida para Meta.
+    track('AddToCart', checkoutEventData(coursePrice));
+
     if (!user) { setAuthModal('register'); return; }
     if (region === 'AR') {
       setEnrolling(true);
       try {
         const { url } = await paymentsApi.checkoutMercadoPago(course.id, { installments });
+        // InitiateCheckout = recién acá entra de verdad a la pasarela de pago.
+        track('InitiateCheckout', checkoutEventData(coursePrice));
         window.location.href = url;
       } catch (err) {
         showToast(err.message || 'No se pudo iniciar el pago. Probá de nuevo en unos minutos.', 'error');
@@ -254,6 +271,7 @@ export default function CourseDetail() {
     setEnrolling(true);
     try {
       const { url } = await paymentsApi.checkout(course.id);
+      track('InitiateCheckout', checkoutEventData(coursePrice));
       window.location.href = url;
     } catch (err) {
       showToast(err.message || 'No se pudo iniciar el pago. Probá de nuevo en unos minutos.', 'error');
@@ -262,10 +280,15 @@ export default function CourseDetail() {
   };
 
   const handleEnrollTransfer = async () => {
+    // Mismo embudo que el pago normal, pero con el precio con 10% de descuento.
+    const transferPrice = coursePrice * 0.9;
+    track('AddToCart', checkoutEventData(transferPrice));
+
     if (!user) { setAuthModal('register'); return; }
     setEnrolling(true);
     try {
       const { url } = await paymentsApi.checkoutMercadoPago(course.id, { transferDiscount: true });
+      track('InitiateCheckout', checkoutEventData(transferPrice));
       window.location.href = url;
     } catch (err) {
       showToast(err.message || 'No se pudo iniciar el pago', 'error');

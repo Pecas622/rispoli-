@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authApi, enrollmentsApi, usersApi } from '../services/api';
-import { track, pixelTrack } from '../lib/pixel';
+import { pixelTrack } from '../lib/pixel';
 import { detectCountry, getDolarRate } from '../utils/currency';
 
 const AppContext = createContext();
@@ -219,19 +219,13 @@ export function AppProvider({ children }) {
 
   const enrolledCourseIds = enrollments.map(e => e.courseId);
 
-  // La pasarela de pago real (Stripe/Mercado Pago) todavía no está conectada
-  // con credenciales productivas — por ahora esto abre un checkout de demo
-  // que no procesa ningún cargo real ni otorga inscripción.
+  // Checkout de demostración, del flujo viejo: hoy no lo llama ningún componente
+  // (la compra real va directo a Mercado Pago/Stripe desde CourseDetail).
+  // Los eventos AddToCart e InitiateCheckout se disparan allá, en el flujo real;
+  // no los repetimos acá para no contar la misma intención dos veces.
   const enrollCourse = (course, overrides) => {
     if (!user) { setAuthModal('login'); return; }
     if (enrolledCourseIds.includes(course.id)) { showToast('Ya estás inscripto en este curso', 'info'); return; }
-    track('InitiateCheckout', {
-      content_type: 'product',
-      content_ids: [String(course.id)],
-      content_name: course.title,
-      value: course.priceARS ?? course.price ?? 0,
-      currency: 'ARS',
-    });
     setCheckoutModal(overrides ? { ...course, ...overrides } : course);
   };
 
