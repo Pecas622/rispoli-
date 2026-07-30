@@ -102,12 +102,13 @@ function metaTrackingContext(req: Request): Record<string, string> {
 // usuario. Cuantas más señales, mejor atribuye Meta la venta a la campaña.
 function purchaseUserData(
   meta: Record<string, any> | null | undefined,
-  user: { name?: string | null; email: string },
+  user: { name?: string | null; phone?: string | null; email: string },
   userId: string,
 ) {
   const partes = (user.name ?? '').trim().split(/\s+/).filter(Boolean);
   return {
     email:           user.email,
+    phone:           user.phone ?? undefined,
     firstName:       partes[0],
     lastName:        partes.length > 1 ? partes.slice(1).join(' ') : undefined,
     externalId:      userId,
@@ -245,7 +246,7 @@ router.post(
         });
 
         const [user, course] = await Promise.all([
-          prisma.user.findUnique({ where: { id: userId },   select: { name: true, email: true } }),
+          prisma.user.findUnique({ where: { id: userId },   select: { name: true, phone: true, email: true } }),
           prisma.course.findUnique({ where: { id: courseId }, select: { title: true, price: true } }),
         ]);
         if (user && course) {
@@ -347,7 +348,7 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
         });
 
         const [user, course] = await Promise.all([
-          prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
+          prisma.user.findUnique({ where: { id: userId }, select: { name: true, phone: true, email: true } }),
           prisma.course.findUnique({ where: { id: courseId }, select: { title: true, price: true } }),
         ]);
         if (user && course) {

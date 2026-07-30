@@ -111,6 +111,11 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       eventId:   leadEventId,
       userData: {
         email,
+        phone,
+        // El registro ya trae el nombre completo: lo partimos para mandar
+        // nombre y apellido por separado, como los espera Meta.
+        firstName:       name.trim().split(/\s+/)[0],
+        lastName:        name.trim().split(/\s+/).slice(1).join(' ') || undefined,
         externalId:      newUser.id,
         clientIpAddress: (req.headers['x-forwarded-for'] as string || '').split(',')[0].trim() || undefined,
         clientUserAgent: req.headers['user-agent'],

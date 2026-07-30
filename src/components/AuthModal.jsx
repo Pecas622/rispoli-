@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { COUNTRY_CODES, DEFAULT_COUNTRY, findCountry } from '../utils/countries';
+import { detectCountry } from '../utils/currency';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -24,6 +26,11 @@ export default function AuthModal() {
   const { authModal, setAuthModal, login, loginWithGoogle, register, forgotPassword } = useApp();
   const googleBtnRef = useRef(null);
   const [form, setForm] = useState({ firstName:'', lastName:'', email:'', phone:'', password:'', confirmPassword:'' });
+  // Código de país del teléfono: se preselecciona por la ubicación del visitante.
+  const [phoneCountry, setPhoneCountry] = useState(DEFAULT_COUNTRY);
+  useEffect(() => {
+    detectCountry().then(iso => { if (iso && findCountry(iso)) setPhoneCountry(iso); }).catch(() => {});
+  }, []);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -63,6 +70,7 @@ export default function AuthModal() {
       if (!form.firstName.trim()) e.firstName = 'Requerido';
       if (!form.lastName.trim()) e.lastName = 'Requerido';
       if (!form.phone.trim()) e.phone = 'Requerido';
+      else if (form.phone.replace(/\D/g, '').length < 6) e.phone = 'Teléfono incompleto';
     }
     if (!form.email.trim()) e.email = 'Requerido';
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Email inválido';
@@ -79,7 +87,7 @@ export default function AuthModal() {
     setLoading(true);
     await (isLogin
       ? login(form.email, form.password)
-      : register(`${form.firstName.trim()} ${form.lastName.trim()}`, form.email, form.phone.trim(), form.password));
+      : register(`${form.firstName.trim()} ${form.lastName.trim()}`, form.email, `${findCountry(phoneCountry)?.dial ?? ''}${form.phone.replace(/\D/g, '')}`, form.password));
     setLoading(false);
   };
 
@@ -171,7 +179,21 @@ export default function AuthModal() {
               </div>
               <div>
                 <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>Teléfono</label>
-                <input className="input" type="tel" placeholder="+54 9 11 1234-5678" value={form.phone} onChange={set('phone')} />
+                <div style={{display:'flex',gap:8}}>
+                  <select
+                    className="input"
+                    value={phoneCountry}
+                    onChange={e => setPhoneCountry(e.target.value)}
+                    aria-label="Código de país"
+                    style={{width:112,flexShrink:0,paddingLeft:10,paddingRight:6}}
+                  >
+                    {COUNTRY_CODES.map(c => (
+                      <option key={c.iso} value={c.iso}>{c.flag} {c.dial}</option>
+                    ))}
+                  </select>
+                  <input className="input" type="tel" placeholder="9 11 1234-5678" autoComplete="tel-national"
+                         value={form.phone} onChange={set('phone')} style={{flex:1,minWidth:0}} />
+                </div>
                 <FieldErr k="phone" />
               </div>
             </>
