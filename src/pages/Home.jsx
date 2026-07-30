@@ -158,7 +158,10 @@ export default function Home() {
               </button>
 
               <div className="hc-stage">
-                {slides.map((s, i) => (
+                {slides.map((s, i) => {
+                  const { current: slidePriceNow, original: slidePriceWas } =
+                    s.kind === 'course' ? getRegionPrice(s, region, dolarRate) : {};
+                  return (
                   <article
                     className={`hc-card ${slidePos(i)} ${s.kind === 'soon' ? 'hc-card-soon' : ''}`}
                     key={s.id}
@@ -179,7 +182,12 @@ export default function Home() {
                             <span>{s.level}</span><span>·</span><span>{s.duration}</span>
                           </div>
                           <div className="hc-card-foot">
-                            <span className="hc-price">{formatPrice(getRegionPrice(s, region, dolarRate).current, region)}</span>
+                            <div className="hc-price-group">
+                              <span className="hc-price">{formatPrice(slidePriceNow, region)}</span>
+                              {slidePriceWas > slidePriceNow && (
+                                <span className="hc-price-was">{formatPrice(slidePriceWas, region)}</span>
+                              )}
+                            </div>
                             <Link to={`/cursos/${s.id}`} className="hc-card-btn" onClick={e => e.stopPropagation()}>Ver curso</Link>
                           </div>
                         </>
@@ -194,7 +202,8 @@ export default function Home() {
                       )}
                     </div>
                   </article>
-                ))}
+                  );
+                })}
               </div>
 
               <button className="hc-arrow hc-arrow-next" onClick={nextSlide} aria-label="Siguiente">

@@ -182,7 +182,9 @@
 .hc-card-sub { font-size: 14px; color: var(--text-2); line-height: 1.5; }
 .hc-card-meta { display: flex; gap: 8px; font-size: 13px; color: var(--text-3); margin-top: 2px; }
 .hc-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 14px; }
+.hc-price-group { display: flex; align-items: baseline; gap: 8px; }
 .hc-price { font-size: 20px; font-weight: 800; color: var(--text); }
+.hc-price-was { font-size: 13px; text-decoration: line-through; color: var(--text-3); }
 .hc-soon-note { font-size: 13px; font-weight: 600; color: #2E63D6; }
 
 .hc-card-btn {
