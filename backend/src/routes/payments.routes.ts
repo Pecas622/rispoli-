@@ -255,6 +255,19 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
       return res.json({ received: true, ignored: topic ?? 'desconocido' });
     }
 
+    // Mercado Pago manda cada pago DOS veces, en dos formatos:
+    //   ?data.id=<id>&type=payment   → webhook moderno (el configurado en el
+    //                                  panel). Trae firma que sabemos validar.
+    //   ?id=<id>&topic=payment       → feed heredado. Viene firmado con otro
+    //                                  esquema, así que no lo podemos validar.
+    // El moderno es el que procesa la venta; el heredado es un duplicado. Lo
+    // damos por recibido para que no quede como fallido en el panel de MP.
+    const esFeedHeredado = req.query['data.id'] === undefined && req.query.topic !== undefined;
+    if (esFeedHeredado) {
+      console.log('[MP Webhook] Aviso heredado (feed) ignorado — lo procesa el webhook moderno:', mpResourceId(req));
+      return res.json({ received: true, ignored: 'feed-heredado' });
+    }
+
     const check = checkMPSignature(req);
     if (!check.ok) {
       console.warn('[MP Webhook] Notificación rechazada:', check.reason);
