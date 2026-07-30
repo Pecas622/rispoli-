@@ -27,7 +27,7 @@ function mpResourceId(req: Request): string | undefined {
 // Devuelve el motivo del rechazo para poder diagnosticarlo desde los logs:
 // un 401 mudo no dice si falta la firma o si la clave no coincide.
 function checkMPSignature(req: Request): { ok: boolean; reason?: string } {
-  const secret = process.env.MP_WEBHOOK_SECRET;
+  const secret = process.env.MP_WEBHOOK_SECRET?.trim();
   if (!secret) {
     console.warn('[MP Webhook] MP_WEBHOOK_SECRET no configurado: la firma no se está validando.');
     return { ok: true };
