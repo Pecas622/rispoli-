@@ -24,7 +24,7 @@ const loginSchema = z.object({
 });
 
 const COOKIE_NAME = 'access_token';
-const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 días
+const COOKIE_MAX_AGE_MS = 12 * 60 * 60 * 1000; // 12 horas
 
 function cookieOptions() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -41,7 +41,7 @@ function signToken(userId: string, role: string) {
   return jwt.sign(
     { userId, role },
     process.env.JWT_SECRET!,
-    { expiresIn: (process.env.JWT_EXPIRES_IN ?? '7d') as jwt.SignOptions['expiresIn'] },
+    { expiresIn: (process.env.JWT_EXPIRES_IN ?? '12h') as jwt.SignOptions['expiresIn'] },
   );
 }
 
