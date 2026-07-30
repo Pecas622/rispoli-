@@ -1,3 +1,5 @@
+import { fbCookies } from '../lib/pixel';
+
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 async function request(endpoint, options = {}) {
@@ -104,8 +106,11 @@ export const progressApi = {
 
 // ── Payments ──────────────────────────────────────────────
 export const paymentsApi = {
-  checkout:            (courseId) => api.post(`/payments/checkout/${courseId}`, {}),
-  checkoutMercadoPago: (courseId, body = {}) => api.post(`/payments/mercadopago/${courseId}`, body),
+  // Se adjuntan las cookies de Meta (_fbp/_fbc): el pago se confirma después
+  // por webhook, cuando ya no hay navegador del cual leerlas, y sin ellas el
+  // evento Purchase pierde calidad de coincidencia.
+  checkout:            (courseId) => api.post(`/payments/checkout/${courseId}`, { ...fbCookies() }),
+  checkoutMercadoPago: (courseId, body = {}) => api.post(`/payments/mercadopago/${courseId}`, { ...body, ...fbCookies() }),
   history:             ()         => api.get('/payments/history'),
   adminList: (params = {}) => {
     const qs = new URLSearchParams(params).toString();

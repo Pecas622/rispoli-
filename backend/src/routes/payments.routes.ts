@@ -73,6 +73,51 @@ function checkMPSignature(req: Request): { ok: boolean; reason?: string } {
   return { ok: true };
 }
 
+// Datos del navegador que Meta usa para reconocer al usuario: las cookies del
+// Pixel (_fbp identifica al visitante, _fbc guarda el clic en el anuncio), la
+// IP y el dispositivo.
+//
+// Se capturan al CREAR el pago, que es el único momento en que tenemos al
+// usuario delante: la confirmación llega después por webhook, un pedido que
+// hace Mercado Pago desde sus servidores. Viajan en la metadata del pago para
+// que el webhook pueda reenviarlos junto al evento Purchase.
+//
+// Las claves van en snake_case porque Mercado Pago las devuelve así.
+function metaTrackingContext(req: Request): Record<string, string> {
+  const fwd = req.headers['x-forwarded-for'];
+  const ip = typeof fwd === 'string' && fwd
+    ? fwd.split(',')[0].trim()
+    : req.socket?.remoteAddress ?? '';
+  return {
+    fbp:       (req.body?.fbp as string | undefined) ?? '',
+    fbc:       (req.body?.fbc as string | undefined) ?? '',
+    client_ip: ip ?? '',
+    // Stripe limita la metadata a 500 caracteres por valor.
+    client_ua: ((req.headers['user-agent'] as string | undefined) ?? '').slice(0, 300),
+  };
+}
+
+// Arma los datos de reconocimiento del evento Purchase combinando lo que
+// guardamos al crear el pago (cookies, IP, dispositivo) con lo que sabemos del
+// usuario. Cuantas más señales, mejor atribuye Meta la venta a la campaña.
+function purchaseUserData(
+  meta: Record<string, any> | null | undefined,
+  user: { name?: string | null; email: string },
+  userId: string,
+) {
+  const partes = (user.name ?? '').trim().split(/\s+/).filter(Boolean);
+  return {
+    email:           user.email,
+    firstName:       partes[0],
+    lastName:        partes.length > 1 ? partes.slice(1).join(' ') : undefined,
+    externalId:      userId,
+    fbp:             meta?.fbp || undefined,
+    fbc:             meta?.fbc || undefined,
+    clientIpAddress: meta?.client_ip || undefined,
+    clientUserAgent: meta?.client_ua || undefined,
+  };
+}
+
 // ── Guards ────────────────────────────────────────────────────────────────────
 
 function requireStripe(_req: Request, res: Response, next: NextFunction) {
@@ -138,6 +183,7 @@ router.post(
           userId:   req.user!.userId,
           courseId: course.id,
           provider: 'stripe',
+          ...metaTrackingContext(req),
         },
         success_url: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${course.id}`,
         cancel_url:  `${process.env.FRONTEND_URL}/cursos/${course.id}?payment=cancelled`,
@@ -212,7 +258,7 @@ router.post(
             eventName:      'Purchase',
             eventId:        `purchase_${session.id}`,
             eventSourceUrl: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${courseId}`,
-            userData:       { email: user.email, externalId: userId },
+            userData:       purchaseUserData(session.metadata, user, userId),
             customData: {
               currency:     'USD',
               value:        amount,
@@ -313,7 +359,7 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
             eventName:      'Purchase',
             eventId:        `purchase_${paymentId}`,
             eventSourceUrl: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${courseId}`,
-            userData:       { email: user.email, externalId: userId },
+            userData:       purchaseUserData(payment.metadata, user, userId),
             customData: {
               currency:     'ARS',
               value:        amount,
@@ -380,6 +426,7 @@ router.post(
           metadata: {
             userId:   req.user!.userId,
             courseId: course.id,
+            ...metaTrackingContext(req),
           },
           back_urls: {
             success: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${course.id}`,

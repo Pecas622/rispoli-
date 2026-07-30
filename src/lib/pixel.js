@@ -30,6 +30,13 @@ function newEventId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+// Identificadores que Meta usa para reconocer al usuario. Los guarda el Pixel
+// en el navegador: _fbp identifica al visitante y _fbc guarda el clic en el
+// anuncio. Sin ellos, Meta no puede atribuir la venta a la campaña.
+export function fbCookies() {
+  return { fbp: getCookie('_fbp'), fbc: getCookie('_fbc') };
+}
+
 function getCookie(name) {
   if (typeof document === 'undefined') return undefined;
   const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
