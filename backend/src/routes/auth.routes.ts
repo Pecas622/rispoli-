@@ -79,7 +79,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     const { name, email, password } = registerSchema.parse(req.body);
 
     const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    if (existing && !existing.deletedAt) {
       if (!existing.emailVerified) {
         // Reenviar código si el usuario existe pero no verificó
         const code = await createAndSendCode(email);
@@ -89,7 +89,15 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const newUser = await prisma.user.create({ data: { name, email, passwordHash } });
+    // Si el email pertenece a un usuario eliminado (soft delete), reactivamos
+    // esa misma fila en vez de bloquear el registro — así se conserva su
+    // historial de compras/inscripciones en vez de dejar el email huérfano.
+    const newUser = existing
+      ? await prisma.user.update({
+          where: { email },
+          data:  { name, passwordHash, deletedAt: null, isBlocked: false, emailVerified: false },
+        })
+      : await prisma.user.create({ data: { name, email, passwordHash } });
 
     const code = await createAndSendCode(email);
 
