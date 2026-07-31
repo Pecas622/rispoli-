@@ -174,11 +174,18 @@ export default function Home() {
                 {slides.map((s, i) => {
                   const { current: slidePriceNow, original: slidePriceWas } =
                     s.kind === 'course' ? getRegionPrice(s, region, dolarRate) : {};
+                  // Los cursos ya en venta: toda la card lleva al curso (como en
+                  // el grid). Las "próximamente" no tienen a dónde ir todavía,
+                  // así que solo recentran el carrusel al tocarlas.
+                  const CardTag  = s.kind === 'course' ? Link : 'article';
+                  const cardProp = s.kind === 'course'
+                    ? { to: `/cursos/${s.id}` }
+                    : { onClick: () => { if (slidePos(i) !== 'is-center') setActiveIndex(i); } };
                   return (
-                  <article
+                  <CardTag
                     className={`hc-card ${slidePos(i)} ${s.kind === 'soon' ? 'hc-card-soon' : ''}`}
                     key={s.id}
-                    onClick={() => { if (slidePos(i) !== 'is-center') setActiveIndex(i); }}
+                    {...cardProp}
                   >
                     <div className="hc-card-media">
                       <img src={s.image} alt={s.title} />
@@ -201,7 +208,7 @@ export default function Home() {
                                 <span className="hc-price-was">{formatPrice(slidePriceWas, region)}</span>
                               )}
                             </div>
-                            <Link to={`/cursos/${s.id}`} className="hc-card-btn" onClick={e => e.stopPropagation()}>Ver curso</Link>
+                            <span className="hc-card-btn">Ver curso</span>
                           </div>
                         </>
                       ) : (
@@ -213,7 +220,7 @@ export default function Home() {
                         </>
                       )}
                     </div>
-                  </article>
+                  </CardTag>
                   );
                 })}
               </div>
