@@ -232,12 +232,17 @@ router.post(
       const session = event.data.object;
       const { userId, courseId } = session.metadata as { userId: string; courseId: string };
       const amount = (session.amount_total ?? 0) / 100;
+      // Con Adaptive Pricing, Stripe le cobra a cada comprador en su moneda
+      // local, así que `amount_total` no siempre está en dólares. Tomamos la
+      // moneda real de la sesión: fijarla en USD inflaría los ingresos que ve
+      // Meta (ej. R$ 1.900 reportados como 1900 dólares).
+      const currency = (session.currency ?? 'usd').toUpperCase();
 
       try {
         await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
-          update: { paidAt: new Date(), stripeSessionId: session.id, amount, paymentProvider: 'stripe', currency: 'USD' },
-          create: { userId, courseId, stripeSessionId: session.id, paidAt: new Date(), amount, paymentProvider: 'stripe', currency: 'USD' },
+          update: { paidAt: new Date(), stripeSessionId: session.id, amount, paymentProvider: 'stripe', currency },
+          create: { userId, courseId, stripeSessionId: session.id, paidAt: new Date(), amount, paymentProvider: 'stripe', currency },
         });
 
         await prisma.course.update({
@@ -261,7 +266,7 @@ router.post(
             eventSourceUrl: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${courseId}`,
             userData:       purchaseUserData(session.metadata, user, userId),
             customData: {
-              currency:     'USD',
+              currency,
               value:        amount,
               content_type: 'product',
               content_ids:  [courseId],
