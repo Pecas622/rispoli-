@@ -153,15 +153,14 @@
   display: inline-flex; align-items: center;
   padding: 7px 14px;
   font-size: 12.5px; font-weight: 600;
-  color: var(--accent);
-  background: var(--violet-pale);
+  color: #fff;
+  background: #2E63D6;
   border-radius: 8px;
   text-decoration: none;
-  transition: background 0.18s, color 0.18s;
+  transition: background 0.18s;
   white-space: nowrap;
 }
 
 .cc-cta-btn:hover {
-  background: var(--violet-light);
-  color: var(--accent);
+  background: #2554BC;
 }
