@@ -9,14 +9,18 @@ const REGION_OPTIONS = [
   { code: 'WORLD', flag: '🌍', label: 'Internacional', sub: 'USD · Stripe'        },
 ];
 
-const navLinks = [
-  { label: 'Inicio', to: '/' },
-  { label: 'Cursos', to: '/cursos' },
-  { label: 'Mi Aprendizaje', to: '/dashboard', protected: true },
-  { label: 'Certificaciones', to: '/certificaciones', protected: true },
-  { label: 'Nosotros', to: '/nosotros' },
-  { label: 'Contacto', to: '/contacto' },
-];
+function getNavLinks(isAdmin) {
+  return [
+    { label: 'Inicio', to: '/' },
+    { label: 'Cursos', to: '/cursos' },
+    isAdmin
+      ? { label: 'Panel', to: '/admin', protected: true }
+      : { label: 'Mi Aprendizaje', to: '/dashboard', protected: true },
+    { label: 'Certificaciones', to: '/certificaciones', protected: true },
+    { label: 'Nosotros', to: '/nosotros' },
+    { label: 'Contacto', to: '/contacto' },
+  ];
+}
 
 export default function Navbar() {
   const { user, logout, setAuthModal, region, selectRegion } = useApp();
@@ -26,6 +30,7 @@ export default function Navbar() {
   const [regionMenu, setRegionMenu] = useState(false);
   const regionRef = useRef(null);
   const location = useLocation();
+  const navLinks = getNavLinks(user?.role === 'admin');
 
   useEffect(() => {
     if (!regionMenu) return;

@@ -104,6 +104,7 @@ export default function VerifyEmailModal() {
         <p className="vem-subtitle">
           Enviamos un código de 6 dígitos a<br /><strong>{maskedEmail}</strong>
         </p>
+        <p className="vem-spam-note">Si no lo ves en unos minutos, revisá la carpeta de spam o correo no deseado.</p>
         {devCode && (
           <div className="vem-dev-banner">
             <span className="vem-dev-label">🛠️ Modo Desarrollo · Email no configurado</span>

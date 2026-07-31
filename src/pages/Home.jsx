@@ -43,12 +43,25 @@ const AVATAR_IDS = [
   'photo-1506794778202-cad84cf45f1d',
 ];
 
+const ORG_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type':    'EducationalOrganization',
+  name:        'Go Travel Academy',
+  url:         'https://gotravelacademy.com',
+  logo:        'https://gotravelacademy.com/gta-logo.jpeg',
+  description: 'Formación 100% online para agentes de viajes, con casos reales y certificado avalado por la Universidad del Aconcagua.',
+  sameAs: [
+    'https://www.instagram.com/go.travelacademy/',
+    'https://www.facebook.com/profile.php?id=61576498965707',
+  ],
+};
+
 export default function Home() {
   const { setAuthModal, region, dolarRate } = useApp();
   const [openFaq, setOpenFaq] = useState(null);
   const [courses, setCourses] = useState(USE_API ? [] : mockCourses);
 
-  useSEO({ path: '/' });
+  useSEO({ path: '/', jsonLd: ORG_JSON_LD });
 
   useEffect(() => {
     if (!USE_API) return;
@@ -196,7 +209,6 @@ export default function Home() {
                           <div className="hc-card-meta"><span>Muy pronto</span></div>
                           <div className="hc-card-foot">
                             <span className="hc-soon-note">Lanzamiento próximo</span>
-                            <button className="hc-card-btn hc-card-btn-ghost" onClick={(e) => { e.stopPropagation(); setAuthModal('register'); }}>Avisame</button>
                           </div>
                         </>
                       )}
@@ -399,7 +411,6 @@ export default function Home() {
                     </div>
                     <div className="cc-footer">
                       <span className="hc-soon-note">Lanzamiento próximo</span>
-                      <button className="cc-cta-btn" onClick={() => setAuthModal('register')}>Avisame</button>
                     </div>
                   </article>
                 )

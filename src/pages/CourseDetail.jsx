@@ -134,22 +134,44 @@ export default function CourseDetail() {
     description: course ? (course.subtitle || course.description?.slice(0, 160)) : undefined,
     image:       course?.image,
     path:        course ? `/cursos/${course.id}` : undefined,
-    jsonLd: course ? {
-      '@context': 'https://schema.org',
-      '@type':    'Course',
-      name:        course.title,
-      description: course.description ?? course.subtitle ?? '',
-      provider: {
-        '@type': 'Organization',
-        name:    'Go Travel Academy',
-        sameAs:  'https://gotravelacademy.com',
+    jsonLd: course ? [
+      {
+        '@context': 'https://schema.org',
+        '@type':    'Course',
+        name:        course.title,
+        description: course.description ?? course.subtitle ?? '',
+        provider: {
+          '@type': 'Organization',
+          name:    'Go Travel Academy',
+          sameAs:  'https://gotravelacademy.com',
+        },
+        ...(course.level    ? { educationalLevel: course.level } : {}),
+        ...(course.modality ? { courseMode: course.modality } : {}),
+        ...(course.price > 0 ? {
+          offers: { '@type': 'Offer', price: course.price, priceCurrency: 'ARS', availability: 'https://schema.org/InStock' },
+        } : {}),
+        // Solo con reseñas reales de alumnos (nunca con el número/rating
+        // genérico que se muestra en pantalla cuando no hay reseñas todavía):
+        // Google trata el aggregateRating inflado como reseñas falsas y
+        // aplica acciones manuales sobre el sitio entero.
+        ...(realReviews.length > 0 ? {
+          aggregateRating: {
+            '@type':      'AggregateRating',
+            ratingValue:  Math.round((realReviews.reduce((a, r) => a + r.rating, 0) / realReviews.length) * 10) / 10,
+            reviewCount:  realReviews.length,
+          },
+        } : {}),
       },
-      ...(course.level    ? { educationalLevel: course.level } : {}),
-      ...(course.modality ? { courseMode: course.modality } : {}),
-      ...(course.price > 0 ? {
-        offers: { '@type': 'Offer', price: course.price, priceCurrency: 'ARS', availability: 'https://schema.org/InStock' },
-      } : {}),
-    } : null,
+      {
+        '@context': 'https://schema.org',
+        '@type':    'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Inicio',  item: 'https://gotravelacademy.com/' },
+          { '@type': 'ListItem', position: 2, name: 'Cursos',  item: 'https://gotravelacademy.com/cursos' },
+          { '@type': 'ListItem', position: 3, name: course.title, item: `https://gotravelacademy.com/cursos/${course.id}` },
+        ],
+      },
+    ] : null,
   });
 
   if (course === undefined) return <div style={{padding:'160px 0',textAlign:'center'}}><div className="spinner" style={{margin:'0 auto'}} /></div>;
