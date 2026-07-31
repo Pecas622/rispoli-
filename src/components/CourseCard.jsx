@@ -22,7 +22,7 @@ export default function CourseCard({ course }) {
   const comingSoon = course.price === 0;
 
   return (
-    <article className="course-card">
+    <Link to={`/cursos/${course.id}`} className="course-card">
       {/* Image */}
       <div className="cc-image-wrap">
         <img src={course.image} alt={course.title} className="cc-image" loading="lazy" />
@@ -81,10 +81,8 @@ export default function CourseCard({ course }) {
             {discount > 0 && <span className="cc-price-was">{formatPrice(original, region)}</span>}
           </div>
         )}
-        <Link to={`/cursos/${course.id}`} className="cc-cta-btn">
-          Ver curso
-        </Link>
+        <span className="cc-cta-btn">Ver curso</span>
       </div>
-    </article>
+    </Link>
   );
 }
