@@ -428,7 +428,13 @@ router.post(
             currency_id: 'ARS',
           }],
           payer: {},
-          payment_methods: { installments, default_installments: installments },
+          // `installments` es el MÁXIMO de cuotas que se ofrecen. No fijamos
+          // `default_installments`: al preseleccionar 6, quien paga con una
+          // tarjeta que no admite cuotas (las prepagas, por ejemplo) recibe un
+          // rechazo si no cambia la opción a mano. Dejando que Mercado Pago
+          // elija el valor por defecto, a cada tarjeta le muestra lo que sí
+          // puede pagar y se siguen ofreciendo las cuotas a quien las tiene.
+          payment_methods: { installments },
           metadata: {
             userId:   req.user!.userId,
             courseId: course.id,
