@@ -33,9 +33,9 @@ router.post('/', authenticate, async (req: Request, res: Response, next: NextFun
 
     const enrollment = await prisma.enrollment.findUnique({
       where:  { userId_courseId: { userId: req.user!.userId, courseId } },
-      select: { paidAt: true },
+      select: { paidAt: true, refundedAt: true },
     });
-    if (!enrollment?.paidAt) {
+    if (!enrollment?.paidAt || enrollment.refundedAt) {
       return res.status(403).json({ message: 'Necesitás haber comprado el curso para dejar una reseña' });
     }
 

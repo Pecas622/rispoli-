@@ -9,9 +9,9 @@ async function canAccessCourseContent(userId: string, role: string, courseId: st
   if (role === 'ADMIN' || role === 'INSTRUCTOR') return true;
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId } },
-    select: { paidAt: true },
+    select: { paidAt: true, refundedAt: true },
   });
-  return !!enrollment?.paidAt;
+  return !!enrollment?.paidAt && !enrollment.refundedAt;
 }
 
 function maskLesson<T extends { isPreview: boolean; videoUrl: string | null; content: string | null; resources?: any[] }>(

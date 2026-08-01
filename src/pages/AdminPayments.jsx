@@ -24,7 +24,8 @@ export default function AdminPayments() {
 
   useEffect(() => { load(); }, [load]);
 
-  const totalRecaudado = payments.reduce((a, p) => a + (p.amount || 0), 0);
+  const paymentsOk  = payments.filter(p => p.status !== 'reembolsado');
+  const totalRecaudado = paymentsOk.reduce((a, p) => a + (p.amount || 0), 0);
 
   return (
     <div className="container">
@@ -33,7 +34,7 @@ export default function AdminPayments() {
           { label: 'Pagos (esta página)', val: payments.length },
           { label: 'Total de pagos',       val: total },
           { label: 'Recaudado (esta página)', val: `$${totalRecaudado.toLocaleString()}` },
-          { label: 'Promedio por pago', val: payments.length ? `$${Math.round(totalRecaudado / payments.length).toLocaleString()}` : '$0' },
+          { label: 'Promedio por pago', val: paymentsOk.length ? `$${Math.round(totalRecaudado / paymentsOk.length).toLocaleString()}` : '$0' },
         ].map(({ label, val }) => (
           <div key={label} className="admin-stat">
             <div className="admin-stat-label">{label}</div>
@@ -80,7 +81,11 @@ export default function AdminPayments() {
                       </td>
                       <td style={{fontSize:13,color:'var(--text-2)',textTransform:'capitalize'}}>{p.provider ?? '—'}</td>
                       <td style={{fontSize:13,color:'var(--text-2)'}}>{p.paidAt ? new Date(p.paidAt).toLocaleDateString('es-AR') : '—'}</td>
-                      <td><span className="badge badge-green">Aprobado</span></td>
+                      <td>
+                        {p.status === 'reembolsado'
+                          ? <span className="badge badge-red">Reembolsado</span>
+                          : <span className="badge badge-green">Aprobado</span>}
+                      </td>
                     </tr>
                   ))}
                   {payments.length === 0 && (

@@ -8,7 +8,7 @@ const router = Router();
 router.get('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const enrollments = await prisma.enrollment.findMany({
-      where: { userId: req.user!.userId, paidAt: { not: null } },
+      where: { userId: req.user!.userId, paidAt: { not: null }, refundedAt: null },
       include: {
         course: {
           include: {
@@ -76,7 +76,7 @@ router.post('/:courseId/free', authenticate, requireAdmin, async (req: Request, 
 
     const enrollment = await prisma.enrollment.upsert({
       where: { userId_courseId: { userId: targetUserId, courseId } },
-      update: { paidAt: new Date(), amount: 0 },
+      update: { paidAt: new Date(), refundedAt: null, amount: 0 },
       create: { userId: targetUserId, courseId, paidAt: new Date(), amount: 0 },
     });
     res.status(201).json({ enrollment });

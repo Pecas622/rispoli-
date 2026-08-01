@@ -66,7 +66,7 @@ router.get('/', optionalAuth, async (req: Request, res: Response, next: NextFunc
         _count: {
           select: {
             modules: true,
-            enrollments: { where: { paidAt: { not: null } } },
+            enrollments: { where: { paidAt: { not: null }, refundedAt: null } },
           },
         },
       },
@@ -114,7 +114,7 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response, next: NextF
             },
           },
         },
-        _count: { select: { enrollments: { where: { paidAt: { not: null } } } } },
+        _count: { select: { enrollments: { where: { paidAt: { not: null }, refundedAt: null } } } },
       },
     });
 

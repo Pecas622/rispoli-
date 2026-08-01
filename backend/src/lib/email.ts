@@ -290,6 +290,62 @@ export async function sendPurchaseConfirmationEmail(
   });
 }
 
+// ── Aviso interno de venta (al equipo, no al alumno) ─────────────────────────
+// Antes la única forma de enterarse de una compra era mirar el panel de
+// Mercado Pago/Stripe a mano. Este mail se dispara junto con la factura del
+// alumno, así que llega apenas se confirma el pago.
+export async function sendPurchaseNotificationEmail(
+  user: UserData & { phone?: string | null },
+  course: CourseData,
+  amount: number,
+  currency: string,
+  provider: string,
+) {
+  await send({
+    to:      CONTACT_INBOX,
+    subject: `💰 Nueva venta: ${course.title} — ${currency} ${amount.toLocaleString('es-AR')}`,
+    html: `
+<!DOCTYPE html><html lang="es">
+<body style="margin:0;padding:0;background:#f4f3ef;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0"
+      style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e8e7e3;">
+      <tr>
+        <td style="background:#065f46;padding:28px 40px;">
+          <h1 style="margin:0;color:#fff;font-size:20px;font-weight:800;">💰 Nueva venta confirmada</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:32px 40px;">
+          <p style="margin:0 0 6px;font-size:12px;color:#8a8983;text-transform:uppercase;letter-spacing:0.06em;">Curso</p>
+          <p style="margin:0 0 20px;font-size:16px;font-weight:700;color:#1e293b;">${course.title}</p>
+
+          <p style="margin:0 0 6px;font-size:12px;color:#8a8983;text-transform:uppercase;letter-spacing:0.06em;">Monto</p>
+          <p style="margin:0 0 20px;font-size:16px;font-weight:700;color:#1e293b;">
+            ${currency} ${amount.toLocaleString('es-AR')} · ${provider === 'stripe' ? 'Stripe' : 'Mercado Pago'}
+          </p>
+
+          <p style="margin:0 0 6px;font-size:12px;color:#8a8983;text-transform:uppercase;letter-spacing:0.06em;">Alumno</p>
+          <p style="margin:0;font-size:14px;color:#1e293b;">${user.name}</p>
+          <p style="margin:2px 0 0;font-size:13px;color:#64748b;">
+            <a href="mailto:${user.email}" style="color:#2E63D6;">${user.email}</a>
+            ${user.phone ? ` · ${user.phone}` : ''}
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 40px;border-top:1px solid #e8e7e3;background:#f4f3ef;">
+          <p style="margin:0;color:#94a3b8;font-size:11px;">GO Travel Academy · aviso automático de ventas</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+  });
+}
+
 // ── Reset de contraseña ──────────────────────────────────────────────────────
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   await send({

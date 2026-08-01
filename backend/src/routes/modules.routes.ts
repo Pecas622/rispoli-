@@ -7,14 +7,14 @@ const router = Router({ mergeParams: true });
 
 // Un usuario puede ver el CONTENIDO completo (video/texto/recursos) de un curso si:
 // - es ADMIN o INSTRUCTOR, o
-// - tiene una inscripción paga (Enrollment.paidAt) para ese courseId
+// - tiene una inscripción paga (Enrollment.paidAt) y no reembolsada para ese courseId
 async function canAccessCourseContent(userId: string, role: string, courseId: string): Promise<boolean> {
   if (role === 'ADMIN' || role === 'INSTRUCTOR') return true;
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId } },
-    select: { paidAt: true },
+    select: { paidAt: true, refundedAt: true },
   });
-  return !!enrollment?.paidAt;
+  return !!enrollment?.paidAt && !enrollment.refundedAt;
 }
 
 // Oculta el contenido "pago" de una clase que no sea preview (video, texto, recursos)

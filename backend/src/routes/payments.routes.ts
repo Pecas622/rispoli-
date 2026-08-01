@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { getStripe, isStripeReady } from '../lib/stripe';
 import { isMercadoPagoReady } from '../lib/mercadopago';
 import { prisma } from '../lib/prisma';
-import { sendPurchaseConfirmationEmail } from '../lib/email';
+import { sendPurchaseConfirmationEmail, sendPurchaseNotificationEmail } from '../lib/email';
 import { sendMetaEvent } from '../lib/capi';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
@@ -173,7 +173,7 @@ router.post(
       const existing = await prisma.enrollment.findUnique({
         where: { userId_courseId: { userId: req.user!.userId, courseId: course.id } },
       });
-      if (existing?.paidAt) {
+      if (existing?.paidAt && !existing.refundedAt) {
         return res.status(400).json({ message: 'Ya estás inscripto en este curso' });
       }
 
@@ -254,12 +254,15 @@ router.post(
       // moneda real de la sesión: fijarla en USD inflaría los ingresos que ve
       // Meta (ej. R$ 1.900 reportados como 1900 dólares).
       const currency = (session.currency ?? 'usd').toUpperCase();
+      const paymentIntentId = typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id;
 
       try {
         await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
-          update: { paidAt: new Date(), stripeSessionId: session.id, amount, paymentProvider: 'stripe', currency },
-          create: { userId, courseId, stripeSessionId: session.id, paidAt: new Date(), amount, paymentProvider: 'stripe', currency },
+          update: { paidAt: new Date(), refundedAt: null, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, amount, paymentProvider: 'stripe', currency },
+          create: { userId, courseId, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, paidAt: new Date(), amount, paymentProvider: 'stripe', currency },
         });
 
         await prisma.course.update({
@@ -274,6 +277,7 @@ router.post(
         if (user && course) {
           const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
           sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
+          sendPurchaseNotificationEmail(user, course, amount, currency, 'stripe').catch(console.error);
 
           // Meta CAPI: Purchase server-side (la conversión que más importa).
           // event_id estable por sesión → se deduplica si el navegador también lo dispara.
@@ -293,6 +297,28 @@ router.post(
         }
       } catch (err) {
         console.error('[Stripe Webhook] Error procesando inscripción:', err);
+      }
+    }
+
+    // Reembolso (total o parcial) o contracargo: revocar el acceso al curso.
+    // No borramos el registro de Enrollment — queda en el historial de pagos
+    // del admin marcado como reembolsado en vez de desaparecer.
+    if (event.type === 'charge.refunded' || event.type === 'charge.dispute.created') {
+      const charge = event.data.object as { payment_intent?: string | { id: string } | null };
+      const paymentIntentId = typeof charge.payment_intent === 'string'
+        ? charge.payment_intent
+        : charge.payment_intent?.id;
+
+      if (paymentIntentId) {
+        try {
+          const enrollment = await prisma.enrollment.findFirst({ where: { stripePaymentIntentId: paymentIntentId } });
+          if (enrollment && !enrollment.refundedAt) {
+            await prisma.enrollment.update({ where: { id: enrollment.id }, data: { refundedAt: new Date() } });
+            console.log(`[Stripe Webhook] Acceso revocado por reembolso/contracargo: enrollment ${enrollment.id}`);
+          }
+        } catch (err) {
+          console.error('[Stripe Webhook] Error revocando acceso por reembolso:', err);
+        }
       }
     }
 
@@ -360,7 +386,7 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
 
         await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
-          update: { paidAt: new Date(), mpPaymentId: paymentId, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
+          update: { paidAt: new Date(), refundedAt: null, mpPaymentId: paymentId, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
           create: { userId, courseId, mpPaymentId: paymentId, paidAt: new Date(), amount, paymentProvider: 'mercadopago', currency: 'ARS' },
         });
 
@@ -376,6 +402,7 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
         if (user && course) {
           const invoiceNumber = `INV-MP-${Date.now().toString(36).toUpperCase()}`;
           sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
+          sendPurchaseNotificationEmail(user, course, amount, 'ARS', 'mercadopago').catch(console.error);
 
           // Meta CAPI: Purchase server-side (Mercado Pago, ARS).
           sendMetaEvent({
@@ -392,9 +419,17 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
             },
           }).catch(() => {});
         }
+      } else if (['refunded', 'cancelled', 'charged_back'].includes(payment.status ?? '')) {
+        // Reembolso, anulación o contracargo: revocar el acceso sin borrar
+        // el registro de la venta (queda en el historial marcado como tal).
+        const enrollment = await prisma.enrollment.findFirst({ where: { mpPaymentId: paymentId } });
+        if (enrollment && !enrollment.refundedAt) {
+          await prisma.enrollment.update({ where: { id: enrollment.id }, data: { refundedAt: new Date() } });
+          console.log(`[MP Webhook] Acceso revocado (${payment.status}): enrollment ${enrollment.id}`);
+        }
       }
 
-      console.log('[MP Webhook] Payment notification received:', paymentId);
+      console.log('[MP Webhook] Payment notification received:', paymentId, payment.status);
     }
 
     res.json({ received: true });
@@ -423,7 +458,7 @@ router.post(
       const existing = await prisma.enrollment.findUnique({
         where: { userId_courseId: { userId: req.user!.userId, courseId: course.id } },
       });
-      if (existing?.paidAt) {
+      if (existing?.paidAt && !existing.refundedAt) {
         return res.status(400).json({ message: 'Ya estás inscripto en este curso' });
       }
 
@@ -499,7 +534,8 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
       currency: e.currency,
       provider: e.paymentProvider,
       paidAt:   e.paidAt,
-      status:   'aprobado' as const,
+      refundedAt: e.refundedAt,
+      status:   e.refundedAt ? 'reembolsado' as const : 'aprobado' as const,
     }));
 
     res.json({ payments, total, page, totalPages: Math.max(1, Math.ceil(total / limit)) });

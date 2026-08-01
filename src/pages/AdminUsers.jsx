@@ -129,6 +129,7 @@ export default function AdminUsers() {
                   <tr>
                     <th>Nombre</th>
                     <th>Email</th>
+                    <th>Teléfono</th>
                     <th>Rol</th>
                     <th>Registrado</th>
                     <th>Estado</th>
@@ -140,6 +141,7 @@ export default function AdminUsers() {
                     <tr key={u.id} style={{ cursor:'pointer' }} onClick={() => openDetail(u)}>
                       <td style={{fontSize:13,fontWeight:600}}>{u.name}</td>
                       <td style={{fontSize:13,color:'var(--text-2)'}}>{u.email}</td>
+                      <td style={{fontSize:13,color:'var(--text-2)'}}>{u.phone || '—'}</td>
                       <td><span className="badge badge-default">{u.role}</span></td>
                       <td style={{fontSize:13,color:'var(--text-2)'}}>{new Date(u.createdAt).toLocaleDateString('es-AR')}</td>
                       <td>
@@ -156,7 +158,7 @@ export default function AdminUsers() {
                     </tr>
                   ))}
                   {users.length === 0 && (
-                    <tr><td colSpan={6} style={{ textAlign:'center', padding:'32px 0', color:'var(--text-3)' }}>Sin usuarios</td></tr>
+                    <tr><td colSpan={7} style={{ textAlign:'center', padding:'32px 0', color:'var(--text-3)' }}>Sin usuarios</td></tr>
                   )}
                 </tbody>
               </table>
@@ -231,7 +233,9 @@ export default function AdminUsers() {
           <div className="modal" style={{maxWidth:520,maxHeight:'85vh',overflowY:'auto'}}>
             <button className="modal-close-btn" onClick={()=>setDetailUser(null)}><X size={14}/></button>
             <p className="modal-title">{detailUser.name}</p>
-            <p style={{fontSize:13,color:'var(--text-3)',marginTop:-16,marginBottom:20}}>{detailUser.email}</p>
+            <p style={{fontSize:13,color:'var(--text-3)',marginTop:-16,marginBottom:20}}>
+              {detailUser.email}{detailUser.phone ? ` · ${detailUser.phone}` : ''}
+            </p>
 
             <p style={{fontSize:12,fontWeight:600,color:'var(--text-3)',textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:10}}>Cursos inscriptos</p>
             {detailEnrollments === null ? (

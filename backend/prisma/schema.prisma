@@ -153,16 +153,20 @@ model Resource {
 }
 
 model Enrollment {
-  id              String    @id @default(cuid())
-  userId          String    @map("user_id")
-  courseId        String    @map("course_id")
-  stripeSessionId String?   @map("stripe_session_id")
-  mpPaymentId     String?   @map("mp_payment_id")
-  paymentProvider String?   @map("payment_provider") // stripe | mercadopago | free
-  paidAt          DateTime? @map("paid_at")
-  amount          Float?
-  currency        String?   @default("ARS")
-  createdAt       DateTime  @default(now()) @map("created_at")
+  id                    String    @id @default(cuid())
+  userId                String    @map("user_id")
+  courseId              String    @map("course_id")
+  stripeSessionId       String?   @map("stripe_session_id")
+  stripePaymentIntentId String?   @map("stripe_payment_intent_id")
+  mpPaymentId           String?   @map("mp_payment_id")
+  paymentProvider       String?   @map("payment_provider") // stripe | mercadopago | free
+  paidAt                DateTime? @map("paid_at")
+  // Reembolso o contracargo: revoca el acceso sin borrar el registro de la
+  // venta (queda para el historial de pagos del admin).
+  refundedAt            DateTime? @map("refunded_at")
+  amount                Float?
+  currency              String?   @default("ARS")
+  createdAt             DateTime  @default(now()) @map("created_at")
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
