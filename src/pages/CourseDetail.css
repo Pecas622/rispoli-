@@ -386,3 +386,20 @@
   .enroll-body { padding: 16px; }
   .pc-body { padding: 16px; }
 }
+
+/* ── AVISO DE PAGO RECHAZADO ────────────────────────────────────────────────── */
+.pago-rechazado {
+  border: 1px solid rgba(220, 38, 38, 0.28);
+  background: rgba(220, 38, 38, 0.05);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  margin-bottom: 22px;
+}
+.pago-rechazado-titulo { font-size: 15px; font-weight: 700; color: var(--red); margin-bottom: 8px; }
+.pago-rechazado-texto  { font-size: 13.5px; color: var(--text-2); line-height: 1.65; }
+.pago-rechazado-lista  { margin: 8px 0 10px 18px; }
+.pago-rechazado-lista li { font-size: 13.5px; color: var(--text-2); line-height: 1.7; }
+.pago-rechazado-cerrar {
+  margin-top: 10px; background: none; border: none; padding: 0;
+  font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer;
+}
