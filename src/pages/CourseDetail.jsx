@@ -46,9 +46,16 @@ export default function CourseDetail() {
   const [myComment, setMyComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  // Aviso al volver del checkout. El rechazo se muestra como cartel fijo y no
+  // como notificación: el alumno necesita leer qué hacer, y una notificación
+  // que se va sola lo deja sin saber por qué no pudo pagar.
+  const [pagoRechazado, setPagoRechazado] = useState(false);
   useEffect(() => {
-    if (searchParams.get('payment') === 'cancelled') {
+    const estado = searchParams.get('payment');
+    if (estado === 'cancelled') {
       showToast('Pago cancelado. Podés intentarlo de nuevo cuando quieras.', 'error');
+    } else if (estado === 'failed') {
+      setPagoRechazado(true);
     }
   }, []);
 
@@ -331,6 +338,32 @@ export default function CourseDetail() {
           <div className={`detail-layout ${course.previewVideo ? 'has-video' : ''}`}>
             {/* ── Columna izquierda ── */}
             <div className="detail-info">
+              {/* Vuelta del checkout con el pago rechazado: el banco es la causa
+                  más común y el alumno no tiene forma de saberlo. Sin esto
+                  volvía a la página sin ningún mensaje. */}
+              {pagoRechazado && (
+                <div className="pago-rechazado" role="alert">
+                  <h3 className="pago-rechazado-titulo">Tu banco rechazó el pago</h3>
+                  <p className="pago-rechazado-texto">
+                    No se te cobró nada. Suele pasar con compras grandes por internet:
+                    el banco las frena por seguridad. Podés:
+                  </p>
+                  <ul className="pago-rechazado-lista">
+                    <li>Llamar al teléfono que figura en tu tarjeta y pedir que autoricen la compra.</li>
+                    <li>Intentar con otra tarjeta.</li>
+                    {course.transferCode && <li>Pagar por transferencia y ahorrarte un 10%.</li>}
+                  </ul>
+                  <p className="pago-rechazado-texto">
+                    Si sigue sin funcionar, escribinos a{' '}
+                    <a href="mailto:academygotravel@gmail.com">academygotravel@gmail.com</a>{' '}
+                    y lo resolvemos con vos.
+                  </p>
+                  <button type="button" className="pago-rechazado-cerrar" onClick={() => setPagoRechazado(false)}>
+                    Entendido
+                  </button>
+                </div>
+              )}
+
               <div className="detail-badges">
                 <span className={`badge ${levelBadge[course.level]||'badge-default'}`}>{course.level}</span>
                 <span className="badge badge-default">{course.category}</span>
