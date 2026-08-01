@@ -34,13 +34,17 @@ function newEventId() {
 // en el navegador: _fbp identifica al visitante y _fbc guarda el clic en el
 // anuncio. Sin ellos, Meta no puede atribuir la venta a la campaña.
 export function fbCookies() {
-  return { fbp: getCookie('_fbp'), fbc: getCookie('_fbc') };
+  // Sin decodificar: Meta exige que _fbp y _fbc lleguen EXACTAMENTE como los
+  // guardó el Pixel. Cualquier transformación (incluso una decodificación
+  // estándar) hace que marque el identificador de clic como alterado y
+  // desconfíe del dato para atribuir la campaña.
+  return { fbp: getCookieRaw('_fbp'), fbc: getCookieRaw('_fbc') };
 }
 
-function getCookie(name) {
+function getCookieRaw(name) {
   if (typeof document === 'undefined') return undefined;
   const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-  return m ? decodeURIComponent(m[1]) : undefined;
+  return m ? m[1] : undefined;
 }
 
 // Dispara un evento SOLO por el Pixel del navegador (opcionalmente con event_id
@@ -71,8 +75,8 @@ export function track(event, params) {
         eventId,
         eventSourceUrl: typeof window !== 'undefined' ? window.location.href : undefined,
         customData:     params || {},
-        fbp:            getCookie('_fbp'),
-        fbc:            getCookie('_fbc'),
+        fbp:            getCookieRaw('_fbp'),
+        fbc:            getCookieRaw('_fbc'),
       }),
     }).catch(() => {});
   } catch { /* noop */ }
