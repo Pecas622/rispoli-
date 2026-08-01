@@ -70,7 +70,18 @@ export async function sendMetaEvent(event: CapiEvent): Promise<void> {
   if (event.userData.clientIpAddress) user_data.client_ip_address = event.userData.clientIpAddress;
   if (event.userData.clientUserAgent) user_data.client_user_agent = event.userData.clientUserAgent;
   if (event.userData.fbp) user_data.fbp = event.userData.fbp;
-  if (event.userData.fbc) user_data.fbc = event.userData.fbc;
+  // El identificador de clic debe viajar EXACTAMENTE como lo guardó el Pixel:
+  // "fb.<subdominio>.<timestamp>.<fbclid>". Si viene con otro formato (cortado,
+  // en minúsculas o inventado), Meta lo marca como modificado y desconfía del
+  // dato, así que preferimos no mandarlo antes que mandarlo mal.
+  const FBC_VALIDO = /^fb\.\d\.\d+\..+$/;
+  if (event.userData.fbc) {
+    if (FBC_VALIDO.test(event.userData.fbc)) {
+      user_data.fbc = event.userData.fbc;
+    } else {
+      console.warn('[Meta CAPI] fbc con formato inesperado, se omite:', event.userData.fbc.slice(0, 40));
+    }
+  }
 
   const payload: Record<string, unknown> = {
     data: [{

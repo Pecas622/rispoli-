@@ -90,11 +90,28 @@ function metaTrackingContext(req: Request): Record<string, string> {
     : req.socket?.remoteAddress ?? '';
   return {
     fbp:       (req.body?.fbp as string | undefined) ?? '',
-    fbc:       (req.body?.fbc as string | undefined) ?? '',
+    // El fbc va en hexadecimal: Mercado Pago normaliza los valores de la
+    // metadata y el identificador de clic distingue mayúsculas. En hexa (solo
+    // 0-9 a-f) sobrevive intacto aunque lo pasen a minúsculas.
+    fbc_hex:   Buffer.from((req.body?.fbc as string | undefined) ?? '', 'utf8').toString('hex'),
     client_ip: ip ?? '',
     // Stripe limita la metadata a 500 caracteres por valor.
     client_ua: ((req.headers['user-agent'] as string | undefined) ?? '').slice(0, 300),
   };
+}
+
+// Recupera el identificador de clic guardado al crear el pago. Se prioriza la
+// versión hexadecimal (a prueba de normalizaciones); `fbc` queda como respaldo
+// para los pagos creados antes de este cambio.
+function decodificarFbc(meta: Record<string, any> | null | undefined): string | undefined {
+  const hex = meta?.fbc_hex;
+  if (typeof hex === 'string' && hex.length >= 2) {
+    try {
+      const valor = Buffer.from(hex, 'hex').toString('utf8');
+      if (valor) return valor;
+    } catch { /* metadata corrupta: caemos al respaldo */ }
+  }
+  return meta?.fbc || undefined;
 }
 
 // Arma los datos de reconocimiento del evento Purchase combinando lo que
@@ -113,7 +130,7 @@ function purchaseUserData(
     lastName:        partes.length > 1 ? partes.slice(1).join(' ') : undefined,
     externalId:      userId,
     fbp:             meta?.fbp || undefined,
-    fbc:             meta?.fbc || undefined,
+    fbc:             decodificarFbc(meta),
     clientIpAddress: meta?.client_ip || undefined,
     clientUserAgent: meta?.client_ua || undefined,
   };
