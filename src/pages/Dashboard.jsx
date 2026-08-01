@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import {
   BookOpen, Award, ArrowRight, Play, Loader, CheckCircle,
@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { coursesApi } from '../services/api';
+import { pixelTrack } from '../lib/pixel';
 import './Dashboard.css';
 
 const sidebarLinks = [
@@ -31,6 +32,7 @@ export default function Dashboard() {
       const t = setTimeout(() => {
         searchParams.delete('payment');
         searchParams.delete('course');
+        searchParams.delete('sid');
         setSearchParams(searchParams, { replace: true });
       }, 6000);
       return () => clearTimeout(t);
@@ -40,6 +42,32 @@ export default function Dashboard() {
   useEffect(() => {
     coursesApi.list().then(res => setAllCourses(res.courses)).catch(() => setAllCourses([]));
   }, []);
+
+  // Purchase de respaldo por si el webhook (que es quien manda el evento con
+  // el monto real cobrado) todavía no llegó o falla — usa el mismo event_id
+  // que el webhook (purchase_<id>) para que Meta lo deduplique en vez de
+  // contar la venta dos veces. "sid" (Stripe) y "payment_id" (Mercado Pago,
+  // que MP agrega solo al volver) son los mismos ids que arma el webhook.
+  const purchaseTracked = useRef(false);
+  useEffect(() => {
+    if (paymentStatus !== 'success' || purchaseTracked.current) return;
+    if (allCourses.length === 0) return; // esperar a tener nombre/precio del curso
+
+    const sid       = searchParams.get('sid');
+    const paymentId = searchParams.get('payment_id');
+    const eventId   = sid ? `purchase_${sid}` : paymentId ? `purchase_${paymentId}` : null;
+    if (!eventId) return; // sin id no se puede deduplicar con el webhook: mejor no mandar nada que duplicar la venta
+
+    purchaseTracked.current = true;
+    const course = allCourses.find(c => c.id === paidCourseId);
+    pixelTrack('Purchase', {
+      value:        course?.priceUSD ?? course?.price ?? 0,
+      currency:     sid ? 'USD' : 'ARS',
+      content_type: 'product',
+      content_ids:  [paidCourseId],
+      content_name: course?.title,
+    }, eventId);
+  }, [paymentStatus, allCourses]);
 
   if (!user) return <Navigate to="/" />;
   if (user.role === 'admin') return <Navigate to="/admin" />;

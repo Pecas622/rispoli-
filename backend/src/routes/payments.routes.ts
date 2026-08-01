@@ -203,7 +203,12 @@ router.post(
           provider: 'stripe',
           ...metaTrackingContext(req),
         },
-        success_url: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${course.id}`,
+        // {CHECKOUT_SESSION_ID} es un placeholder literal que Stripe reemplaza
+        // por el id real de la sesión al redirigir — permite que el navegador
+        // arme el mismo event_id que el webhook (purchase_<session.id>) para
+        // que el Purchase de respaldo del navegador se deduplique con el del
+        // servidor en vez de contarse dos veces en Meta.
+        success_url: `${process.env.FRONTEND_URL}/dashboard?payment=success&course=${course.id}&sid={CHECKOUT_SESSION_ID}`,
         cancel_url:  `${process.env.FRONTEND_URL}/cursos/${course.id}?payment=cancelled`,
         // Managed Payments (activado por defecto en la cuenta) exige tax_code
         // por producto, que no configuramos — lo desactivamos para esta sesión.
@@ -467,6 +472,16 @@ router.post(
       // Pago por transferencia = pago único; compra normal = hasta 6 cuotas (elegidas por el usuario).
       const installments = applyTransferDiscount ? 1 : Math.min(6, Math.max(1, Number(req.body?.installments) || 1));
 
+      // Precarga nombre/email en el checkout de MP: un paso menos para el
+      // comprador. Se omite el teléfono a propósito — MP es estricto con el
+      // formato (area_code/number) y un dato mal partido puede hacer fallar
+      // la creación de la preferencia; no vale la pena el riesgo por ese campo.
+      const buyer = await prisma.user.findUnique({
+        where:  { id: req.user!.userId },
+        select: { name: true, email: true },
+      });
+      const [buyerName, ...buyerSurnameParts] = (buyer?.name ?? '').trim().split(/\s+/).filter(Boolean);
+
       const { getMPClient, Preference } = await import('../lib/mercadopago');
       const preference = new Preference(getMPClient());
 
@@ -479,7 +494,11 @@ router.post(
             unit_price: unitPrice,   // precio en ARS, con descuento por transferencia si aplica
             currency_id: 'ARS',
           }],
-          payer: {},
+          payer: {
+            ...(buyer?.email && { email: buyer.email }),
+            ...(buyerName && { name: buyerName }),
+            ...(buyerSurnameParts.length > 0 && { surname: buyerSurnameParts.join(' ') }),
+          },
           payment_methods: { installments, default_installments: installments },
           metadata: {
             userId:   req.user!.userId,
