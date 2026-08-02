@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { getStripe, isStripeReady } from '../lib/stripe';
 import { isMercadoPagoReady } from '../lib/mercadopago';
 import { prisma } from '../lib/prisma';
-import { sendPurchaseConfirmationEmail, sendPurchaseNotificationEmail } from '../lib/email';
+import { sendPurchaseConfirmationEmail, sendPurchaseNotificationEmail, sendPaymentRejectedEmail, sendRefundEmail } from '../lib/email';
 import { sendMetaEvent } from '../lib/capi';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
@@ -320,6 +320,12 @@ router.post(
           if (enrollment && !enrollment.refundedAt) {
             await prisma.enrollment.update({ where: { id: enrollment.id }, data: { refundedAt: new Date() } });
             console.log(`[Stripe Webhook] Acceso revocado por reembolso/contracargo: enrollment ${enrollment.id}`);
+
+            const [user, course] = await Promise.all([
+              prisma.user.findUnique({ where: { id: enrollment.userId }, select: { name: true, email: true } }),
+              prisma.course.findUnique({ where: { id: enrollment.courseId }, select: { title: true, price: true } }),
+            ]);
+            if (user && course) sendRefundEmail(user, course).catch(console.error);
           }
         } catch (err) {
           console.error('[Stripe Webhook] Error revocando acceso por reembolso:', err);
@@ -431,7 +437,23 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
         if (enrollment && !enrollment.refundedAt) {
           await prisma.enrollment.update({ where: { id: enrollment.id }, data: { refundedAt: new Date() } });
           console.log(`[MP Webhook] Acceso revocado (${payment.status}): enrollment ${enrollment.id}`);
+
+          const [user, course] = await Promise.all([
+            prisma.user.findUnique({ where: { id: enrollment.userId }, select: { name: true, email: true } }),
+            prisma.course.findUnique({ where: { id: enrollment.courseId }, select: { title: true, price: true } }),
+          ]);
+          if (user && course) sendRefundEmail(user, course).catch(console.error);
         }
+      } else if (payment.status === 'rejected' && payment.metadata) {
+        // El banco rechazó el pago: antes esto no le avisaba a nadie salvo
+        // que el alumno volviera a ver el cartel en el sitio. Le mandamos un
+        // mail para que sepa qué pasó y pueda reintentar.
+        const { user_id: userId, course_id: courseId } = payment.metadata;
+        const [user, course] = await Promise.all([
+          prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
+          prisma.course.findUnique({ where: { id: courseId }, select: { title: true, price: true } }),
+        ]);
+        if (user && course) sendPaymentRejectedEmail(user, { ...course, id: courseId }).catch(console.error);
       }
 
       console.log('[MP Webhook] Payment notification received:', paymentId, payment.status);

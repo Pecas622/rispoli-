@@ -346,6 +346,122 @@ export async function sendPurchaseNotificationEmail(
   });
 }
 
+// ── Pago rechazado ───────────────────────────────────────────────────────────
+// Se dispara cuando Mercado Pago avisa que un pago quedó "rejected" (tarjeta
+// rechazada por el banco). Antes esto no le llegaba a nadie salvo que el
+// alumno volviera a ver el cartel en el sitio.
+export async function sendPaymentRejectedEmail(user: UserData, course: CourseData & { id: string }) {
+  await send({
+    to:      user.email,
+    subject: `Tu pago no pudo procesarse — ${course.title}`,
+    html: `
+<!DOCTYPE html><html lang="es">
+<body style="margin:0;padding:0;background:#f4f3ef;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0"
+      style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e8e7e3;">
+      <tr>
+        <td style="background:#06043F;padding:28px 40px;">
+          <h1 style="margin:0;color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.03em;">GO Travel Academy</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="background:#fee2e2;padding:14px 40px;">
+          <span style="color:#991b1b;font-size:14px;font-weight:600;">❌ Tu pago no fue aprobado</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:32px 40px;">
+          <p style="margin:0 0 16px;font-size:15px;color:#1e293b;">Hola ${user.name.split(' ')[0]},</p>
+          <p style="margin:0 0 16px;font-size:14px;color:#5a5955;line-height:1.7;">
+            Tu banco rechazó el pago del curso <strong>${course.title}</strong>. No se te cobró nada
+            y todavía no tenés acceso al curso. Suele pasar con compras grandes por internet: el
+            banco las frena por seguridad.
+          </p>
+          <p style="margin:0 0 24px;font-size:14px;color:#5a5955;line-height:1.7;">
+            Podés intentar de nuevo con la misma tarjeta (a veces alcanza con autorizarla llamando
+            al banco), probar con otra tarjeta, o usar la opción de transferencia con 10% off.
+          </p>
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background:#06043F;border-radius:8px;padding:13px 28px;">
+                <a href="${process.env.FRONTEND_URL}/cursos/${course.id}"
+                   style="color:#fff;text-decoration:none;font-size:14px;font-weight:600;">
+                  Volver a intentar →
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px 40px;border-top:1px solid #e8e7e3;background:#f4f3ef;">
+          <p style="margin:0;color:#94a3b8;font-size:12px;line-height:1.6;">
+            ¿Necesitás ayuda? Respondé este email y te ayudamos a resolverlo.<br>© 2026 GO Travel Academy
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+  });
+}
+
+// ── Reembolso / anulación ────────────────────────────────────────────────────
+// Se dispara cuando un pago aprobado se reembolsa, se anula o entra en
+// contracargo (Stripe: charge.refunded/charge.dispute.created — MP: refunded/
+// cancelled/charged_back). El acceso al curso ya se revoca en el webhook; esto
+// es lo que le avisa al alumno que pasó, en vez de que descubra que perdió el
+// acceso sin ninguna explicación.
+export async function sendRefundEmail(user: UserData, course: CourseData) {
+  await send({
+    to:      user.email,
+    subject: `Reembolso procesado — ${course.title}`,
+    html: `
+<!DOCTYPE html><html lang="es">
+<body style="margin:0;padding:0;background:#f4f3ef;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0"
+      style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e8e7e3;">
+      <tr>
+        <td style="background:#06043F;padding:28px 40px;">
+          <h1 style="margin:0;color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.03em;">GO Travel Academy</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="background:#fef3c7;padding:14px 40px;">
+          <span style="color:#92400e;font-size:14px;font-weight:600;">↩️ Reembolso procesado</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:32px 40px;">
+          <p style="margin:0 0 16px;font-size:15px;color:#1e293b;">Hola ${user.name.split(' ')[0]},</p>
+          <p style="margin:0 0 16px;font-size:14px;color:#5a5955;line-height:1.7;">
+            Te confirmamos que tu pago del curso <strong>${course.title}</strong> fue reembolsado.
+            El dinero vuelve al medio de pago original — el tiempo en verse reflejado depende de tu
+            banco o tarjeta.
+          </p>
+          <p style="margin:0;font-size:14px;color:#5a5955;line-height:1.7;">
+            Como consecuencia, el acceso al curso quedó desactivado. Si esto no lo pediste vos o
+            tenés dudas, respondé este email y lo revisamos.
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px 40px;border-top:1px solid #e8e7e3;background:#f4f3ef;">
+          <p style="margin:0;color:#94a3b8;font-size:12px;line-height:1.6;">© 2026 GO Travel Academy</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+  });
+}
+
 // ── Reset de contraseña ──────────────────────────────────────────────────────
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   await send({
