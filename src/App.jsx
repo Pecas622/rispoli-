@@ -18,7 +18,7 @@ import CourseContent from './pages/CourseContent';
 import Learn from './pages/Learn';
 import ResetPassword from './pages/ResetPassword';
 import { Empresas, Nosotros, Blog, Contacto } from './pages/StaticPages';
-import { Certificaciones, Descargas, Perfil } from './pages/UserPages';
+import { Certificaciones, Descargas, Perfil, Pagos } from './pages/UserPages';
 import { loadPixel, pixelTrack } from './lib/pixel';
 
 function ScrollToTop() {
@@ -54,6 +54,7 @@ function Layout() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/certificaciones" element={<Certificaciones />} />
           <Route path="/descargas" element={<Descargas />} />
+          <Route path="/pagos" element={<Pagos />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/empresas" element={<Empresas />} />
           <Route path="/nosotros" element={<Nosotros />} />

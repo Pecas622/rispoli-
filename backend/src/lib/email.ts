@@ -567,3 +567,51 @@ export async function sendContactEmail({ name, email, subject, message }: Contac
 </body></html>`,
   });
 }
+
+// ── Alerta: webhook de pagos falló ───────────────────────────────────────────
+// Antes, si un webhook de Stripe/MP tiraba una excepción (bug, DB caída, lo
+// que sea), solo quedaba en los logs de Railway — nadie se enteraba salvo que
+// alguien fuera a mirarlos. Esto manda un aviso apenas pasa. Best-effort: si
+// falla el envío del mail no debe romper el manejo del webhook en sí.
+export async function sendWebhookErrorAlert(provider: 'Stripe' | 'Mercado Pago', context: string, error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  await send({
+    to:      CONTACT_INBOX,
+    subject: `⚠️ Webhook de ${provider} falló — ${context}`,
+    html: `
+<!DOCTYPE html><html lang="es">
+<body style="margin:0;padding:0;background:#f4f3ef;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0"
+      style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e8e7e3;">
+      <tr>
+        <td style="background:#7f1d1d;padding:24px 40px;">
+          <h1 style="margin:0;color:#fff;font-size:18px;font-weight:800;">⚠️ Webhook de pagos falló</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:28px 40px;">
+          <p style="margin:0 0 6px;font-size:12px;color:#8a8983;text-transform:uppercase;letter-spacing:0.06em;">Procesador</p>
+          <p style="margin:0 0 18px;font-size:15px;font-weight:600;color:#1e293b;">${provider}</p>
+          <p style="margin:0 0 6px;font-size:12px;color:#8a8983;text-transform:uppercase;letter-spacing:0.06em;">Dónde</p>
+          <p style="margin:0 0 18px;font-size:15px;color:#1e293b;">${context}</p>
+          <p style="margin:0 0 6px;font-size:12px;color:#8a8983;text-transform:uppercase;letter-spacing:0.06em;">Error</p>
+          <p style="margin:0;font-size:13px;color:#991b1b;font-family:'Courier New',monospace;background:#fef2f2;
+             padding:12px 16px;border-radius:8px;white-space:pre-wrap;word-break:break-word;">${message}</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:16px 40px;border-top:1px solid #e8e7e3;background:#f4f3ef;">
+          <p style="margin:0;color:#94a3b8;font-size:12px;">
+            Puede significar que una venta o un reembolso no se procesó bien — conviene revisar los
+            logs de Railway y, si hace falta, el pago a mano en el panel de MP/Stripe.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+  });
+}

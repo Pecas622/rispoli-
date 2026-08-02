@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { Award, Download, User, BookOpen, CheckCircle, ArrowLeft, FileText, ExternalLink, Loader } from 'lucide-react';
+import { Award, Download, User, BookOpen, CheckCircle, ArrowLeft, FileText, ExternalLink, Loader, Receipt } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { paymentsApi } from '../services/api';
 import './UserPages.css';
 
 function PageShell({ icon: Icon, label, title, children }) {
@@ -166,6 +167,68 @@ export function Descargas() {
                   <Download size={13} />
                   <span className="hide-xs">Descargar</span>
                 </a>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </PageShell>
+  );
+}
+
+// ── Historial de pagos ───────────────────────────────────────────────────────
+const PROVIDER_LABEL = { stripe: 'Stripe', mercadopago: 'Mercado Pago' };
+
+export function Pagos() {
+  const { user } = useApp();
+  if (!user) return <Navigate to="/" />;
+
+  const [history, setHistory] = useState(null); // null = cargando
+
+  useEffect(() => {
+    paymentsApi.history()
+      .then(res => setHistory(res.history ?? []))
+      .catch(() => setHistory([]));
+  }, []);
+
+  return (
+    <PageShell icon={Receipt} label="Mi cuenta" title="Historial de pagos">
+      {history === null ? (
+        <LoadingBlock />
+      ) : history.length === 0 ? (
+        <EmptyState
+          icon={Receipt}
+          title="Todavía no tenés pagos"
+          desc="Cuando compres un curso, tu comprobante va a aparecer acá."
+          action={<Link to="/cursos" className="btn btn-primary">Explorar cursos <BookOpen size={14} /></Link>}
+        />
+      ) : (
+        <div className="downloads-list">
+          {history.map(p => {
+            const refunded = !!p.refundedAt;
+            const color    = refunded ? '#D97706' : '#16A34A';
+            const date     = p.paidAt
+              ? new Date(p.paidAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })
+              : '';
+            return (
+              <div key={p.id} className="download-row">
+                <div className="download-icon" style={{ background: `${color}18` }}>
+                  <Receipt size={18} color={color} />
+                </div>
+                <div className="download-info">
+                  <div className="download-name">{p.course?.title}</div>
+                  <div className="download-meta">
+                    {date}{p.paymentProvider ? ` · ${PROVIDER_LABEL[p.paymentProvider] ?? p.paymentProvider}` : ''}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
+                    {p.amount != null ? `${p.currency ?? 'ARS'} ${p.amount.toLocaleString('es-AR')}` : '—'}
+                  </div>
+                  <span className="download-type" style={{ background: `${color}18`, color }}>
+                    {refunded ? 'Reembolsado' : 'Aprobado'}
+                  </span>
+                </div>
               </div>
             );
           })}

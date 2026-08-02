@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { getStripe, isStripeReady } from '../lib/stripe';
 import { isMercadoPagoReady } from '../lib/mercadopago';
 import { prisma } from '../lib/prisma';
-import { sendPurchaseConfirmationEmail, sendPurchaseNotificationEmail, sendPaymentRejectedEmail, sendRefundEmail } from '../lib/email';
+import { sendPurchaseConfirmationEmail, sendPurchaseNotificationEmail, sendPaymentRejectedEmail, sendRefundEmail, sendWebhookErrorAlert } from '../lib/email';
 import { sendMetaEvent } from '../lib/capi';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
@@ -302,6 +302,7 @@ router.post(
         }
       } catch (err) {
         console.error('[Stripe Webhook] Error procesando inscripción:', err);
+        sendWebhookErrorAlert('Stripe', `checkout.session.completed (session ${session.id})`, err).catch(console.error);
       }
     }
 
@@ -329,6 +330,7 @@ router.post(
           }
         } catch (err) {
           console.error('[Stripe Webhook] Error revocando acceso por reembolso:', err);
+          sendWebhookErrorAlert('Stripe', `${event.type} (payment_intent ${paymentIntentId})`, err).catch(console.error);
         }
       }
     }
@@ -462,6 +464,7 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
     res.json({ received: true });
   } catch (err) {
     console.error('[MP Webhook] Error:', err);
+    sendWebhookErrorAlert('Mercado Pago', `payment ${mpResourceId(req) ?? '(sin id)'}`, err).catch(console.error);
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 });

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import {
   BookOpen, Award, ArrowRight, Play, Loader, CheckCircle,
-  Home, Download, User, LogOut,
+  Home, Download, User, LogOut, Receipt,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { coursesApi } from '../services/api';
@@ -14,6 +14,7 @@ const sidebarLinks = [
   { label: 'Mis cursos',    icon: BookOpen, to: '/dashboard' },
   { label: 'Certificados',  icon: Award,    to: '/certificaciones' },
   { label: 'Descargas',     icon: Download, to: '/descargas' },
+  { label: 'Pagos',         icon: Receipt,  to: '/pagos' },
   { label: 'Perfil',        icon: User,     to: '/perfil' },
 ];
 
