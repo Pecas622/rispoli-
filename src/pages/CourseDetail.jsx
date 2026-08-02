@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Award, Lock } from 'lucide-react';
+import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Award, Lock, AlertTriangle } from 'lucide-react';
 import { courses as mockCourses, testimonials } from '../data/courses';
 import { coursesApi, progressApi, paymentsApi, reviewsApi } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -24,6 +24,39 @@ function normalizeTitle(s = '') {
 
 function extractVimeoId(url = '') {
   return url.match(/vimeo\.com\/(?:video\/)?(\d+)/)?.[1] ?? '';
+}
+
+// Botón de pago con tarjeta: al tocarlo, primero avisa que compras grandes
+// pueden requerir que el banco autorice el pago (en vez de que el alumno se
+// entere recién si le rechaza), y recién con la confirmación dispara el pago.
+function PayButton({ onConfirm, label, enrolling, className, style }) {
+  const [confirming, setConfirming] = useState(false);
+
+  if (!confirming) {
+    return (
+      <button type="button" onClick={() => setConfirming(true)} className={className} style={style} disabled={enrolling}>
+        {label}
+      </button>
+    );
+  }
+
+  return (
+    <div className="pay-confirm" style={style}>
+      <p className="pay-confirm-text">
+        <AlertTriangle size={13} />
+        Compras grandes a veces requieren que tu banco autorice el pago. Si no sale al primer
+        intento, no te preocupes: no se te cobra nada y podés reintentar.
+      </p>
+      <div className="pay-confirm-actions">
+        <button type="button" className="btn btn-outline btn-sm" onClick={() => setConfirming(false)} disabled={enrolling}>
+          Cancelar
+        </button>
+        <button type="button" className={className} style={{ flex: 1, justifyContent: 'center' }} onClick={onConfirm} disabled={enrolling}>
+          {enrolling ? <><div className="spinner" /> Procesando...</> : 'Confirmar y pagar'}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function CourseDetail() {
@@ -439,20 +472,23 @@ export default function CourseDetail() {
                           </div>
                           <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}>
                             <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:8}}>{`En cuotas sin interés ${formatPrice(coursePrice, region)}`}</p>
-                            <button onClick={handleEnroll} className="btn btn-primary btn-sm" style={{width:'100%',justifyContent:'center'}} disabled={enrolling}>
-                              {enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar 6 x ${formatPrice(coursePrice/6, region)}`}
-                            </button>
+                            <PayButton
+                              onConfirm={handleEnroll}
+                              label={`Pagar 6 x ${formatPrice(coursePrice/6, region)}`}
+                              enrolling={enrolling}
+                              className="btn btn-primary btn-sm"
+                              style={{width:'100%',justifyContent:'center'}}
+                            />
                           </div>
                         </div>
                       ) : (
-                        <button
-                          onClick={handleEnroll}
+                        <PayButton
+                          onConfirm={handleEnroll}
+                          label={checkoutLabel}
+                          enrolling={enrolling}
                           className="btn btn-primary"
                           style={{width:'100%',justifyContent:'center',padding:'13px',marginTop:16}}
-                          disabled={enrolling}
-                        >
-                          {enrolling ? <><div className="spinner" /> Procesando...</> : checkoutLabel}
-                        </button>
+                        />
                       )}
                     </>
                   )}

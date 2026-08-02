@@ -387,6 +387,21 @@
   .pc-body { padding: 16px; }
 }
 
+/* ── CONFIRMAR ANTES DE PAGAR (aviso preventivo) ────────────────────────────── */
+.pay-confirm {
+  border: 1px solid rgba(217, 119, 6, 0.28);
+  background: rgba(217, 119, 6, 0.06);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+}
+.pay-confirm-text {
+  display: flex; align-items: flex-start; gap: 7px;
+  font-size: 12px; color: var(--text-2); line-height: 1.55;
+  margin-bottom: 12px;
+}
+.pay-confirm-text svg { flex-shrink: 0; margin-top: 1px; color: #D97706; }
+.pay-confirm-actions { display: flex; gap: 8px; }
+
 /* ── AVISO DE PAGO RECHAZADO ────────────────────────────────────────────────── */
 .pago-rechazado {
   border: 1px solid rgba(220, 38, 38, 0.28);
