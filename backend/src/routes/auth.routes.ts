@@ -12,15 +12,20 @@ import { authenticate } from '../middleware/auth.middleware';
 const router = Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// Los emails se normalizan a minúscula/sin espacios en TODOS los endpoints que
+// los reciben — si no, "Santi@gmail.com" y "santi@gmail.com" quedan como dos
+// cuentas distintas (Postgres compara texto sensible a mayúsculas).
+const emailField = z.string().trim().toLowerCase().email('Email inválido');
+
 const registerSchema = z.object({
   name:     z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  email:    z.string().email('Email inválido'),
+  email:    emailField,
   phone:    z.string().min(6, 'Teléfono inválido'),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
 });
 
 const loginSchema = z.object({
-  email:    z.string().email(),
+  email:    emailField,
   password: z.string().min(1),
 });
 
@@ -134,7 +139,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
 router.post('/verify-email', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, code } = z.object({
-      email: z.string().email(),
+      email: emailField,
       code:  z.string().length(6),
     }).parse(req.body);
 
@@ -171,7 +176,7 @@ router.post('/verify-email', async (req: Request, res: Response, next: NextFunct
 // POST /api/auth/resend-code
 router.post('/resend-code', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email } = z.object({ email: z.string().email() }).parse(req.body);
+    const { email } = z.object({ email: emailField }).parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: 'Email no encontrado' });
@@ -231,14 +236,15 @@ router.post('/google', async (req: Request, res: Response, next: NextFunction) =
     });
     const payload = ticket.getPayload();
     if (!payload?.email) return res.status(401).json({ message: 'Token de Google inválido' });
+    const email = payload.email.trim().toLowerCase();
 
-    let user = await prisma.user.findUnique({ where: { email: payload.email } });
+    let user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       user = await prisma.user.create({
         data: {
-          name:          payload.name ?? payload.email.split('@')[0],
-          email:         payload.email,
+          name:          payload.name ?? email.split('@')[0],
+          email,
           avatar:        payload.picture,
           emailVerified: true, // Google ya verificó la propiedad del email
         },
@@ -267,7 +273,7 @@ router.post('/logout', (_req: Request, res: Response) => {
 // POST /api/auth/forgot-password
 router.post('/forgot-password', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email } = z.object({ email: z.string().email() }).parse(req.body);
+    const { email } = z.object({ email: emailField }).parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email } });
     // Siempre el mismo mensaje exista o no el email (evita user enumeration)
