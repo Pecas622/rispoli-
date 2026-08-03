@@ -10,7 +10,7 @@
 // resolverla.
 const SITE_URL = 'https://gotravelacademy.com';
 
-const STATIC_PATHS = ['/', '/cursos', '/nosotros', '/empresas', '/blog', '/contacto'];
+const STATIC_PATHS = ['/', '/cursos', '/nosotros', '/empresas', '/blog', '/contacto', '/privacidad', '/terminos', '/cookies'];
 
 export default async function handler(req, res) {
   let courses = [];

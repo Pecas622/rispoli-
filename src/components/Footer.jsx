@@ -104,12 +104,12 @@ export default function Footer() {
         <div style={{borderTop:'1px solid var(--border)',paddingTop:20,display:'flex',flexWrap:'wrap',gap:12,justifyContent:'space-between',alignItems:'center'}}>
           <p style={{fontSize:12,color:'var(--text-3)'}}>© 2026 Go Travel Academy. Todos los derechos reservados.</p>
           <div style={{display:'flex',gap:18}}>
-            {['Privacidad','Términos','Cookies'].map(t=>(
-              <a key={t} href="#" style={{fontSize:12,color:'var(--text-3)',transition:'color 0.15s'}}
+            {[{t:'Privacidad',to:'/privacidad'},{t:'Términos',to:'/terminos'},{t:'Cookies',to:'/cookies'}].map(({t,to})=>(
+              <Link key={t} to={to} style={{fontSize:12,color:'var(--text-3)',transition:'color 0.15s'}}
                 onMouseEnter={e=>e.currentTarget.style.color='var(--text)'}
                 onMouseLeave={e=>e.currentTarget.style.color='var(--text-3)'}>
                 {t}
-              </a>
+              </Link>
             ))}
           </div>
         </div>

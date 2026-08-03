@@ -185,3 +185,256 @@ export function Contacto() {
     </PageShell>
   );
 }
+
+// ── Páginas legales (Privacidad / Términos / Cookies) ──────────────────────────
+const legalH2 = {fontFamily:'var(--display)',fontSize:'clamp(19px,2.2vw,24px)',fontWeight:800,letterSpacing:'-0.02em',marginTop:34,marginBottom:12};
+const legalP  = {fontSize:14.5,color:'var(--text-2)',lineHeight:1.85,marginBottom:14};
+const legalUl = {margin:'0 0 14px 20px',padding:0};
+const legalLi = {fontSize:14.5,color:'var(--text-2)',lineHeight:1.85,marginBottom:8};
+const legalStrong = {color:'var(--text)',fontWeight:700};
+
+function LegalDoc({ updated, children }) {
+  return (
+    <div style={{maxWidth:760}}>
+      <p style={{fontSize:13,color:'var(--text-3)',marginBottom:8}}>Última actualización: {updated}</p>
+      {children}
+    </div>
+  );
+}
+
+export function Privacidad() {
+  return (
+    <PageShell
+      path="/privacidad"
+      label="Legal"
+      title="Política de Privacidad"
+      lead="Cómo recolectamos, usamos y protegemos tus datos personales en Go Travel Academy."
+    >
+      <LegalDoc updated="Agosto 2026">
+        <h2 style={legalH2}>1. Quiénes somos</h2>
+        <p style={legalP}>
+          Go Travel Academy ("nosotros", "el sitio") es la plataforma de formación online en{' '}
+          <strong style={legalStrong}>gotravelacademy.com</strong>, operada desde Argentina. Esta política
+          explica qué datos personales recolectamos de quienes visitan el sitio o se inscriben en un curso,
+          para qué los usamos y qué derechos tenés sobre ellos.
+        </p>
+
+        <h2 style={legalH2}>2. Qué datos recolectamos</h2>
+        <p style={legalP}>Según cómo interactúes con el sitio, podemos recolectar:</p>
+        <ul style={legalUl}>
+          <li style={legalLi}><strong style={legalStrong}>Datos de cuenta:</strong> nombre, apellido, email y teléfono al registrarte, o nombre, email y foto de perfil si entrás con Google.</li>
+          <li style={legalLi}><strong style={legalStrong}>Datos de compra:</strong> el curso adquirido, el monto y el medio de pago usado. Los pagos se procesan a través de Mercado Pago o Stripe — <strong style={legalStrong}>nunca vemos ni almacenamos el número de tu tarjeta</strong>, eso queda a cargo de esos procesadores.</li>
+          <li style={legalLi}><strong style={legalStrong}>Datos de uso:</strong> tu progreso en los cursos, las reseñas que dejás, y mensajes que nos envíes por el formulario de contacto.</li>
+          <li style={legalLi}><strong style={legalStrong}>Datos de navegación:</strong> cookies técnicas para mantener tu sesión iniciada, y cookies de Meta (Facebook/Instagram) para medir la efectividad de nuestras campañas publicitarias. Más detalle en nuestra <a href="/cookies" style={{color:'var(--accent)'}}>Política de Cookies</a>.</li>
+        </ul>
+
+        <h2 style={legalH2}>3. Para qué usamos tus datos</h2>
+        <ul style={legalUl}>
+          <li style={legalLi}>Crear y administrar tu cuenta, y darte acceso al contenido de los cursos que comprás.</li>
+          <li style={legalLi}>Procesar pagos, emitir el comprobante de compra y avisarte sobre el estado de tu inscripción (aprobada, rechazada o reembolsada).</li>
+          <li style={legalLi}>Responder tus consultas y darte soporte.</li>
+          <li style={legalLi}>Enviarte comunicaciones sobre tu cuenta o tus cursos (no vendemos tu email a terceros para spam).</li>
+          <li style={legalLi}>Medir y optimizar nuestras campañas publicitarias en Meta (Facebook/Instagram).</li>
+        </ul>
+
+        <h2 style={legalH2}>4. Con quién compartimos tus datos</h2>
+        <p style={legalP}>
+          No vendemos tus datos personales. Los compartimos únicamente con los proveedores que necesitamos
+          para operar el servicio, cada uno con su propia política de privacidad:
+        </p>
+        <ul style={legalUl}>
+          <li style={legalLi}><strong style={legalStrong}>Mercado Pago / Stripe</strong> — procesamiento de pagos.</li>
+          <li style={legalLi}><strong style={legalStrong}>Meta (Facebook/Instagram)</strong> — medición de campañas publicitarias.</li>
+          <li style={legalLi}><strong style={legalStrong}>Google</strong> — si elegís iniciar sesión con tu cuenta de Google.</li>
+          <li style={legalLi}><strong style={legalStrong}>Brevo</strong> — envío de emails transaccionales (verificación, comprobantes, notificaciones).</li>
+          <li style={legalLi}><strong style={legalStrong}>Proveedores de infraestructura</strong> (hosting, base de datos, almacenamiento de archivos) — para que el sitio funcione.</li>
+        </ul>
+
+        <h2 style={legalH2}>5. Cuánto tiempo los conservamos</h2>
+        <p style={legalP}>
+          Conservamos tus datos mientras tu cuenta esté activa. Si la eliminás, los datos de facturación se
+          conservan el tiempo que exige la normativa impositiva vigente; el resto se elimina o anonimiza.
+        </p>
+
+        <h2 style={legalH2}>6. Tus derechos</h2>
+        <p style={legalP}>
+          De acuerdo a la Ley 25.326 de Protección de Datos Personales, tenés derecho a acceder, rectificar,
+          actualizar y solicitar la supresión de tus datos personales. Para ejercer estos derechos, escribinos a{' '}
+          <a href="mailto:academygotravel@gmail.com" style={{color:'var(--accent)'}}>academygotravel@gmail.com</a>.
+          La Agencia de Acceso a la Información Pública, en su carácter de Órgano de Control de la Ley 25.326,
+          tiene la atribución de atender las denuncias y reclamos que interpongan quienes resulten afectados
+          en sus derechos por incumplimiento de las normas vigentes en materia de protección de datos personales.
+        </p>
+
+        <h2 style={legalH2}>7. Seguridad</h2>
+        <p style={legalP}>
+          Tu contraseña se guarda encriptada (nunca en texto plano), la sesión viaja en una cookie protegida
+          contra acceso desde JavaScript, y todo el tráfico del sitio va cifrado (HTTPS). Ningún sistema es
+          100% infalible, pero tomamos medidas razonables para proteger tu información.
+        </p>
+
+        <h2 style={legalH2}>8. Menores de edad</h2>
+        <p style={legalP}>
+          Nuestros cursos están dirigidos a personas mayores de 18 años. No recolectamos deliberadamente datos
+          de menores sin el consentimiento de madre, padre o tutor.
+        </p>
+
+        <h2 style={legalH2}>9. Cambios a esta política</h2>
+        <p style={legalP}>
+          Podemos actualizar esta política ocasionalmente. Los cambios importantes los vamos a comunicar por
+          email o con un aviso visible en el sitio.
+        </p>
+
+        <h2 style={legalH2}>10. Contacto</h2>
+        <p style={legalP}>
+          ¿Dudas sobre esta política? Escribinos a{' '}
+          <a href="mailto:academygotravel@gmail.com" style={{color:'var(--accent)'}}>academygotravel@gmail.com</a>.
+        </p>
+      </LegalDoc>
+    </PageShell>
+  );
+}
+
+export function Terminos() {
+  return (
+    <PageShell
+      path="/terminos"
+      label="Legal"
+      title="Términos y Condiciones"
+      lead="Las condiciones que rigen el uso del sitio y la compra de nuestros cursos."
+    >
+      <LegalDoc updated="Agosto 2026">
+        <h2 style={legalH2}>1. Aceptación de los términos</h2>
+        <p style={legalP}>
+          Al crear una cuenta, comprar un curso o usar gotravelacademy.com de cualquier forma, aceptás estos
+          términos y nuestra <a href="/privacidad" style={{color:'var(--accent)'}}>Política de Privacidad</a>.
+          Si no estás de acuerdo, te pedimos que no uses el sitio.
+        </p>
+
+        <h2 style={legalH2}>2. El servicio</h2>
+        <p style={legalP}>
+          Go Travel Academy ofrece cursos de formación online en el rubro turístico, con contenido en video,
+          material descargable y, en los cursos que corresponda, certificado avalado por la Universidad del
+          Aconcagua. El acceso es 100% digital: no se envía material físico.
+        </p>
+
+        <h2 style={legalH2}>3. Tu cuenta</h2>
+        <ul style={legalUl}>
+          <li style={legalLi}>Sos responsable de que los datos que nos das al registrarte sean correctos.</li>
+          <li style={legalLi}>Sos responsable de mantener tu contraseña segura y de toda actividad que ocurra desde tu cuenta.</li>
+          <li style={legalLi}>Nos reservamos el derecho de suspender cuentas que usen el sitio de forma fraudulenta o que violen estos términos.</li>
+        </ul>
+
+        <h2 style={legalH2}>4. Compras y pagos</h2>
+        <p style={legalP}>
+          Los precios se muestran en ARS o USD según tu región, e incluyen impuestos cuando corresponda. Podés
+          pagar con Mercado Pago (Argentina, hasta 6 cuotas o con 10% de descuento por transferencia) o con
+          Stripe (pagos internacionales). El acceso al curso se activa apenas el pago queda confirmado.
+        </p>
+
+        <h2 style={legalH2}>5. Acceso al contenido</h2>
+        <p style={legalP}>
+          El acceso a un curso es personal e intransferible. No está permitido compartir tu usuario, ni
+          descargar, redistribuir, revender o publicar el contenido de los cursos (videos, materiales,
+          textos) por fuera de la plataforma.
+        </p>
+
+        <h2 style={legalH2}>6. Reembolsos y cancelaciones</h2>
+        <p style={legalP}>
+          Si tu pago se reembolsa, se anula o entra en disputa (a través de Mercado Pago o Stripe), el acceso
+          al curso correspondiente se desactiva automáticamente. Te avisamos por email cuando esto pasa. Para
+          consultas puntuales sobre un reembolso, escribinos a{' '}
+          <a href="mailto:academygotravel@gmail.com" style={{color:'var(--accent)'}}>academygotravel@gmail.com</a>.
+        </p>
+
+        <h2 style={legalH2}>7. Propiedad intelectual</h2>
+        <p style={legalP}>
+          Todo el contenido de los cursos (videos, textos, materiales, marca y diseño del sitio) es propiedad
+          de Go Travel Academy o de sus instructores, y está protegido por las leyes de propiedad intelectual
+          vigentes. Comprar un curso te da una licencia de uso personal, no la titularidad del contenido.
+        </p>
+
+        <h2 style={legalH2}>8. Certificados</h2>
+        <p style={legalP}>
+          El certificado de un curso se emite una vez que completás el 100% del contenido. La validez y el
+          reconocimiento del certificado dependen del aval indicado en cada curso.
+        </p>
+
+        <h2 style={legalH2}>9. Limitación de responsabilidad</h2>
+        <p style={legalP}>
+          Hacemos nuestro mejor esfuerzo para que el sitio funcione sin interrupciones, pero no garantizamos
+          disponibilidad ininterrumpida. No nos hacemos responsables por resultados laborales o económicos que
+          puedas o no obtener a partir de tomar un curso.
+        </p>
+
+        <h2 style={legalH2}>10. Cambios</h2>
+        <p style={legalP}>
+          Podemos modificar estos términos o el servicio en cualquier momento. Los cambios relevantes los
+          vamos a comunicar por email o con un aviso en el sitio.
+        </p>
+
+        <h2 style={legalH2}>11. Ley aplicable</h2>
+        <p style={legalP}>
+          Estos términos se rigen por las leyes de la República Argentina. Ante cualquier conflicto, las
+          partes se someten a los tribunales competentes de Argentina.
+        </p>
+
+        <h2 style={legalH2}>12. Contacto</h2>
+        <p style={legalP}>
+          ¿Dudas sobre estos términos? Escribinos a{' '}
+          <a href="mailto:academygotravel@gmail.com" style={{color:'var(--accent)'}}>academygotravel@gmail.com</a>.
+        </p>
+      </LegalDoc>
+    </PageShell>
+  );
+}
+
+export function Cookies() {
+  return (
+    <PageShell
+      path="/cookies"
+      label="Legal"
+      title="Política de Cookies"
+      lead="Qué cookies usamos en gotravelacademy.com y para qué."
+    >
+      <LegalDoc updated="Agosto 2026">
+        <h2 style={legalH2}>1. Qué es una cookie</h2>
+        <p style={legalP}>
+          Una cookie es un pequeño archivo que un sitio guarda en tu navegador para recordar información entre
+          visitas — por ejemplo, que iniciaste sesión, o desde qué anuncio llegaste.
+        </p>
+
+        <h2 style={legalH2}>2. Qué cookies usamos</h2>
+        <ul style={legalUl}>
+          <li style={legalLi}>
+            <strong style={legalStrong}>Cookie de sesión (esencial):</strong> mantiene tu inicio de sesión activo.
+            Está protegida (no accesible desde JavaScript) y es necesaria para que el sitio funcione — no se
+            puede desactivar sin dejar de poder iniciar sesión.
+          </li>
+          <li style={legalLi}>
+            <strong style={legalStrong}>Cookies de Meta (_fbp, _fbc):</strong> las coloca el Pixel de Meta
+            (Facebook/Instagram) para medir qué tan efectivas son nuestras campañas publicitarias y mostrarte
+            anuncios más relevantes. Son de terceros (Meta).
+          </li>
+          <li style={legalLi}>
+            <strong style={legalStrong}>Preferencias:</strong> guardamos tu región y moneda elegida (Argentina/ARS
+            o Internacional/USD) en el almacenamiento local de tu navegador, no en una cookie propiamente dicha.
+          </li>
+        </ul>
+
+        <h2 style={legalH2}>3. Cómo controlarlas</h2>
+        <p style={legalP}>
+          Podés bloquear o eliminar cookies desde la configuración de tu navegador. Tené en cuenta que bloquear
+          la cookie de sesión va a impedir que puedas iniciar sesión o comprar un curso. Las cookies de Meta
+          las podés gestionar también desde la configuración de anuncios de tu cuenta de Facebook/Instagram.
+        </p>
+
+        <h2 style={legalH2}>4. Contacto</h2>
+        <p style={legalP}>
+          ¿Dudas sobre esta política? Escribinos a{' '}
+          <a href="mailto:academygotravel@gmail.com" style={{color:'var(--accent)'}}>academygotravel@gmail.com</a>.
+        </p>
+      </LegalDoc>
+    </PageShell>
+  );
+}

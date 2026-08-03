@@ -18,7 +18,7 @@ import Instructor from './pages/Instructor';
 import CourseContent from './pages/CourseContent';
 import Learn from './pages/Learn';
 import ResetPassword from './pages/ResetPassword';
-import { Empresas, Nosotros, Blog, Contacto } from './pages/StaticPages';
+import { Empresas, Nosotros, Blog, Contacto, Privacidad, Terminos, Cookies } from './pages/StaticPages';
 import { Certificaciones, Descargas, Perfil, Pagos } from './pages/UserPages';
 import { loadPixel, pixelTrack } from './lib/pixel';
 
@@ -61,6 +61,9 @@ function Layout() {
           <Route path="/nosotros" element={<Nosotros />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/contacto" element={<Contacto />} />
+          <Route path="/privacidad" element={<Privacidad />} />
+          <Route path="/terminos" element={<Terminos />} />
+          <Route path="/cookies" element={<Cookies />} />
           <Route path="*" element={
             <div style={{ textAlign: 'center', padding: '200px 24px' }}>
               <div style={{ fontSize: 80, fontWeight: 900 }}>404</div>
