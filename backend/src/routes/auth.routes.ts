@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { z } from 'zod';
 import { OAuth2Client } from 'google-auth-library';
 import { prisma } from '../lib/prisma';
-import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail } from '../lib/email';
+import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendAccountExistsEmail } from '../lib/email';
 import { sendMetaEvent } from '../lib/capi';
 import { authenticate } from '../middleware/auth.middleware';
 
@@ -37,7 +37,10 @@ function cookieOptions() {
   return {
     httpOnly: true,
     secure:   isProd,
-    sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
+    // Frontend y backend viven bajo el mismo dominio (gotravelacademy.com)
+    // gracias al proxy /api/* de Vercel — ya no hace falta 'none', que
+    // exponía la cookie a peticiones cross-site (CSRF).
+    sameSite: 'lax' as const,
     maxAge:   COOKIE_MAX_AGE_MS,
     path:     '/',
   };
@@ -91,7 +94,11 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
         const code = await createAndSendCode(email);
         return res.status(200).json({ requiresVerification: true, email, ...devPayload(code) });
       }
-      return res.status(409).json({ message: 'El email ya está registrado' });
+      // No confirmamos por HTTP que la cuenta ya existe (evita que se pueda
+      // enumerar qué emails están registrados) — la respuesta es idéntica a
+      // la de un registro nuevo. Avisamos por mail solo al dueño real.
+      await sendAccountExistsEmail(email);
+      return res.status(200).json({ requiresVerification: true, email });
     }
 
     const passwordHash = await bcrypt.hash(password, 12);

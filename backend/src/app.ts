@@ -63,6 +63,15 @@ const contactLimiter = rateLimit({
   legacyHeaders:   false,
   message: { message: 'Demasiados mensajes. Esperá unos minutos e intentá de nuevo.' },
 });
+// Límite global holgado: cubre endpoints que no tenían ninguna protección
+// (cursos, subidas, creación de pagos) sin afectar el uso normal del sitio.
+const globalLimiter = rateLimit({
+  windowMs:        15 * 60 * 1000,
+  max:             300,             // generoso a propósito, solo frena abuso/fuzzing
+  standardHeaders: true,
+  legacyHeaders:   false,
+  message: { message: 'Demasiadas solicitudes. Esperá un momento e intentá de nuevo.' },
+});
 
 // ── Stripe webhook needs raw body BEFORE express.json() ───
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
@@ -70,7 +79,9 @@ app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 // ── General middleware ─────────────────────────────────────
 app.use(cookieParser());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// No se usa express.urlencoded: la API es JSON puro, y dejarlo habilitado
+// solo agregaba una forma extra de disparar peticiones cross-site sin
+// preflight (form POST con application/x-www-form-urlencoded).
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 }
@@ -79,6 +90,8 @@ if (process.env.NODE_ENV !== 'test') {
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+app.use('/api', globalLimiter);
 
 // ── API routes ─────────────────────────────────────────────
 // Aplicar rate limits a los endpoints de autenticación

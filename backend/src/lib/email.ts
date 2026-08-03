@@ -515,6 +515,48 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   });
 }
 
+// ── Aviso de cuenta existente (no se revela por HTTP, solo por email) ────────
+export async function sendAccountExistsEmail(email: string) {
+  await send({
+    to:      email,
+    subject: 'Ya tenés una cuenta — GO Travel Academy',
+    html: `
+<!DOCTYPE html><html lang="es">
+<body style="margin:0;padding:0;background:#f4f3ef;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+  <tr><td align="center">
+    <table width="520" cellpadding="0" cellspacing="0"
+      style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e8e7e3;">
+      <tr>
+        <td style="background:#06043F;padding:28px 40px;">
+          <h1 style="margin:0;color:#fff;font-size:22px;font-weight:800;">GO Travel Academy</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:40px;">
+          <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0d0d0d;">
+            Ya tenés una cuenta con este email
+          </h2>
+          <p style="margin:0 0 24px;color:#5a5955;font-size:15px;line-height:1.7;">
+            Alguien intentó crear una cuenta nueva usando <strong>${email}</strong>,
+            pero ya existe una cuenta con ese email. Si fuiste vos, simplemente
+            iniciá sesión normalmente. Si no reconocés este intento, podés
+            ignorar este mensaje con tranquilidad — tu cuenta no cambió.
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px 40px;border-top:1px solid #e8e7e3;background:#f4f3ef;">
+          <p style="margin:0;color:#94a3b8;font-size:12px;">© 2026 GO Travel Academy</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+  });
+}
+
 // ── Formulario de contacto ────────────────────────────────────────────────────
 const CONTACT_INBOX = 'academygotravel@gmail.com';
 

@@ -21,6 +21,30 @@ const EXT_PERMITIDAS = [
   'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg',
 ];
 
+// El Content-Type real se deduce de la extensión (ya validada arriba), en vez
+// de confiar en el header que manda el cliente — evita que alguien suba un
+// .pdf declarado como text/html (XSS almacenado si el navegador lo ejecuta).
+const CONTENT_TYPE_POR_EXT: Record<string, string> = {
+  pdf: 'application/pdf',
+  zip: 'application/zip',
+  rar: 'application/vnd.rar',
+  '7z': 'application/x-7z-compressed',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  csv: 'text/csv',
+  txt: 'text/plain',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+};
+
 router.post(
   '/',
   authenticate,
@@ -48,7 +72,8 @@ router.post(
     }
 
     try {
-      const { url } = await uploadFile(name, req.headers['content-type'] || '', body);
+      const contentType = CONTENT_TYPE_POR_EXT[ext] ?? 'application/octet-stream';
+      const { url } = await uploadFile(name, contentType, body);
       res.status(201).json({ url, name, size: body.length });
     } catch (err: any) {
       console.error('[Uploads] Falló la subida:', err?.message);
