@@ -393,6 +393,17 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
       const paymentApi = new Payment(getMPClient());
       const payment = await paymentApi.get({ id: Number(paymentId) });
 
+      // La cuenta de Mercado Pago está compartida con la tienda vieja, así que
+      // acá también llegan avisos de pagos que no salieron de este sitio. Esos
+      // no traen nuestra metadata (MP devuelve un objeto vacío, no null) y sin
+      // curso ni usuario no hay nada que inscribir: los damos por recibidos y
+      // seguimos, en vez de romper e inundar de alertas.
+      const meta = (payment.metadata ?? {}) as Record<string, any>;
+      if (!meta.user_id || !meta.course_id) {
+        console.log('[MP Webhook] Pago ajeno a este sitio (sin metadata propia), ignorado:', paymentId);
+        return res.json({ received: true, ignored: 'pago-ajeno' });
+      }
+
       if (payment.status === 'approved' && payment.metadata) {
         const { user_id: userId, course_id: courseId } = payment.metadata;
         const amount = payment.transaction_amount ?? 0;
