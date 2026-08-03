@@ -5,6 +5,7 @@ import { AppProvider } from './context/AppContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
+import CompleteProfileModal from './components/CompleteProfileModal';
 import VerifyEmailModal from './components/VerifyEmailModal';
 import CheckoutModal from './components/CheckoutModal';
 import Toast from './components/Toast';
@@ -72,6 +73,7 @@ function Layout() {
       </main>
       <Footer />
       <AuthModal />
+      <CompleteProfileModal />
       <VerifyEmailModal />
       <CheckoutModal />
       <Toast />
