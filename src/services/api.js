@@ -85,6 +85,7 @@ export const enrollmentsApi = {
     return api.get(`/enrollments${qs ? `?${qs}` : ''}`);
   },
   free: (courseId, userId) => api.post(`/enrollments/${courseId}/free`, { userId }),
+  revoke: (id) => api.post(`/enrollments/${id}/revoke`, {}),
 };
 
 // ── Users (admin) ──────────────────────────────────────────

@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
+import { sendRefundEmail } from '../lib/email';
 
 const router = Router();
 
@@ -80,6 +81,34 @@ router.post('/:courseId/free', authenticate, requireAdmin, async (req: Request, 
       create: { userId: targetUserId, courseId, paidAt: new Date(), amount: 0 },
     });
     res.status(201).json({ enrollment });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/enrollments/:id/revoke — admin: revocar acceso a mano (ej. un
+// reembolso que se gestionó fuera del sistema, antes de que existiera esta
+// funcionalidad, o cualquier otro caso puntual). Deja al alumno en el mismo
+// estado que un reembolso automático: pierde el acceso y le vuelve a
+// aparecer la opción de comprar el curso.
+router.post('/:id/revoke', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const enrollment = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
+    if (!enrollment) return res.status(404).json({ message: 'Inscripción no encontrada' });
+    if (enrollment.refundedAt) return res.status(400).json({ message: 'Ya tenía el acceso revocado' });
+
+    const updated = await prisma.enrollment.update({
+      where: { id: enrollment.id },
+      data:  { refundedAt: new Date() },
+    });
+
+    const [user, course] = await Promise.all([
+      prisma.user.findUnique({ where: { id: enrollment.userId }, select: { name: true, email: true } }),
+      prisma.course.findUnique({ where: { id: enrollment.courseId }, select: { title: true, price: true } }),
+    ]);
+    if (user && course) sendRefundEmail(user, course).catch(console.error);
+
+    res.json({ enrollment: updated });
   } catch (err) {
     next(err);
   }

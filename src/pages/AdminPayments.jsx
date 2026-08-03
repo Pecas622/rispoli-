@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Loader, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { paymentsApi } from '../services/api';
+import { paymentsApi, enrollmentsApi } from '../services/api';
 
 export default function AdminPayments() {
   const { showToast } = useApp();
@@ -12,6 +12,8 @@ export default function AdminPayments() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(null); // pago a confirmar antes de revocar
+  const [revokingId,        setRevokingId]        = useState(null); // id en vuelo mientras se procesa
 
   const load = useCallback(() => {
     setLoading(true);
@@ -23,6 +25,21 @@ export default function AdminPayments() {
   }, [page]);
 
   useEffect(() => { load(); }, [load]);
+
+  const confirmRevoke = async () => {
+    const payment = confirmingPayment;
+    setConfirmingPayment(null);
+    setRevokingId(payment.id);
+    try {
+      await enrollmentsApi.revoke(payment.id);
+      setPayments(prev => prev.map(p => p.id === payment.id ? { ...p, status: 'reembolsado', refundedAt: new Date().toISOString() } : p));
+      showToast('Acceso revocado. Le avisamos por mail al alumno.');
+    } catch (err) {
+      showToast(err.message || 'No se pudo revocar el acceso', 'error');
+    } finally {
+      setRevokingId(null);
+    }
+  };
 
   const paymentsOk  = payments.filter(p => p.status !== 'reembolsado');
   const totalRecaudado = paymentsOk.reduce((a, p) => a + (p.amount || 0), 0);
@@ -66,6 +83,7 @@ export default function AdminPayments() {
                     <th>Proveedor</th>
                     <th>Fecha</th>
                     <th>Estado</th>
+                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -86,10 +104,21 @@ export default function AdminPayments() {
                           ? <span className="badge badge-red">Reembolsado</span>
                           : <span className="badge badge-green">Aprobado</span>}
                       </td>
+                      <td>
+                        {p.status !== 'reembolsado' && (
+                          <button
+                            className="btn btn-outline btn-sm"
+                            onClick={() => setConfirmingPayment(p)}
+                            disabled={revokingId === p.id}
+                          >
+                            {revokingId === p.id ? 'Revocando...' : 'Revocar acceso'}
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                   {payments.length === 0 && (
-                    <tr><td colSpan={6} style={{ textAlign:'center', padding:'32px 0', color:'var(--text-3)' }}>Sin pagos todavía</td></tr>
+                    <tr><td colSpan={7} style={{ textAlign:'center', padding:'32px 0', color:'var(--text-3)' }}>Sin pagos todavía</td></tr>
                   )}
                 </tbody>
               </table>
@@ -105,6 +134,33 @@ export default function AdminPayments() {
           </>
         )}
       </div>
+
+      {confirmingPayment && (
+        <div className="modal-overlay" onClick={() => setConfirmingPayment(null)}>
+          <div className="modal" style={{ maxWidth: 380 }} onClick={e => e.stopPropagation()}>
+            <p className="modal-title">¿Revocar acceso?</p>
+            <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 24, lineHeight: 1.6 }}>
+              <strong style={{ color: 'var(--text)' }}>{confirmingPayment.user?.name}</strong> va a perder el
+              acceso a <strong style={{ color: 'var(--text)' }}>{confirmingPayment.course?.title}</strong> y le
+              va a volver a aparecer la opción de comprarlo. Le mandamos un mail avisándole. Esta acción no se
+              puede deshacer desde acá.
+            </p>
+            <div className="form-actions">
+              <button className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }}
+                onClick={() => setConfirmingPayment(null)}>
+                Cancelar
+              </button>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, justifyContent: 'center', background: 'var(--red)', borderColor: 'var(--red)' }}
+                onClick={confirmRevoke}
+              >
+                Revocar acceso
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
