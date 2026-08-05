@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { getStripe, isStripeReady } from '../lib/stripe';
 import { isMercadoPagoReady } from '../lib/mercadopago';
 import { prisma } from '../lib/prisma';
-import { sendPurchaseConfirmationEmail, sendPurchaseNotificationEmail, sendPaymentRejectedEmail, sendRefundEmail, sendWebhookErrorAlert } from '../lib/email';
+import { sendPurchaseConfirmationEmail, sendPurchaseWelcomeEmail, sendPurchaseNotificationEmail, sendPaymentRejectedEmail, sendRefundEmail, sendWebhookErrorAlert } from '../lib/email';
 import { sendMetaEvent } from '../lib/capi';
 import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
@@ -282,6 +282,7 @@ router.post(
         if (user && course) {
           const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
           sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
+          sendPurchaseWelcomeEmail(user, course).catch(console.error);
           sendPurchaseNotificationEmail(user, course, amount, currency, 'stripe').catch(console.error);
 
           // Meta CAPI: Purchase server-side (la conversión que más importa).
@@ -426,6 +427,7 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
         if (user && course) {
           const invoiceNumber = `INV-MP-${Date.now().toString(36).toUpperCase()}`;
           sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
+          sendPurchaseWelcomeEmail(user, course).catch(console.error);
           sendPurchaseNotificationEmail(user, course, amount, 'ARS', 'mercadopago').catch(console.error);
 
           // Meta CAPI: Purchase server-side (Mercado Pago, ARS).

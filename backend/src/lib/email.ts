@@ -147,6 +147,95 @@ export async function sendWelcomeEmail(user: UserData) {
   });
 }
 
+// ── Bienvenida al comprar un curso ────────────────────────────────────────────
+export async function sendPurchaseWelcomeEmail(user: UserData, course: CourseData) {
+  await send({
+    to:      user.email,
+    subject: `¡Bienvenido/a a Go Travel Academy! 👋`,
+    html: `
+<!DOCTYPE html><html lang="es">
+<body style="margin:0;padding:0;background:#f4f3ef;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0"
+      style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e8e7e3;">
+      <tr>
+        <td style="background:#06043F;padding:32px 40px;">
+          <h1 style="margin:0;color:#fff;font-size:24px;font-weight:800;">GO Travel Academy</h1>
+          <p style="margin:4px 0 0;color:#8CB0F4;font-size:13px;">Plataforma de educación online</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:40px;">
+          <h2 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1e293b;">
+            ¡Hola, ${user.name.split(' ')[0]}! 👋
+          </h2>
+          <p style="margin:0 0 20px;color:#5a5955;font-size:15px;line-height:1.75;">
+            ¡Bienvenido/a a <strong>Go Travel Academy</strong>! Estamos muy felices de que
+            hayas dado este paso para formarte como agente de viajes y comenzar a crecer
+            en el mundo del turismo ✈️
+          </p>
+          <p style="margin:0 0 24px;color:#5a5955;font-size:15px;line-height:1.75;">
+            Ya tenés <strong>acceso inmediato</strong> a <strong>${course.title}</strong> —
+            no hace falta esperar nada, ¡ya podés entrar ahora mismo con el email y la
+            contraseña que usaste para registrarte!
+          </p>
+
+          <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+            <tr>
+              <td style="background:#06043F;border-radius:8px;padding:13px 28px;">
+                <a href="${process.env.FRONTEND_URL}/dashboard"
+                   style="color:#fff;text-decoration:none;font-size:14px;font-weight:600;">
+                  Entrar a mi curso →
+                </a>
+              </td>
+            </tr>
+          </table>
+
+          <div style="background:#f4f3ef;border-radius:12px;padding:20px 24px;margin-bottom:28px;">
+            <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#0d0d0d;">
+              👉 Antes de arrancar, mirá esta guía rápida
+            </p>
+            <p style="margin:0 0 14px;color:#5a5955;font-size:13.5px;line-height:1.6;">
+              Te dejamos una presentación de bienvenida con el paso a paso para que puedas
+              hacer el curso con tranquilidad.
+            </p>
+            <a href="${process.env.WELCOME_GUIDE_URL ?? 'https://canva.link/nuzpidcbcdk5xcu'}"
+               style="color:#06043F;font-size:14px;font-weight:600;text-decoration:underline;">
+              Ver guía de bienvenida →
+            </a>
+          </div>
+
+          <p style="margin:0 0 4px;color:#5a5955;font-size:14px;line-height:1.7;">
+            Nuestros horarios de atención son de <strong>lunes a viernes de 9:00 a
+            18:00 hs</strong>. Dentro de ese rango estaremos respondiendo consultas y
+            enviando usuarios y contraseñas correspondientes.
+          </p>
+          <p style="margin:12px 0 0;color:#5a5955;font-size:14px;line-height:1.7;">
+            Ante cualquier duda, podés escribirnos y con gusto te vamos a ayudar 😊
+          </p>
+
+          <p style="margin:28px 0 0;color:#5a5955;font-size:15px;">
+            ¡Gracias por confiar en nosotros!<br>
+            <strong style="color:#0d0d0d;">Equipo de Go Travel Academy 💙</strong>
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px 40px;border-top:1px solid #e8e7e3;background:#f4f3ef;">
+          <p style="margin:0;color:#94a3b8;font-size:12px;">
+            © 2026 GO Travel Academy ·
+            <a href="${process.env.FRONTEND_URL}" style="color:#6F95E8;">gotravelacademy.com</a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+  });
+}
+
 // ── Factura de compra ────────────────────────────────────────────────────────
 export async function sendPurchaseConfirmationEmail(
   user: UserData,
