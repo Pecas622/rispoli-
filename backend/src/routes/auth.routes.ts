@@ -257,7 +257,7 @@ router.post('/google', async (req: Request, res: Response, next: NextFunction) =
         },
       });
     } else {
-      if (user.deletedAt) return res.status(401).json({ message: 'Credenciales incorrectas' });
+      if (user.deletedAt) user = await prisma.user.update({ where: { id: user.id }, data: { name: payload.name ?? user.name, avatar: payload.picture ?? user.avatar, deletedAt: null, isBlocked: false, emailVerified: true } });
       if (!user.emailVerified) {
         user = await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true } });
       }
