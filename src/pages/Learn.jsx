@@ -3,9 +3,10 @@ import { useParams, Link, Navigate } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle, Circle, Play, Lock,
   FileText, Archive, Image, Code, File, AlignLeft, ChevronDown,
+  MessageCircle, Send, Trash2, User as UserIcon,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { coursesApi, modulesApi, progressApi } from '../services/api';
+import { coursesApi, modulesApi, progressApi, questionsApi } from '../services/api';
 import './Learn.css';
 
 const TYPE_ICONS = { pdf: FileText, zip: Archive, image: Image, code: Code };
@@ -83,6 +84,182 @@ function TextContent({ content }) {
           ))}</p>
         ))}
       </div>
+    </div>
+  );
+}
+
+// Foro de preguntas de la clase: público entre todos los inscriptos al
+// curso (no solo entre el alumno y el instructor), pregunta y respuesta.
+function QuestionRow({ q, currentUser, onDeleteQuestion, onSubmitAnswer, onDeleteAnswer }) {
+  const [replying, setReplying] = useState(false);
+  const [answerText, setAnswerText] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const canDelete = (authorId) => currentUser && (currentUser.id === authorId || currentUser.role === 'admin' || currentUser.role === 'instructor');
+
+  const submitAnswer = async () => {
+    if (!answerText.trim()) return;
+    setSending(true);
+    const ok = await onSubmitAnswer(q.id, answerText.trim());
+    setSending(false);
+    if (ok) { setAnswerText(''); setReplying(false); }
+  };
+
+  return (
+    <div className="learn-question">
+      <div className="learn-question-head">
+        <div className="learn-question-avatar">
+          {q.user?.avatar ? <img src={q.user.avatar} alt={q.user.name} /> : <UserIcon size={13} />}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="learn-question-name">
+            {q.user?.name ?? 'Alumno'}
+            {(q.user?.role === 'ADMIN' || q.user?.role === 'INSTRUCTOR') && <span className="learn-question-staff">Staff</span>}
+          </div>
+          <p className="learn-question-body">{q.body}</p>
+        </div>
+        {canDelete(q.userId) && (
+          <button className="learn-question-del" onClick={() => onDeleteQuestion(q.id)} title="Eliminar pregunta">
+            <Trash2 size={13} />
+          </button>
+        )}
+      </div>
+
+      {q.answers?.length > 0 && (
+        <div className="learn-answers">
+          {q.answers.map(a => (
+            <div key={a.id} className="learn-answer">
+              <div className="learn-question-avatar learn-answer-avatar">
+                {a.user?.avatar ? <img src={a.user.avatar} alt={a.user.name} /> : <UserIcon size={11} />}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="learn-question-name">
+                  {a.user?.name ?? 'Alumno'}
+                  {(a.user?.role === 'ADMIN' || a.user?.role === 'INSTRUCTOR') && <span className="learn-question-staff">Staff</span>}
+                </div>
+                <p className="learn-question-body">{a.body}</p>
+              </div>
+              {canDelete(a.userId) && (
+                <button className="learn-question-del" onClick={() => onDeleteAnswer(q.id, a.id)} title="Eliminar respuesta">
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {replying ? (
+        <div className="learn-answer-form">
+          <input
+            className="input" placeholder="Escribí una respuesta..."
+            value={answerText} onChange={e => setAnswerText(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && submitAnswer()}
+            autoFocus
+          />
+          <button className="btn btn-primary btn-sm" onClick={submitAnswer} disabled={sending || !answerText.trim()}>
+            {sending ? <div className="spinner" /> : <Send size={13} />}
+          </button>
+        </div>
+      ) : (
+        <button className="learn-reply-btn" onClick={() => setReplying(true)}>Responder</button>
+      )}
+    </div>
+  );
+}
+
+function LessonQuestions({ lessonId, user, showToast }) {
+  const [questions, setQuestions] = useState(null); // null = cargando
+  const [newQuestion, setNewQuestion] = useState('');
+  const [posting, setPosting] = useState(false);
+
+  useEffect(() => {
+    setQuestions(null);
+    setNewQuestion('');
+    if (!lessonId) return;
+    questionsApi.list(lessonId)
+      .then(res => setQuestions(res.questions ?? []))
+      .catch(() => setQuestions([]));
+  }, [lessonId]);
+
+  const submitQuestion = async () => {
+    if (!newQuestion.trim()) return;
+    setPosting(true);
+    try {
+      const res = await questionsApi.create(lessonId, newQuestion.trim());
+      setQuestions(prev => [...(prev ?? []), res.question]);
+      setNewQuestion('');
+    } catch (err) {
+      showToast(err.message || 'No se pudo publicar la pregunta', 'error');
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  const submitAnswer = async (questionId, body) => {
+    try {
+      const res = await questionsApi.answer(questionId, body);
+      setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, answers: [...(q.answers ?? []), res.answer] } : q));
+      return true;
+    } catch (err) {
+      showToast(err.message || 'No se pudo publicar la respuesta', 'error');
+      return false;
+    }
+  };
+
+  const deleteQuestion = async (questionId) => {
+    try {
+      await questionsApi.remove(questionId);
+      setQuestions(prev => prev.filter(q => q.id !== questionId));
+    } catch (err) {
+      showToast(err.message || 'No se pudo eliminar', 'error');
+    }
+  };
+
+  const deleteAnswer = async (questionId, answerId) => {
+    try {
+      await questionsApi.removeAnswer(answerId);
+      setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, answers: q.answers.filter(a => a.id !== answerId) } : q));
+    } catch (err) {
+      showToast(err.message || 'No se pudo eliminar', 'error');
+    }
+  };
+
+  return (
+    <div className="learn-section">
+      <h3 className="learn-section-title">
+        <MessageCircle size={14} style={{ display: 'inline', marginRight: 6 }} />
+        Preguntas de la clase
+      </h3>
+      <p className="learn-questions-hint">Visible para todos los inscriptos en el curso.</p>
+
+      <div className="learn-answer-form" style={{ marginBottom: 18 }}>
+        <input
+          className="input" placeholder="Escribí tu pregunta sobre esta clase..."
+          value={newQuestion} onChange={e => setNewQuestion(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && submitQuestion()}
+        />
+        <button className="btn btn-primary btn-sm" onClick={submitQuestion} disabled={posting || !newQuestion.trim()}>
+          {posting ? <div className="spinner" /> : <Send size={13} />}
+        </button>
+      </div>
+
+      {questions === null ? (
+        <p className="learn-questions-hint">Cargando...</p>
+      ) : questions.length === 0 ? (
+        <p className="learn-questions-hint">Todavía no hay preguntas en esta clase. ¡Sé el primero!</p>
+      ) : (
+        <div className="learn-questions-list">
+          {questions.map(q => (
+            <QuestionRow
+              key={q.id} q={q} currentUser={user}
+              onDeleteQuestion={deleteQuestion}
+              onSubmitAnswer={submitAnswer}
+              onDeleteAnswer={deleteAnswer}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -290,6 +467,8 @@ export default function Learn() {
                   </ul>
                 </div>
               )}
+
+              <LessonQuestions lessonId={activeLesson.id} user={user} showToast={showToast} />
 
               <div className="learn-footer">
                 <button className="btn btn-outline" onClick={goPrev} disabled={activeIndex <= 0}>

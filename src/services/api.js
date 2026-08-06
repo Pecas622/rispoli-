@@ -61,6 +61,15 @@ export const reviewsApi = {
   create: (courseId, data) => api.post(`/courses/${courseId}/reviews`, data),
 };
 
+// ── Foro de preguntas por clase ──────────────────────────────
+export const questionsApi = {
+  list:         (lessonId)            => api.get(`/lessons/${lessonId}/questions`),
+  create:       (lessonId, body)      => api.post(`/lessons/${lessonId}/questions`, { body }),
+  answer:       (questionId, body)    => api.post(`/questions/${questionId}/answers`, { body }),
+  remove:       (questionId)          => api.delete(`/questions/${questionId}`),
+  removeAnswer: (answerId)            => api.delete(`/questions/answers/${answerId}`),
+};
+
 // ── Content (modules & lessons) ───────────────────────────
 export const modulesApi = {
   list:    (courseId)        => api.get(`/courses/${courseId}/modules`),

@@ -31,6 +31,8 @@ model User {
   progress    LessonProgress[]
   passwordResetTokens PasswordResetToken[]
   reviews     Review[]
+  questions   Question[]
+  answers     Answer[]
 
   @@map("users")
 }
@@ -135,8 +137,40 @@ model Lesson {
   module    Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   resources Resource[]
   progress  LessonProgress[]
+  questions Question[]
 
   @@map("lessons")
+}
+
+// Foro de preguntas por clase: pregunta y respuestas públicas para todos los
+// alumnos inscriptos en el curso (no solo entre el alumno y el instructor).
+model Question {
+  id        String   @id @default(cuid())
+  lessonId  String   @map("lesson_id")
+  userId    String   @map("user_id")
+  body      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  lesson  Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers Answer[]
+
+  @@index([lessonId])
+  @@map("questions")
+}
+
+model Answer {
+  id         String   @id @default(cuid())
+  questionId String   @map("question_id")
+  userId     String   @map("user_id")
+  body       String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@map("answers")
 }
 
 model Resource {

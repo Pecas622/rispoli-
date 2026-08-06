@@ -17,6 +17,7 @@ import { trackRouter }       from './routes/track.routes';
 import { catalogRouter }     from './routes/catalog.routes';
 import { uploadsRouter }     from './routes/uploads.routes';
 import { reviewsRouter }     from './routes/reviews.routes';
+import { questionsRouter }   from './routes/questions.routes';
 import { contactRouter }     from './routes/contact.routes';
 import { errorMiddleware }   from './middleware/error.middleware';
 
@@ -120,6 +121,10 @@ app.use('/api/modules',  modulesRouter);
 app.use('/api/modules/:moduleId/lessons', lessonsRouter);
 // Standalone lesson endpoints
 app.use('/api/lessons',  lessonsRouter);
+
+// Foro de preguntas por clase
+app.use('/api/lessons/:lessonId/questions', questionsRouter);
+app.use('/api/questions', questionsRouter);
 
 app.use('/api/enrollments', enrollmentsRouter);
 app.use('/api/progress',    progressRouter);
