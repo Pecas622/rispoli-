@@ -25,7 +25,7 @@ function waitForGoogleScript(timeoutMs = 8000) {
 export default function AuthModal() {
   const { authModal, setAuthModal, login, loginWithGoogle, register, forgotPassword } = useApp();
   const googleBtnRef = useRef(null);
-  const [form, setForm] = useState({ firstName:'', lastName:'', email:'', phone:'', password:'', confirmPassword:'' });
+  const [form, setForm] = useState({ firstName:'', lastName:'', email:'', phone:'', dni:'', password:'', confirmPassword:'' });
   // Código de país del teléfono: se preselecciona por la ubicación del visitante.
   const [phoneCountry, setPhoneCountry] = useState(DEFAULT_COUNTRY);
   useEffect(() => {
@@ -71,6 +71,8 @@ export default function AuthModal() {
       if (!form.lastName.trim()) e.lastName = 'Requerido';
       if (!form.phone.trim()) e.phone = 'Requerido';
       else if (form.phone.replace(/\D/g, '').length < 6) e.phone = 'Teléfono incompleto';
+      if (!form.dni.trim()) e.dni = 'Requerido';
+      else if (form.dni.replace(/\D/g, '').length < 6) e.dni = 'DNI incompleto';
     }
     if (!form.email.trim()) e.email = 'Requerido';
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Email inválido';
@@ -87,7 +89,7 @@ export default function AuthModal() {
     setLoading(true);
     await (isLogin
       ? login(form.email, form.password)
-      : register(`${form.firstName.trim()} ${form.lastName.trim()}`, form.email, `${findCountry(phoneCountry)?.dial ?? ''}${form.phone.replace(/\D/g, '')}`, form.password));
+      : register(`${form.firstName.trim()} ${form.lastName.trim()}`, form.email, `${findCountry(phoneCountry)?.dial ?? ''}${form.phone.replace(/\D/g, '')}`, form.dni.trim(), form.password));
     setLoading(false);
   };
 
@@ -195,6 +197,12 @@ export default function AuthModal() {
                          value={form.phone} onChange={set('phone')} style={{flex:1,minWidth:0}} />
                 </div>
                 <FieldErr k="phone" />
+              </div>
+              <div>
+                <label style={{display:'block',fontSize:12,fontWeight:500,color:'var(--text-3)',marginBottom:6}}>DNI</label>
+                <input className="input" type="text" inputMode="numeric" placeholder="12345678"
+                       value={form.dni} onChange={set('dni')} />
+                <FieldErr k="dni" />
               </div>
             </>
           )}

@@ -246,6 +246,7 @@ export function Perfil() {
 
   const [name, setName] = useState(user.name);
   const [phone, setPhone] = useState(user.phone ?? '');
+  const [dni, setDni] = useState(user.dni ?? '');
   const [saving, setSaving] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -258,8 +259,16 @@ export function Perfil() {
       showToast('Revisá el teléfono: falta el código de país o faltan dígitos', 'error');
       return;
     }
+    if (dni.trim() && dni.replace(/\D/g, '').length < 6) {
+      showToast('Revisá el DNI: faltan dígitos', 'error');
+      return;
+    }
     setSaving(true);
-    await updateProfile(phone.trim() ? { name, phone: phone.trim() } : { name });
+    await updateProfile({
+      name,
+      ...(phone.trim() && { phone: phone.trim() }),
+      ...(dni.trim() && { dni: dni.trim() }),
+    });
     setSaving(false);
   };
 
@@ -321,6 +330,14 @@ export function Perfil() {
                 placeholder="+54 9 261 555 5555"
               />
               <p className="perfil-field-note">Incluí el código de país (por ejemplo +54).</p>
+            </div>
+            <div className="perfil-field">
+              <label>DNI</label>
+              <input
+                className="input" type="text" inputMode="numeric" value={dni}
+                onChange={e => setDni(e.target.value)}
+                placeholder="12345678"
+              />
             </div>
 
             <div className="perfil-field">

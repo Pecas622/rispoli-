@@ -10,13 +10,14 @@ const updateSchema = z.object({
   // Mismo criterio que el registro: al menos 8 dígitos, sin exigir un formato
   // puntual porque varía por país.
   phone:     z.string().trim().refine(v => v.replace(/\D/g, '').length >= 8, 'Teléfono inválido').optional(),
+  dni:       z.string().trim().refine(v => v.replace(/\D/g, '').length >= 6, 'DNI inválido').optional(),
   avatar:    z.union([z.string().url(), z.literal('')]).optional(),
   role:      z.enum(['ADMIN', 'INSTRUCTOR', 'STUDENT']).optional(),
   isBlocked: z.boolean().optional(),
 });
 
 const USER_SELECT = {
-  id: true, name: true, email: true, phone: true,
+  id: true, name: true, email: true, phone: true, dni: true,
   role: true, avatar: true, isBlocked: true, createdAt: true,
   _count: { select: { enrollments: true } },
 } as const;

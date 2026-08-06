@@ -18,6 +18,7 @@ model User {
   name          String
   email         String   @unique
   phone         String?
+  dni           String?
   passwordHash  String?  @map("password_hash")
   role          Role     @default(STUDENT)
   avatar        String?

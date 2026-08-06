@@ -21,6 +21,7 @@ const registerSchema = z.object({
   name:     z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   email:    emailField,
   phone:    z.string().min(6, 'Teléfono inválido'),
+  dni:      z.string().trim().refine(v => v.replace(/\D/g, '').length >= 6, 'DNI inválido'),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
 });
 
@@ -85,7 +86,7 @@ function devPayload(code: string) {
 // POST /api/auth/register
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, email, phone, password } = registerSchema.parse(req.body);
+    const { name, email, phone, dni, password } = registerSchema.parse(req.body);
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing && !existing.deletedAt) {
@@ -108,9 +109,9 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     const newUser = existing
       ? await prisma.user.update({
           where: { email },
-          data:  { name, phone, passwordHash, deletedAt: null, isBlocked: false, emailVerified: false },
+          data:  { name, phone, dni, passwordHash, deletedAt: null, isBlocked: false, emailVerified: false },
         })
-      : await prisma.user.create({ data: { name, email, phone, passwordHash } });
+      : await prisma.user.create({ data: { name, email, phone, dni, passwordHash } });
 
     const code = await createAndSendCode(email);
 
@@ -166,7 +167,7 @@ router.post('/verify-email', async (req: Request, res: Response, next: NextFunct
     const user = await prisma.user.update({
       where: { email },
       data:  { emailVerified: true },
-      select: { id: true, name: true, email: true, phone: true, role: true, avatar: true, emailVerified: true },
+      select: { id: true, name: true, email: true, phone: true, dni: true, role: true, avatar: true, emailVerified: true },
     });
 
     await prisma.verificationCode.deleteMany({ where: { email } });
@@ -362,7 +363,7 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
   try {
     const user = await prisma.user.findFirst({
       where:  { id: req.user!.userId, deletedAt: null },
-      select: { id: true, name: true, email: true, phone: true, role: true, avatar: true, createdAt: true },
+      select: { id: true, name: true, email: true, phone: true, dni: true, role: true, avatar: true, createdAt: true },
     });
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
     res.json({ user });
