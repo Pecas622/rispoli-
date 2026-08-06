@@ -245,13 +245,30 @@ export default function AdminUsers() {
             ) : detailEnrollments.length === 0 ? (
               <p style={{fontSize:13,color:'var(--text-3)',marginBottom:20}}>Sin inscripciones todavía.</p>
             ) : (
-              <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
+              <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:20}}>
                 {detailEnrollments.map(e => (
-                  <div key={e.id} style={{display:'flex',justifyContent:'space-between',fontSize:13,padding:'8px 12px',border:'1px solid var(--border)',borderRadius:'var(--r-sm)'}}>
-                    <span>{e.course?.title ?? '—'}</span>
-                    <span style={{color:'var(--text-3)'}}>
-                      {e.paidAt ? new Date(e.paidAt).toLocaleDateString('es-AR') : 'Pendiente'} · ${(e.amount ?? 0).toLocaleString()}
-                    </span>
+                  <div key={e.id} style={{padding:'10px 12px',border:'1px solid var(--border)',borderRadius:'var(--r-sm)'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:13,marginBottom:e.refundedAt?0:8}}>
+                      <span style={{fontWeight:600}}>{e.course?.title ?? '—'}</span>
+                      <span style={{color:'var(--text-3)'}}>
+                        {e.paidAt ? new Date(e.paidAt).toLocaleDateString('es-AR') : 'Pendiente'} · ${(e.amount ?? 0).toLocaleString()}
+                      </span>
+                    </div>
+                    {e.refundedAt ? (
+                      <span className="badge badge-default" style={{color:'var(--red)'}}>Reembolsado</span>
+                    ) : (
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <div className="progress-bar" style={{flex:1}}>
+                          <div
+                            className="progress-fill"
+                            style={{width:`${e.progressPercent ?? 0}%`,background: e.progressPercent===100 ? 'var(--green)' : 'var(--accent)'}}
+                          />
+                        </div>
+                        <span style={{fontSize:11.5,color:'var(--text-3)',flexShrink:0}}>
+                          {e.completedLessons ?? 0}/{e.totalLessons ?? 0} clases · {e.progressPercent ?? 0}%
+                        </span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

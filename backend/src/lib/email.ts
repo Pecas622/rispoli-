@@ -242,10 +242,14 @@ export async function sendPurchaseConfirmationEmail(
   course: CourseData,
   amount: number,
   invoiceNumber: string,
+  expiresAt?: Date | null,
 ) {
   const date = new Date().toLocaleDateString('es-AR', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
+  const accessNote = expiresAt
+    ? `Acceso hasta el ${expiresAt.toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })} · Modalidad online`
+    : 'Acceso de por vida · Modalidad online';
 
   await send({
     to:      user.email,
@@ -322,7 +326,7 @@ export async function sendPurchaseConfirmationEmail(
             <tr>
               <td style="padding:18px 20px;border-top:1px solid #e8e7e3;">
                 <p style="margin:0;font-size:15px;font-weight:600;color:#1e293b;">${course.title}</p>
-                <p style="margin:4px 0 0;font-size:12px;color:#94a3b8;">Acceso de por vida · Modalidad online</p>
+                <p style="margin:4px 0 0;font-size:12px;color:#94a3b8;">${accessNote}</p>
               </td>
               <td align="right" style="padding:18px 20px;border-top:1px solid #e8e7e3;">
                 <p style="margin:0;font-size:16px;font-weight:700;color:#0d0d0d;">

@@ -10,6 +10,13 @@ import { authenticate, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
+// Acceso por 6 meses para las compras nuevas (ver nota en schema.prisma).
+function sixMonthsFromNow(): Date {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 6);
+  return d;
+}
+
 // Webhooks de Mercado Pago.
 // Doc: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
 
@@ -262,12 +269,13 @@ router.post(
       const paymentIntentId = typeof session.payment_intent === 'string'
         ? session.payment_intent
         : session.payment_intent?.id;
+      const expiresAt = sixMonthsFromNow();
 
       try {
         await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
-          update: { paidAt: new Date(), refundedAt: null, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, amount, paymentProvider: 'stripe', currency },
-          create: { userId, courseId, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, paidAt: new Date(), amount, paymentProvider: 'stripe', currency },
+          update: { paidAt: new Date(), refundedAt: null, expiresAt, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, amount, paymentProvider: 'stripe', currency },
+          create: { userId, courseId, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, paidAt: new Date(), expiresAt, amount, paymentProvider: 'stripe', currency },
         });
 
         await prisma.course.update({
@@ -281,7 +289,7 @@ router.post(
         ]);
         if (user && course) {
           const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
-          sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
+          sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber, expiresAt).catch(console.error);
           sendPurchaseWelcomeEmail(user, course).catch(console.error);
           sendPurchaseNotificationEmail(user, course, amount, currency, 'stripe').catch(console.error);
 
@@ -408,11 +416,12 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
       if (payment.status === 'approved' && payment.metadata) {
         const { user_id: userId, course_id: courseId } = payment.metadata;
         const amount = payment.transaction_amount ?? 0;
+        const expiresAt = sixMonthsFromNow();
 
         await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
-          update: { paidAt: new Date(), refundedAt: null, mpPaymentId: paymentId, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
-          create: { userId, courseId, mpPaymentId: paymentId, paidAt: new Date(), amount, paymentProvider: 'mercadopago', currency: 'ARS' },
+          update: { paidAt: new Date(), refundedAt: null, expiresAt, mpPaymentId: paymentId, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
+          create: { userId, courseId, mpPaymentId: paymentId, paidAt: new Date(), expiresAt, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
         });
 
         await prisma.course.update({
@@ -426,7 +435,7 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
         ]);
         if (user && course) {
           const invoiceNumber = `INV-MP-${Date.now().toString(36).toUpperCase()}`;
-          sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber).catch(console.error);
+          sendPurchaseConfirmationEmail(user, course, amount, invoiceNumber, expiresAt).catch(console.error);
           sendPurchaseWelcomeEmail(user, course).catch(console.error);
           sendPurchaseNotificationEmail(user, course, amount, 'ARS', 'mercadopago').catch(console.error);
 

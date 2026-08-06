@@ -9,9 +9,10 @@ async function canAccessCourseContent(userId: string, role: string, courseId: st
   if (role === 'ADMIN' || role === 'INSTRUCTOR') return true;
   const enrollment = await prisma.enrollment.findUnique({
     where: { userId_courseId: { userId, courseId } },
-    select: { paidAt: true, refundedAt: true },
+    select: { paidAt: true, refundedAt: true, expiresAt: true },
   });
-  return !!enrollment?.paidAt && !enrollment.refundedAt;
+  if (!enrollment?.paidAt || enrollment.refundedAt) return false;
+  return !enrollment.expiresAt || enrollment.expiresAt > new Date();
 }
 
 function maskLesson<T extends { isPreview: boolean; videoUrl: string | null; content: string | null; resources?: any[] }>(

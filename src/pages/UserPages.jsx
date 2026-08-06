@@ -219,6 +219,7 @@ export function Pagos() {
                   <div className="download-name">{p.course?.title}</div>
                   <div className="download-meta">
                     {date}{p.paymentProvider ? ` · ${PROVIDER_LABEL[p.paymentProvider] ?? p.paymentProvider}` : ''}
+                    {!refunded && p.expiresAt && ` · Acceso hasta el ${new Date(p.expiresAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}`}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>

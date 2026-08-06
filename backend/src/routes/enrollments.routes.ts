@@ -9,7 +9,12 @@ const router = Router();
 router.get('/me', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const enrollments = await prisma.enrollment.findMany({
-      where: { userId: req.user!.userId, paidAt: { not: null }, refundedAt: null },
+      where: {
+        userId: req.user!.userId,
+        paidAt: { not: null },
+        refundedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
       include: {
         course: {
           include: {
@@ -51,6 +56,8 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
 });
 
 // GET /api/enrollments — admin: all enrollments (opcionalmente filtradas por usuario)
+// Cuando viene filtrado por userId, suma el progreso de cada curso (cuántas
+// clases completó) — se usa en el detalle del alumno del panel de usuarios.
 router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userId } = req.query as Record<string, string>;
@@ -58,11 +65,38 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
       where: { ...(userId && { userId }) },
       include: {
         user:   { select: { id: true, name: true, email: true } },
-        course: { select: { id: true, title: true, price: true } },
+        course: {
+          select: {
+            id: true, title: true, price: true,
+            modules: { select: { lessons: { select: { id: true } } } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
-    res.json({ enrollments });
+
+    if (!userId) return res.json({ enrollments });
+
+    const progress = await prisma.lessonProgress.findMany({
+      where: { userId },
+      select: { lessonId: true },
+    });
+    const completedIds = new Set(progress.map(p => p.lessonId));
+
+    const result = enrollments.map(e => {
+      const { modules, ...course } = e.course;
+      const totalLessons     = modules.reduce((a, m) => a + m.lessons.length, 0);
+      const completedLessons = modules.reduce((a, m) => a + m.lessons.filter(l => completedIds.has(l.id)).length, 0);
+      return {
+        ...e,
+        course,
+        completedLessons,
+        totalLessons,
+        progressPercent: totalLessons ? Math.round((completedLessons / totalLessons) * 100) : 0,
+      };
+    });
+
+    res.json({ enrollments: result });
   } catch (err) {
     next(err);
   }

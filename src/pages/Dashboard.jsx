@@ -220,6 +220,11 @@ export default function Dashboard() {
                     <div className="dash-course-meta">
                       {enrollment.completedLessons} / {enrollment.totalLessons} clases completadas
                     </div>
+                    {enrollment.expiresAt && (
+                      <div className="dash-course-meta" style={{ marginTop: -8, marginBottom: 8 }}>
+                        Acceso hasta el {new Date(enrollment.expiresAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                      </div>
+                    )}
 
                     <div className="dash-progress-row">
                       <div className="progress-bar">

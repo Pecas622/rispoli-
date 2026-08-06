@@ -164,6 +164,10 @@ model Enrollment {
   // Reembolso o contracargo: revoca el acceso sin borrar el registro de la
   // venta (queda para el historial de pagos del admin).
   refundedAt            DateTime? @map("refunded_at")
+  // Vencimiento del acceso (6 meses desde la compra) para las inscripciones
+  // nuevas. Null = acceso de por vida — así quedan las compras viejas, que se
+  // vendieron con esa promesa y no se les puede cambiar la condición.
+  expiresAt             DateTime? @map("expires_at")
   amount                Float?
   currency              String?   @default("ARS")
   createdAt             DateTime  @default(now()) @map("created_at")
