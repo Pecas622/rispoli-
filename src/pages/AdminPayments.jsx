@@ -14,6 +14,8 @@ export default function AdminPayments() {
   const [error,      setError]      = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(null); // pago a confirmar antes de revocar
   const [revokingId,        setRevokingId]        = useState(null); // id en vuelo mientras se procesa
+  const [deletingPayment,   setDeletingPayment]   = useState(null); // pago a confirmar antes de eliminar
+  const [removingId,        setRemovingId]        = useState(null); // id en vuelo mientras se elimina
 
   const load = useCallback(() => {
     setLoading(true);
@@ -38,6 +40,22 @@ export default function AdminPayments() {
       showToast(err.message || 'No se pudo revocar el acceso', 'error');
     } finally {
       setRevokingId(null);
+    }
+  };
+
+  const confirmDelete = async () => {
+    const payment = deletingPayment;
+    setDeletingPayment(null);
+    setRemovingId(payment.id);
+    try {
+      await paymentsApi.remove(payment.id);
+      setPayments(prev => prev.filter(p => p.id !== payment.id));
+      setTotal(prev => Math.max(0, prev - 1));
+      showToast('Pago eliminado');
+    } catch (err) {
+      showToast(err.message || 'No se pudo eliminar el pago', 'error');
+    } finally {
+      setRemovingId(null);
     }
   };
 
@@ -105,15 +123,26 @@ export default function AdminPayments() {
                           : <span className="badge badge-green">Aprobado</span>}
                       </td>
                       <td>
-                        {p.status !== 'reembolsado' && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {p.status !== 'reembolsado' && (
+                            <button
+                              className="btn btn-outline btn-sm"
+                              onClick={() => setConfirmingPayment(p)}
+                              disabled={revokingId === p.id}
+                            >
+                              {revokingId === p.id ? 'Revocando...' : 'Revocar acceso'}
+                            </button>
+                          )}
                           <button
                             className="btn btn-outline btn-sm"
-                            onClick={() => setConfirmingPayment(p)}
-                            disabled={revokingId === p.id}
+                            style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
+                            onClick={() => setDeletingPayment(p)}
+                            disabled={removingId === p.id}
+                            title="Elimina el registro por completo (no queda en el historial)"
                           >
-                            {revokingId === p.id ? 'Revocando...' : 'Revocar acceso'}
+                            {removingId === p.id ? 'Eliminando...' : 'Eliminar'}
                           </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -156,6 +185,34 @@ export default function AdminPayments() {
                 onClick={confirmRevoke}
               >
                 Revocar acceso
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deletingPayment && (
+        <div className="modal-overlay" onClick={() => setDeletingPayment(null)}>
+          <div className="modal" style={{ maxWidth: 380 }} onClick={e => e.stopPropagation()}>
+            <p className="modal-title">¿Eliminar este pago?</p>
+            <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 24, lineHeight: 1.6 }}>
+              Se borra por completo el registro de <strong style={{ color: 'var(--text)' }}>{deletingPayment.user?.name}</strong> —{' '}
+              <strong style={{ color: 'var(--text)' }}>{deletingPayment.course?.title}</strong>. A diferencia de
+              "Revocar acceso", esto <strong style={{ color: 'var(--text)' }}>no deja rastro en el historial</strong> —
+              usalo para limpiar cargas de prueba o datos erróneos, no para reembolsos reales. El alumno pierde el
+              acceso igual. No se puede deshacer.
+            </p>
+            <div className="form-actions">
+              <button className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }}
+                onClick={() => setDeletingPayment(null)}>
+                Cancelar
+              </button>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, justifyContent: 'center', background: 'var(--red)', borderColor: 'var(--red)' }}
+                onClick={confirmDelete}
+              >
+                Eliminar
               </button>
             </div>
           </div>

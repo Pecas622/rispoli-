@@ -610,6 +610,24 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
   }
 });
 
+// DELETE /api/payments/:id — admin: borra el registro de la venta por
+// completo (a diferencia de "Revocar acceso", que lo marca como reembolsado
+// pero lo deja en el historial). Pensado para limpiar datos que no son ventas
+// reales (accesos gratis de prueba, cargas a mano, etc.) y que distorsionan
+// el promedio — el alumno también pierde el acceso, porque la inscripción
+// deja de existir.
+router.delete('/:id', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const enrollment = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
+    if (!enrollment) return res.status(404).json({ message: 'Pago no encontrado' });
+
+    await prisma.enrollment.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Pago eliminado' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Historial de pagos ────────────────────────────────────────────────────────
 // GET /api/payments/history
 router.get('/history', authenticate, async (req: Request, res: Response, next: NextFunction) => {

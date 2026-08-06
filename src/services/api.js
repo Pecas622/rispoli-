@@ -126,6 +126,7 @@ export const paymentsApi = {
     const qs = new URLSearchParams(params).toString();
     return api.get(`/payments${qs ? `?${qs}` : ''}`);
   },
+  remove: (id) => api.delete(`/payments/${id}`),
 };
 
 // ── Subida de archivos (material de las clases) ───────────
