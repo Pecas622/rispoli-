@@ -14,8 +14,7 @@ export default function AdminPayments() {
   const [error,      setError]      = useState(false);
   const [confirmingPayment, setConfirmingPayment] = useState(null); // pago a confirmar antes de revocar
   const [revokingId,        setRevokingId]        = useState(null); // id en vuelo mientras se procesa
-  const [deletingPayment,   setDeletingPayment]   = useState(null); // pago a confirmar antes de eliminar
-  const [removingId,        setRemovingId]        = useState(null); // id en vuelo mientras se elimina
+  const [togglingId,        setTogglingId]        = useState(null); // id en vuelo al incluir/excluir del total
 
   const load = useCallback(() => {
     setLoading(true);
@@ -43,34 +42,41 @@ export default function AdminPayments() {
     }
   };
 
-  const confirmDelete = async () => {
-    const payment = deletingPayment;
-    setDeletingPayment(null);
-    setRemovingId(payment.id);
+  // No toca el acceso del alumno ni borra el pago: solo lo saca (o lo vuelve
+  // a meter) en las cuentas de recaudado/promedio de acá abajo.
+  const toggleExclude = async (payment) => {
+    setTogglingId(payment.id);
+    const nextValue = !payment.excludeFromStats;
     try {
-      await paymentsApi.remove(payment.id);
-      setPayments(prev => prev.filter(p => p.id !== payment.id));
-      setTotal(prev => Math.max(0, prev - 1));
-      showToast('Pago eliminado');
+      await paymentsApi.toggleExclude(payment.id, nextValue);
+      setPayments(prev => prev.map(p => p.id === payment.id ? { ...p, excludeFromStats: nextValue } : p));
+      showToast(nextValue ? 'Excluido del total' : 'Vuelve a contar en el total');
     } catch (err) {
-      showToast(err.message || 'No se pudo eliminar el pago', 'error');
+      showToast(err.message || 'No se pudo actualizar', 'error');
     } finally {
-      setRemovingId(null);
+      setTogglingId(null);
     }
   };
 
-  const paymentsOk  = payments.filter(p => p.status !== 'reembolsado');
-  const totalRecaudado = paymentsOk.reduce((a, p) => a + (p.amount || 0), 0);
+  // Recaudado/promedio se calculan aparte por moneda (mezclar ARS y USD en
+  // una sola suma no significa nada) y sin contar reembolsados ni excluidos.
+  const countedPayments = payments.filter(p => p.status !== 'reembolsado' && !p.excludeFromStats);
+  const arsPayments = countedPayments.filter(p => (p.currency ?? 'ARS') === 'ARS');
+  const usdPayments = countedPayments.filter(p => p.currency === 'USD');
+  const cuotasPayments = countedPayments.filter(p => (p.installments ?? 1) > 1);
+  const sum = (arr) => arr.reduce((a, p) => a + (p.amount || 0), 0);
+
+  const stats = [
+    { label: 'Recaudado en pesos',   val: `$${sum(arsPayments).toLocaleString('es-AR')}` },
+    { label: 'Recaudado en dólares', val: `USD ${sum(usdPayments).toLocaleString('es-AR')}` },
+    { label: 'Pagos en cuotas',      val: cuotasPayments.length },
+    { label: 'Pagos (esta página)',  val: payments.length },
+  ];
 
   return (
     <div className="container">
       <div className="admin-stats">
-        {[
-          { label: 'Pagos (esta página)', val: payments.length },
-          { label: 'Total de pagos',       val: total },
-          { label: 'Recaudado (esta página)', val: `$${totalRecaudado.toLocaleString()}` },
-          { label: 'Promedio por pago', val: paymentsOk.length ? `$${Math.round(totalRecaudado / paymentsOk.length).toLocaleString()}` : '$0' },
-        ].map(({ label, val }) => (
+        {stats.map(({ label, val }) => (
           <div key={label} className="admin-stat">
             <div className="admin-stat-label">{label}</div>
             <div className="admin-stat-val">{val}</div>
@@ -98,6 +104,7 @@ export default function AdminPayments() {
                     <th>Usuario</th>
                     <th>Curso</th>
                     <th>Monto</th>
+                    <th>Cuotas</th>
                     <th>Proveedor</th>
                     <th>Fecha</th>
                     <th>Estado</th>
@@ -106,7 +113,7 @@ export default function AdminPayments() {
                 </thead>
                 <tbody>
                   {payments.map(p => (
-                    <tr key={p.id}>
+                    <tr key={p.id} style={p.excludeFromStats ? { opacity: 0.5 } : undefined}>
                       <td>
                         <div style={{fontSize:13,fontWeight:600}}>{p.user?.name ?? '—'}</div>
                         <div style={{fontSize:11,color:'var(--text-3)'}}>{p.user?.email}</div>
@@ -115,12 +122,16 @@ export default function AdminPayments() {
                       <td style={{fontSize:13,fontWeight:700}}>
                         {p.currency === 'USD' ? 'USD ' : '$'}{(p.amount ?? 0).toLocaleString()}
                       </td>
+                      <td style={{fontSize:13,color:'var(--text-2)'}}>
+                        {p.installments > 1 ? `${p.installments}x` : p.installments === 1 ? 'Único' : '—'}
+                      </td>
                       <td style={{fontSize:13,color:'var(--text-2)',textTransform:'capitalize'}}>{p.provider ?? '—'}</td>
                       <td style={{fontSize:13,color:'var(--text-2)'}}>{p.paidAt ? new Date(p.paidAt).toLocaleDateString('es-AR') : '—'}</td>
                       <td>
                         {p.status === 'reembolsado'
                           ? <span className="badge badge-red">Reembolsado</span>
                           : <span className="badge badge-green">Aprobado</span>}
+                        {p.excludeFromStats && <div style={{fontSize:10,color:'var(--text-3)',marginTop:2}}>Excluido del total</div>}
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -135,19 +146,18 @@ export default function AdminPayments() {
                           )}
                           <button
                             className="btn btn-outline btn-sm"
-                            style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
-                            onClick={() => setDeletingPayment(p)}
-                            disabled={removingId === p.id}
-                            title="Elimina el registro por completo (no queda en el historial)"
+                            onClick={() => toggleExclude(p)}
+                            disabled={togglingId === p.id}
+                            title="No toca el acceso del alumno, solo lo saca del total/promedio"
                           >
-                            {removingId === p.id ? 'Eliminando...' : 'Eliminar'}
+                            {togglingId === p.id ? 'Guardando...' : p.excludeFromStats ? 'Incluir en el total' : 'Excluir del total'}
                           </button>
                         </div>
                       </td>
                     </tr>
                   ))}
                   {payments.length === 0 && (
-                    <tr><td colSpan={7} style={{ textAlign:'center', padding:'32px 0', color:'var(--text-3)' }}>Sin pagos todavía</td></tr>
+                    <tr><td colSpan={8} style={{ textAlign:'center', padding:'32px 0', color:'var(--text-3)' }}>Sin pagos todavía</td></tr>
                   )}
                 </tbody>
               </table>
@@ -185,34 +195,6 @@ export default function AdminPayments() {
                 onClick={confirmRevoke}
               >
                 Revocar acceso
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deletingPayment && (
-        <div className="modal-overlay" onClick={() => setDeletingPayment(null)}>
-          <div className="modal" style={{ maxWidth: 380 }} onClick={e => e.stopPropagation()}>
-            <p className="modal-title">¿Eliminar este pago?</p>
-            <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 24, lineHeight: 1.6 }}>
-              Se borra por completo el registro de <strong style={{ color: 'var(--text)' }}>{deletingPayment.user?.name}</strong> —{' '}
-              <strong style={{ color: 'var(--text)' }}>{deletingPayment.course?.title}</strong>. A diferencia de
-              "Revocar acceso", esto <strong style={{ color: 'var(--text)' }}>no deja rastro en el historial</strong> —
-              usalo para limpiar cargas de prueba o datos erróneos, no para reembolsos reales. El alumno pierde el
-              acceso igual. No se puede deshacer.
-            </p>
-            <div className="form-actions">
-              <button className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }}
-                onClick={() => setDeletingPayment(null)}>
-                Cancelar
-              </button>
-              <button
-                className="btn btn-primary"
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--red)', borderColor: 'var(--red)' }}
-                onClick={confirmDelete}
-              >
-                Eliminar
               </button>
             </div>
           </div>

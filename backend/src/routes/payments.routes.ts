@@ -274,8 +274,8 @@ router.post(
       try {
         await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
-          update: { paidAt: new Date(), refundedAt: null, expiresAt, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, amount, paymentProvider: 'stripe', currency },
-          create: { userId, courseId, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, paidAt: new Date(), expiresAt, amount, paymentProvider: 'stripe', currency },
+          update: { paidAt: new Date(), refundedAt: null, expiresAt, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, amount, installments: 1, paymentProvider: 'stripe', currency },
+          create: { userId, courseId, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, paidAt: new Date(), expiresAt, amount, installments: 1, paymentProvider: 'stripe', currency },
         });
 
         await prisma.course.update({
@@ -417,11 +417,12 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
         const { user_id: userId, course_id: courseId } = payment.metadata;
         const amount = payment.transaction_amount ?? 0;
         const expiresAt = sixMonthsFromNow();
+        const installments = payment.installments ?? null;
 
         await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
-          update: { paidAt: new Date(), refundedAt: null, expiresAt, mpPaymentId: paymentId, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
-          create: { userId, courseId, mpPaymentId: paymentId, paidAt: new Date(), expiresAt, amount, paymentProvider: 'mercadopago', currency: 'ARS' },
+          update: { paidAt: new Date(), refundedAt: null, expiresAt, mpPaymentId: paymentId, amount, installments, paymentProvider: 'mercadopago', currency: 'ARS' },
+          create: { userId, courseId, mpPaymentId: paymentId, paidAt: new Date(), expiresAt, amount, installments, paymentProvider: 'mercadopago', currency: 'ARS' },
         });
 
         await prisma.course.update({
@@ -593,14 +594,16 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
     ]);
 
     const payments = enrollments.map(e => ({
-      id:       e.id,
-      user:     e.user,
-      course:   e.course,
-      amount:   e.amount,
-      currency: e.currency,
-      provider: e.paymentProvider,
-      paidAt:   e.paidAt,
-      refundedAt: e.refundedAt,
+      id:           e.id,
+      user:         e.user,
+      course:       e.course,
+      amount:       e.amount,
+      currency:     e.currency,
+      provider:     e.paymentProvider,
+      installments: e.installments,
+      paidAt:       e.paidAt,
+      refundedAt:   e.refundedAt,
+      excludeFromStats: e.excludeFromStats,
       status:   e.refundedAt ? 'reembolsado' as const : 'aprobado' as const,
     }));
 
@@ -610,19 +613,21 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
   }
 });
 
-// DELETE /api/payments/:id — admin: borra el registro de la venta por
-// completo (a diferencia de "Revocar acceso", que lo marca como reembolsado
-// pero lo deja en el historial). Pensado para limpiar datos que no son ventas
-// reales (accesos gratis de prueba, cargas a mano, etc.) y que distorsionan
-// el promedio — el alumno también pierde el acceso, porque la inscripción
-// deja de existir.
-router.delete('/:id', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+// PATCH /api/payments/:id/exclude — admin: saca (o vuelve a incluir) un pago
+// de los totales/promedios del panel SIN tocar el acceso del alumno ni el
+// registro de la venta — a diferencia de "Revocar acceso", esto es solo
+// cosmético para las estadísticas (ej. cargas de prueba con monto $0).
+router.patch('/:id/exclude', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const { exclude } = req.body as { exclude?: boolean };
     const enrollment = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
     if (!enrollment) return res.status(404).json({ message: 'Pago no encontrado' });
 
-    await prisma.enrollment.delete({ where: { id: req.params.id } });
-    res.json({ message: 'Pago eliminado' });
+    const updated = await prisma.enrollment.update({
+      where: { id: req.params.id },
+      data:  { excludeFromStats: exclude ?? true },
+    });
+    res.json({ excludeFromStats: updated.excludeFromStats });
   } catch (err) {
     next(err);
   }

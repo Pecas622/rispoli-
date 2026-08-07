@@ -205,6 +205,12 @@ model Enrollment {
   expiresAt             DateTime? @map("expires_at")
   amount                Float?
   currency              String?   @default("ARS")
+  // Cuotas elegidas por el comprador en Mercado Pago (1 = pago único). Stripe
+  // y las cargas gratis no manejan cuotas, quedan en null.
+  installments          Int?
+  // Se saca del total recaudado/promedio del panel sin tocar el acceso del
+  // alumno — para cargas de prueba o datos que no son ventas reales.
+  excludeFromStats      Boolean   @default(false) @map("exclude_from_stats")
   createdAt             DateTime  @default(now()) @map("created_at")
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

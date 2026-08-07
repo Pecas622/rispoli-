@@ -126,7 +126,7 @@ export const paymentsApi = {
     const qs = new URLSearchParams(params).toString();
     return api.get(`/payments${qs ? `?${qs}` : ''}`);
   },
-  remove: (id) => api.delete(`/payments/${id}`),
+  toggleExclude: (id, exclude) => api.patch(`/payments/${id}/exclude`, { exclude }),
 };
 
 // ── Subida de archivos (material de las clases) ───────────
