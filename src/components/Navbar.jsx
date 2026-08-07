@@ -51,6 +51,7 @@ export default function Navbar() {
 
   return (
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
+      <div className="navbar-bg" aria-hidden="true" />
       <div className="container navbar-inner">
         <Link to="/" className="navbar-logo">
           <img src="/logo.jpg" alt="Go Travel Academy" className="navbar-logo-img" />

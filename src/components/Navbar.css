@@ -1,11 +1,21 @@
 .navbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   padding: 0;
-  background: transparent;
-  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 
-.navbar.scrolled {
+/* El fondo con blur va en una capa aparte, NO directo en .navbar: un
+   backdrop-filter en el propio .navbar crea un nuevo containing block para
+   sus hijos position:fixed (como .navbar-links, el menú mobile), que en vez
+   de posicionarse contra toda la pantalla queda encerrado en los 60px de
+   alto del navbar — el menú se veía roto apenas se scrolleaba, porque
+   ".scrolled" (y por lo tanto el blur) solo se activa scrolleado. */
+.navbar-bg {
+  position: absolute; inset: 0; z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.navbar.scrolled .navbar-bg {
+  opacity: 1;
   background: rgba(248, 250, 252, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
