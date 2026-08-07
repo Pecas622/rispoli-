@@ -226,6 +226,7 @@ export function Privacidad() {
           <li style={legalLi}><strong style={legalStrong}>Datos de compra:</strong> el curso adquirido, el monto y el medio de pago usado. Los pagos se procesan a través de Mercado Pago o Stripe — <strong style={legalStrong}>nunca vemos ni almacenamos el número de tu tarjeta</strong>, eso queda a cargo de esos procesadores.</li>
           <li style={legalLi}><strong style={legalStrong}>Datos de uso:</strong> tu progreso en los cursos, las reseñas que dejás, y mensajes que nos envíes por el formulario de contacto.</li>
           <li style={legalLi}><strong style={legalStrong}>Datos de navegación:</strong> cookies técnicas para mantener tu sesión iniciada, y cookies de Meta (Facebook/Instagram) para medir la efectividad de nuestras campañas publicitarias. Más detalle en nuestra <a href="/cookies" style={{color:'var(--accent)'}}>Política de Cookies</a>.</li>
+          <li style={legalLi}><strong style={legalStrong}>Grabaciones de sesión:</strong> usamos Microsoft Clarity para registrar de forma anónima cómo se navega el sitio (movimientos del mouse, clics y desplazamiento) y detectar así partes confusas o que no funcionan bien. <strong style={legalStrong}>Las contraseñas, los datos de tarjetas y los campos sensibles se enmascaran automáticamente</strong>: no quedan registrados ni son visibles en las grabaciones.</li>
         </ul>
 
         <h2 style={legalH2}>3. Para qué usamos tus datos</h2>
@@ -235,6 +236,7 @@ export function Privacidad() {
           <li style={legalLi}>Responder tus consultas y darte soporte.</li>
           <li style={legalLi}>Enviarte comunicaciones sobre tu cuenta o tus cursos (no vendemos tu email a terceros para spam).</li>
           <li style={legalLi}>Medir y optimizar nuestras campañas publicitarias en Meta (Facebook/Instagram).</li>
+          <li style={legalLi}>Detectar errores y mejorar la usabilidad del sitio a partir de cómo se navega (por ejemplo, identificar en qué paso de la compra la gente se traba).</li>
         </ul>
 
         <h2 style={legalH2}>4. Con quién compartimos tus datos</h2>
@@ -246,6 +248,7 @@ export function Privacidad() {
           <li style={legalLi}><strong style={legalStrong}>Mercado Pago / Stripe</strong> — procesamiento de pagos.</li>
           <li style={legalLi}><strong style={legalStrong}>Meta (Facebook/Instagram)</strong> — medición de campañas publicitarias.</li>
           <li style={legalLi}><strong style={legalStrong}>Google</strong> — si elegís iniciar sesión con tu cuenta de Google.</li>
+          <li style={legalLi}><strong style={legalStrong}>Microsoft Clarity</strong> — análisis de uso y grabaciones anónimas de navegación.</li>
           <li style={legalLi}><strong style={legalStrong}>Brevo</strong> — envío de emails transaccionales (verificación, comprobantes, notificaciones).</li>
           <li style={legalLi}><strong style={legalStrong}>Proveedores de infraestructura</strong> (hosting, base de datos, almacenamiento de archivos) — para que el sitio funcione.</li>
         </ul>
@@ -415,6 +418,11 @@ export function Cookies() {
             <strong style={legalStrong}>Cookies de Meta (_fbp, _fbc):</strong> las coloca el Pixel de Meta
             (Facebook/Instagram) para medir qué tan efectivas son nuestras campañas publicitarias y mostrarte
             anuncios más relevantes. Son de terceros (Meta).
+          </li>
+          <li style={legalLi}>
+            <strong style={legalStrong}>Cookies de Microsoft Clarity (_clck, _clsk):</strong> permiten reconocer
+            una misma visita entre páginas para analizar de forma anónima cómo se navega el sitio y detectar
+            errores o pasos confusos. Son de terceros (Microsoft).
           </li>
           <li style={legalLi}>
             <strong style={legalStrong}>Preferencias:</strong> guardamos tu región y moneda elegida (Argentina/ARS
