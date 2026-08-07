@@ -382,7 +382,7 @@ export default function CourseDetail() {
           <div className="container course-cta-bar-inner">
             <span className="course-cta-bar-text">{course.title} — {formatPrice(coursePrice, region)}</span>
             <button type="button" className="btn btn-primary btn-sm" onClick={scrollToCheckout}>
-              Ir a pagar <ChevronDown size={15} />
+              Ir a pagar
             </button>
           </div>
         </div>
