@@ -1,5 +1,31 @@
 .course-detail { padding-top: 80px; }
 
+/* ── Barra fija "Ir a pagar" ──────────────────────────────────────────────────
+   Aparece cuando la tarjeta de pago se va de la vista al scrollear. En
+   desktop la tarjeta queda "sticky" (ver .detail-checkout) así que casi
+   nunca llega a dispararse; el que realmente la usa es mobile, donde la
+   tarjeta no es sticky y se pierde de vista al bajar. */
+.course-cta-bar {
+  position: fixed; top: 60px; left: 0; right: 0; z-index: 90;
+  background: #fff; border-bottom: 1px solid var(--border);
+  box-shadow: 0 8px 22px rgba(6, 4, 63, 0.07);
+  transform: translateY(calc(-100% - 72px));
+  transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.course-cta-bar.show { transform: translateY(0); }
+.course-cta-bar-inner {
+  display: flex; align-items: center; justify-content: center; gap: 22px;
+  padding: 11px 24px;
+}
+.course-cta-bar-text {
+  font-size: 15px; font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60vw;
+}
+@media (max-width: 768px) {
+  .course-cta-bar { top: 56px; }
+  .course-cta-bar-text { display: none; }
+}
+
 .detail-head {
   padding: 48px 0;
   border-bottom: 1px solid var(--border);

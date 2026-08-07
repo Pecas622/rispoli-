@@ -128,6 +128,21 @@ export default function CourseDetail() {
 
   const myReview = user ? realReviews.find(r => r.user.id === user.id) : null;
 
+  // Barra fija con CTA a pagar: aparece cuando la tarjeta de pago se va de la
+  // vista al scrollear (mismo patrón que la del Home con los cursos).
+  const checkoutRef = useRef(null);
+  const [showCtaBar, setShowCtaBar] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const el = checkoutRef.current;
+      if (el) setShowCtaBar(el.getBoundingClientRect().bottom < 70);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  const scrollToCheckout = () => checkoutRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
   useEffect(() => {
     setMyRating(myReview?.rating ?? 0);
     setMyComment(myReview?.comment ?? '');
@@ -362,6 +377,16 @@ export default function CourseDetail() {
 
   return (
     <div className="course-detail">
+      {!enrolled && course.price > 0 && (
+        <div className={`course-cta-bar ${showCtaBar ? 'show' : ''}`}>
+          <div className="container course-cta-bar-inner">
+            <span className="course-cta-bar-text">{course.title} — {formatPrice(coursePrice, region)}</span>
+            <button type="button" className="btn btn-primary btn-sm" onClick={scrollToCheckout}>
+              Ir a pagar <ChevronDown size={15} />
+            </button>
+          </div>
+        </div>
+      )}
       <div className="detail-head">
         <div className="container">
           <button onClick={() => navigate(-1)} className="back-link">
@@ -436,7 +461,7 @@ export default function CourseDetail() {
                 onContinue={handleContinue}
               />
             ) : (
-              <div className="enroll-card card card-elevated detail-checkout">
+              <div className="enroll-card card card-elevated detail-checkout" ref={checkoutRef}>
                 {/* Solo la imagen: el video de presentación va más abajo, en su
                     propio bloque (antes acá se veía con un play que confundía). */}
                 <div className="enroll-thumb">
