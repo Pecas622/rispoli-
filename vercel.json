@@ -1,20 +1,21 @@
 {
-      "routes": [
-              { "src": "/sitemap.xml", "dest": "/api/sitemap" },
-              {
-                "src": "/(.*)",
-                "headers": {
-                  "X-Frame-Options": "SAMEORIGIN",
-                  "X-Content-Type-Options": "nosniff",
-                  "Referrer-Policy": "strict-origin-when-cross-origin",
-                  "Permissions-Policy": "geolocation=(), microphone=(), camera=()"
-                },
-                "continue": true
-              },
-              { "handle": "filesystem" },
-              { "src": "/api/(.*)", "dest": "https://rispoli-backend-production.up.railway.app/api/$1" },
-              { "src": "^/$", "dest": "/index.html" },
-              { "src": "^/(cursos(/[^/]+)?|dashboard|admin(/courses/[^/]+/content)?|instructor|reset-password|certificaciones|descargas|pagos|perfil|empresas|nosotros|blog|contacto|privacidad|terminos|cookies)/?$", "dest": "/index.html" },
-              { "src": "/(.*)", "status": 404, "dest": "/index.html" }
-      ]
+            "routes": [
+                                { "src": "/sitemap.xml", "dest": "/api/sitemap" },
+                                {
+                                                      "src": "/(.*)",
+                                                      "headers": {
+                                                                              "X-Frame-Options": "SAMEORIGIN",
+                                                                              "X-Content-Type-Options": "nosniff",
+                                                                              "Referrer-Policy": "strict-origin-when-cross-origin",
+                                                                              "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+                                                                              "Content-Security-Policy-Report-Only": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.clarity.ms https://scripts.clarity.ms https://connect.facebook.net https://accounts.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://images.unsplash.com https://ui-avatars.com https://lh3.googleusercontent.com https://www.facebook.com https://c.clarity.ms https://.supabase.co; connect-src 'self' https://rispoli-backend-production.up.railway.app https://.clarity.ms https://www.facebook.com https://ipapi.co https://dolarapi.com https://accounts.google.com https://*.supabase.co; frame-src https://player.vimeo.com https://www.youtube.com https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+                                                      },
+                                                      "continue": true
+                                },
+                                { "handle": "filesystem" },
+                                { "src": "/api/(.*)", "dest": "https://rispoli-backend-production.up.railway.app/api/$1" },
+                                { "src": "^/$", "dest": "/index.html" },
+                                { "src": "^/(cursos(/[^/]+)?|dashboard|admin(/courses/[^/]+/content)?|instructor|reset-password|certificaciones|descargas|pagos|perfil|empresas|nosotros|blog|contacto|privacidad|terminos|cookies)/?$", "dest": "/index.html" },
+                                { "src": "/(.*)", "status": 404, "dest": "/index.html" }
+            ]
 }
