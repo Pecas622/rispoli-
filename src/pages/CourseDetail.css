@@ -26,7 +26,9 @@
   grid-template-areas: "info checkout" "video checkout" "learn checkout";
 }
 .detail-info { grid-area: info; min-width: 0; }
-.detail-checkout { grid-area: checkout; min-width: 0; }
+/* Se queda fija en pantalla al scrollear (menos en mobile, donde el layout
+   pasa a una sola columna y quedaría estorbando en medio del contenido). */
+.detail-checkout { grid-area: checkout; min-width: 0; position: sticky; top: 84px; }
 .detail-learn { grid-area: learn; min-width: 0; }
 
 /* ── VIDEO DE PRESENTACIÓN ──────────────────────────────────────────────────── */
