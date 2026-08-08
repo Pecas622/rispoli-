@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import './index.css';
 import { AppProvider } from './context/AppContext';
@@ -36,43 +36,25 @@ function PixelTracker() {
   return null;
 }
 
+function NotFound() {
+  return (
+    <div style={{ textAlign: 'center', padding: '200px 24px' }}>
+      <div style={{ fontSize: 80, fontWeight: 900 }}>404</div>
+      <h2 style={{ fontSize: 28, fontWeight: 800, marginBottom: 12 }}>Página no encontrada</h2>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: 28 }}>La página que buscás no existe.</p>
+      <a href="/" className="btn btn-primary">Volver al inicio</a>
+    </div>
+  );
+}
+
 function Layout() {
   return (
-    <>
+    <AppProvider>
       <ScrollToTop />
       <PixelTracker />
       <Navbar />
       <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/cursos" element={<Courses />} />
-          <Route path="/cursos/:id" element={<CourseDetail />} />
-          <Route path="/cursos/:id/aprender" element={<Learn />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/instructor" element={<Instructor />} />
-          <Route path="/admin/courses/:id/content" element={<CourseContent />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/certificaciones" element={<Certificaciones />} />
-          <Route path="/descargas" element={<Descargas />} />
-          <Route path="/pagos" element={<Pagos />} />
-          <Route path="/perfil" element={<Perfil />} />
-          <Route path="/empresas" element={<Empresas />} />
-          <Route path="/nosotros" element={<Nosotros />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/contacto" element={<Contacto />} />
-          <Route path="/privacidad" element={<Privacidad />} />
-          <Route path="/terminos" element={<Terminos />} />
-          <Route path="/cookies" element={<Cookies />} />
-          <Route path="*" element={
-            <div style={{ textAlign: 'center', padding: '200px 24px' }}>
-              <div style={{ fontSize: 80, fontWeight: 900 }}>404</div>
-              <h2 style={{ fontSize: 28, fontWeight: 800, marginBottom: 12 }}>Página no encontrada</h2>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: 28 }}>La página que buscás no existe.</p>
-              <a href="/" className="btn btn-primary">Volver al inicio</a>
-            </div>
-          } />
-        </Routes>
+        <Outlet />
       </main>
       <Footer />
       <AuthModal />
@@ -80,16 +62,40 @@ function Layout() {
       <VerifyEmailModal />
       <CheckoutModal />
       <Toast />
-    </>
-  );
-}
-
-export default function App() {
-  return (
-    <AppProvider>
-      <BrowserRouter>
-        <Layout />
-      </BrowserRouter>
     </AppProvider>
   );
 }
+
+// vite-react-ssg espera las rutas en formato "data router" (array de objetos
+// con path/element/children), no el <Routes><Route> declarativo de antes —
+// así puede generar HTML estático por ruta en el build. El componente y el
+// comportamiento en el navegador son los mismos que antes.
+export const routes = [
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      { index: true, element: <Home /> },
+      { path: 'cursos', element: <Courses /> },
+      { path: 'cursos/:id', element: <CourseDetail /> },
+      { path: 'cursos/:id/aprender', element: <Learn /> },
+      { path: 'dashboard', element: <Dashboard /> },
+      { path: 'admin', element: <Admin /> },
+      { path: 'instructor', element: <Instructor /> },
+      { path: 'admin/courses/:id/content', element: <CourseContent /> },
+      { path: 'reset-password', element: <ResetPassword /> },
+      { path: 'certificaciones', element: <Certificaciones /> },
+      { path: 'descargas', element: <Descargas /> },
+      { path: 'pagos', element: <Pagos /> },
+      { path: 'perfil', element: <Perfil /> },
+      { path: 'empresas', element: <Empresas /> },
+      { path: 'nosotros', element: <Nosotros /> },
+      { path: 'blog', element: <Blog /> },
+      { path: 'contacto', element: <Contacto /> },
+      { path: 'privacidad', element: <Privacidad /> },
+      { path: 'terminos', element: <Terminos /> },
+      { path: 'cookies', element: <Cookies /> },
+      { path: '*', element: <NotFound /> },
+    ],
+  },
+];

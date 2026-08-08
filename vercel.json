@@ -15,7 +15,15 @@
                                 { "handle": "filesystem" },
                                 { "src": "/api/(.*)", "dest": "https://rispoli-backend-production.up.railway.app/api/$1" },
                                 { "src": "^/$", "dest": "/index.html" },
-                                { "src": "^/(cursos(/[^/]+)?|dashboard|admin(/courses/[^/]+/content)?|instructor|reset-password|certificaciones|descargas|pagos|perfil|empresas|nosotros|blog|contacto|privacidad|terminos|cookies)/?$", "dest": "/index.html" },
+                                { "src": "^/cursos/?$", "dest": "/cursos.html" },
+                                { "src": "^/empresas/?$", "dest": "/empresas.html" },
+                                { "src": "^/nosotros/?$", "dest": "/nosotros.html" },
+                                { "src": "^/blog/?$", "dest": "/blog.html" },
+                                { "src": "^/contacto/?$", "dest": "/contacto.html" },
+                                { "src": "^/privacidad/?$", "dest": "/privacidad.html" },
+                                { "src": "^/terminos/?$", "dest": "/terminos.html" },
+                                { "src": "^/cookies/?$", "dest": "/cookies.html" },
+                                { "src": "^/(cursos/[^/]+(/aprender)?|dashboard|admin(/courses/[^/]+/content)?|instructor|reset-password|certificaciones|descargas|pagos|perfil)/?$", "dest": "/index.html" },
                                 { "src": "/(.*)", "status": 404, "dest": "/index.html" }
             ]
 }
