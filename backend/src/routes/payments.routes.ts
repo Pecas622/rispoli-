@@ -17,11 +17,25 @@ function sixMonthsFromNow(): Date {
   return d;
 }
 
+// Suma meses a una fecha sin desbordar cuando el mes de destino tiene menos
+// días (ej. 31 de enero + 1 mes no puede "rebotar" al 3 de marzo).
+function addMonthsClamped(date: Date, months: number): Date {
+  const d = new Date(date);
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + months);
+  const diasDelMes = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, diasDelMes));
+  return d;
+}
+
 // Genera las filas de cuotas de un pago financiado (>1 cuota) como punto de
 // partida para que el admin las marque a mano: monto dividido en partes
 // iguales (el resto de redondeo va a la última) y vencimiento mensual desde
 // la fecha de pago. Se ejecuta al aprobarse el pago; si ya existen (ej. un
-// reintento del webhook) no las vuelve a crear.
+// reintento del webhook) no las vuelve a crear. `skipDuplicates` cubre el caso
+// de dos llamadas concurrentes (el webhook y un admin abriendo el detalle al
+// mismo tiempo) que pasan el chequeo de "existing" antes de que la otra escriba.
 async function ensureInstallments(enrollmentId: string, totalAmount: number, count: number, paidAt: Date) {
   if (count <= 1) return;
 
@@ -31,14 +45,13 @@ async function ensureInstallments(enrollmentId: string, totalAmount: number, cou
   const base = Math.floor((totalAmount / count) * 100) / 100;
   const rows = Array.from({ length: count }, (_, i) => {
     const number = i + 1;
-    const dueDate = new Date(paidAt);
-    dueDate.setMonth(dueDate.getMonth() + i);
+    const dueDate = addMonthsClamped(paidAt, i);
     const isLast = number === count;
     const amount = isLast ? Math.round((totalAmount - base * (count - 1)) * 100) / 100 : base;
     return { enrollmentId, number, amount, dueDate };
   });
 
-  await prisma.installment.createMany({ data: rows });
+  await prisma.installment.createMany({ data: rows, skipDuplicates: true });
 }
 
 // Webhooks de Mercado Pago.
@@ -706,13 +719,18 @@ router.get('/:id/installments', authenticate, requireAdmin, async (req: Request,
 // como pagada o pendiente (a mano — ver nota en el modelo Installment).
 router.patch('/installments/:instId', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { paid } = req.body as { paid?: boolean };
+    const { paid } = req.body as { paid?: unknown };
+    if (typeof paid !== 'boolean') {
+      return res.status(400).json({ message: 'Falta el campo "paid" (booleano)' });
+    }
+
     const updated = await prisma.installment.update({
       where: { id: req.params.instId },
       data:  { paidAt: paid ? new Date() : null },
     });
     res.json({ installment: updated });
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.code === 'P2025') return res.status(404).json({ message: 'Cuota no encontrada' });
     next(err);
   }
 });
