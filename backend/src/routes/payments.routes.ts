@@ -298,20 +298,26 @@ router.post(
       try {
         // Stripe puede reenviar el mismo evento más de una vez (lo documentan
         // ellos mismos). Si esta sesión ya quedó procesada, es un reenvío: no
-        // la pisamos, porque volvería a poner paidAt en "ahora", reenviaría
-        // los mails de compra y sumaría de nuevo el contador de alumnos.
+        // la reprocesamos, sin importar si mientras tanto el admin la revocó
+        // a mano — si no, un reenvío tardío le devolvería el acceso a un
+        // alumno al que se le revocó a propósito, además de pisar la fecha
+        // real de compra y reenviar los mails.
         const yaProcesado = await prisma.enrollment.findUnique({
           where: { userId_courseId: { userId, courseId } },
         });
-        if (yaProcesado?.stripeSessionId === session.id && yaProcesado.paidAt && !yaProcesado.refundedAt) {
+        if (yaProcesado?.stripeSessionId === session.id) {
           console.log('[Stripe Webhook] Evento duplicado de una sesión ya procesada, ignorado:', session.id);
           return res.json({ received: true });
         }
 
+        // Fecha real del evento según Stripe, no la hora en la que nuestro
+        // server lo procesó — así, si igual se llegara a reprocesar, siempre
+        // converge al mismo valor correcto en vez de ir corriéndose cada vez.
+        const paidAt = new Date(event.created * 1000);
         await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
-          update: { paidAt: new Date(), refundedAt: null, expiresAt, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, amount, installments: 1, paymentProvider: 'stripe', currency },
-          create: { userId, courseId, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, paidAt: new Date(), expiresAt, amount, installments: 1, paymentProvider: 'stripe', currency },
+          update: { paidAt, refundedAt: null, expiresAt, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, amount, installments: 1, paymentProvider: 'stripe', currency },
+          create: { userId, courseId, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, paidAt, expiresAt, amount, installments: 1, paymentProvider: 'stripe', currency },
         });
 
         await prisma.course.update({
@@ -457,18 +463,24 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
 
         // Mercado Pago reenvía la notificación de un mismo pago varias veces
         // (reintentos, reconciliación interna) — es normal de su lado. Si ya
-        // procesamos este mpPaymentId y sigue vigente, es un reenvío: no lo
-        // pisamos, porque volvería a poner paidAt en "ahora", reenviaría los
-        // mails de compra y sumaría de nuevo el contador de alumnos del curso.
+        // vimos este mpPaymentId antes, es un reenvío del mismo pago: no lo
+        // reprocesamos, sin importar si mientras tanto el admin lo revocó a
+        // mano — si no, un reenvío tardío le devolvería el acceso a un alumno
+        // al que se le revocó a propósito, además de pisar la fecha real de
+        // compra y reenviar los mails.
         const yaProcesado = await prisma.enrollment.findUnique({
           where: { userId_courseId: { userId, courseId } },
         });
-        if (yaProcesado?.mpPaymentId === paymentId && yaProcesado.paidAt && !yaProcesado.refundedAt) {
+        if (yaProcesado?.mpPaymentId === paymentId) {
           console.log('[MP Webhook] Notificación duplicada de un pago ya procesado, ignorada:', paymentId);
           return res.json({ received: true, ignored: 'duplicado' });
         }
 
-        const paidAt = new Date();
+        // Fecha real de aprobación según Mercado Pago, no la hora en la que
+        // nuestro server procesó el aviso — así, si igual se llegara a
+        // reprocesar, siempre converge al mismo valor correcto en vez de
+        // ir corriéndose cada vez.
+        const paidAt = payment.date_approved ? new Date(payment.date_approved) : new Date();
         const enrollment = await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
           update: { paidAt, refundedAt: null, expiresAt, mpPaymentId: paymentId, amount, installments, paymentProvider: 'mercadopago', currency: 'ARS' },
