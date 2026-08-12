@@ -20,7 +20,6 @@ export default function AdminPayments() {
 
   const [expandedId,     setExpandedId]     = useState(null); // pago con el detalle de cuotas abierto
   const [installments,   setInstallments]   = useState({});   // enrollmentId -> cuotas[]
-  const [loadingCuotas,  setLoadingCuotas]   = useState(false);
   const [togglingCuotaId, setTogglingCuotaId] = useState(null);
 
   const load = useCallback(() => {
@@ -85,15 +84,12 @@ export default function AdminPayments() {
     const next = expandedId === payment.id ? null : payment.id;
     setExpandedId(next);
     if (next && !installments[payment.id]) {
-      setLoadingCuotas(true);
       try {
         const res = await paymentsApi.getInstallments(payment.id);
         setInstallments(prev => ({ ...prev, [payment.id]: res.installments }));
       } catch (err) {
         showToast(err.message || 'No se pudieron cargar las cuotas', 'error');
         setExpandedId(null);
-      } finally {
-        setLoadingCuotas(false);
       }
     }
   };
@@ -233,7 +229,7 @@ export default function AdminPayments() {
                     {expandedId === p.id && (
                       <tr>
                         <td colSpan={8} style={{ background:'var(--bg-2)', padding:'12px 16px' }}>
-                          {loadingCuotas && !installments[p.id] ? (
+                          {!installments[p.id] ? (
                             <div style={{ display:'flex', justifyContent:'center', padding:'12px 0' }}>
                               <Loader size={18} style={{ animation: 'spin 1s linear infinite', color: 'var(--violet)' }} />
                             </div>
