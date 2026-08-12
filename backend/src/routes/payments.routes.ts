@@ -17,6 +17,30 @@ function sixMonthsFromNow(): Date {
   return d;
 }
 
+// Genera las filas de cuotas de un pago financiado (>1 cuota) como punto de
+// partida para que el admin las marque a mano: monto dividido en partes
+// iguales (el resto de redondeo va a la última) y vencimiento mensual desde
+// la fecha de pago. Se ejecuta al aprobarse el pago; si ya existen (ej. un
+// reintento del webhook) no las vuelve a crear.
+async function ensureInstallments(enrollmentId: string, totalAmount: number, count: number, paidAt: Date) {
+  if (count <= 1) return;
+
+  const existing = await prisma.installment.count({ where: { enrollmentId } });
+  if (existing > 0) return;
+
+  const base = Math.floor((totalAmount / count) * 100) / 100;
+  const rows = Array.from({ length: count }, (_, i) => {
+    const number = i + 1;
+    const dueDate = new Date(paidAt);
+    dueDate.setMonth(dueDate.getMonth() + i);
+    const isLast = number === count;
+    const amount = isLast ? Math.round((totalAmount - base * (count - 1)) * 100) / 100 : base;
+    return { enrollmentId, number, amount, dueDate };
+  });
+
+  await prisma.installment.createMany({ data: rows });
+}
+
 // Webhooks de Mercado Pago.
 // Doc: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
 
@@ -272,6 +296,18 @@ router.post(
       const expiresAt = sixMonthsFromNow();
 
       try {
+        // Stripe puede reenviar el mismo evento más de una vez (lo documentan
+        // ellos mismos). Si esta sesión ya quedó procesada, es un reenvío: no
+        // la pisamos, porque volvería a poner paidAt en "ahora", reenviaría
+        // los mails de compra y sumaría de nuevo el contador de alumnos.
+        const yaProcesado = await prisma.enrollment.findUnique({
+          where: { userId_courseId: { userId, courseId } },
+        });
+        if (yaProcesado?.stripeSessionId === session.id && yaProcesado.paidAt && !yaProcesado.refundedAt) {
+          console.log('[Stripe Webhook] Evento duplicado de una sesión ya procesada, ignorado:', session.id);
+          return res.json({ received: true });
+        }
+
         await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
           update: { paidAt: new Date(), refundedAt: null, expiresAt, stripeSessionId: session.id, stripePaymentIntentId: paymentIntentId, amount, installments: 1, paymentProvider: 'stripe', currency },
@@ -419,11 +455,30 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
         const expiresAt = sixMonthsFromNow();
         const installments = payment.installments ?? null;
 
-        await prisma.enrollment.upsert({
-          where:  { userId_courseId: { userId, courseId } },
-          update: { paidAt: new Date(), refundedAt: null, expiresAt, mpPaymentId: paymentId, amount, installments, paymentProvider: 'mercadopago', currency: 'ARS' },
-          create: { userId, courseId, mpPaymentId: paymentId, paidAt: new Date(), expiresAt, amount, installments, paymentProvider: 'mercadopago', currency: 'ARS' },
+        // Mercado Pago reenvía la notificación de un mismo pago varias veces
+        // (reintentos, reconciliación interna) — es normal de su lado. Si ya
+        // procesamos este mpPaymentId y sigue vigente, es un reenvío: no lo
+        // pisamos, porque volvería a poner paidAt en "ahora", reenviaría los
+        // mails de compra y sumaría de nuevo el contador de alumnos del curso.
+        const yaProcesado = await prisma.enrollment.findUnique({
+          where: { userId_courseId: { userId, courseId } },
         });
+        if (yaProcesado?.mpPaymentId === paymentId && yaProcesado.paidAt && !yaProcesado.refundedAt) {
+          console.log('[MP Webhook] Notificación duplicada de un pago ya procesado, ignorada:', paymentId);
+          return res.json({ received: true, ignored: 'duplicado' });
+        }
+
+        const paidAt = new Date();
+        const enrollment = await prisma.enrollment.upsert({
+          where:  { userId_courseId: { userId, courseId } },
+          update: { paidAt, refundedAt: null, expiresAt, mpPaymentId: paymentId, amount, installments, paymentProvider: 'mercadopago', currency: 'ARS' },
+          create: { userId, courseId, mpPaymentId: paymentId, paidAt, expiresAt, amount, installments, paymentProvider: 'mercadopago', currency: 'ARS' },
+        });
+
+        if (installments && installments > 1) {
+          ensureInstallments(enrollment.id, amount, installments, paidAt).catch(err =>
+            console.error('[MP Webhook] Error generando cuotas:', err));
+        }
 
         await prisma.course.update({
           where: { id: courseId },
@@ -608,6 +663,43 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
     }));
 
     res.json({ payments, total, page, totalPages: Math.max(1, Math.ceil(total / limit)) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/payments/:id/installments — admin: detalle de cuotas de un pago.
+// Si el pago es en cuotas y todavía no tiene filas generadas (ej. compras
+// hechas antes de este cambio), las genera ahora mismo.
+router.get('/:id/installments', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const enrollment = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
+    if (!enrollment) return res.status(404).json({ message: 'Pago no encontrado' });
+
+    if (enrollment.installments && enrollment.installments > 1 && enrollment.amount && enrollment.paidAt) {
+      await ensureInstallments(enrollment.id, enrollment.amount, enrollment.installments, enrollment.paidAt);
+    }
+
+    const installmentPayments = await prisma.installment.findMany({
+      where:   { enrollmentId: enrollment.id },
+      orderBy: { number: 'asc' },
+    });
+    res.json({ installments: installmentPayments });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/payments/installments/:instId — admin: marca una cuota puntual
+// como pagada o pendiente (a mano — ver nota en el modelo Installment).
+router.patch('/installments/:instId', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { paid } = req.body as { paid?: boolean };
+    const updated = await prisma.installment.update({
+      where: { id: req.params.instId },
+      data:  { paidAt: paid ? new Date() : null },
+    });
+    res.json({ installment: updated });
   } catch (err) {
     next(err);
   }

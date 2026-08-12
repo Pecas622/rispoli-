@@ -216,8 +216,31 @@ model Enrollment {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
+  installmentPayments Installment[]
+
   @@unique([userId, courseId])
   @@map("enrollments")
+}
+
+// Estado real de cada cuota de un pago financiado (a diferencia de
+// Enrollment.installments, que es solo la cantidad elegida). Mercado Pago no
+// le avisa a Rispoli cuándo el comprador le paga cada cuota a su banco —eso
+// pasa entre el comprador y su tarjeta—, así que el admin marca acá a mano
+// cuál está paga y cuál no. Se generan como sugerencia al aprobarse el pago
+// (monto dividido, vencimiento mensual) pero el admin las edita libremente.
+model Installment {
+  id           String    @id @default(cuid())
+  enrollmentId String    @map("enrollment_id")
+  number       Int
+  amount       Float
+  dueDate      DateTime? @map("due_date")
+  paidAt       DateTime? @map("paid_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, number])
+  @@map("installments")
 }
 
 model LessonProgress {
