@@ -737,6 +737,33 @@ router.patch('/:id/exclude', authenticate, requireAdmin, async (req: Request, re
   }
 });
 
+// DELETE /api/payments/:id — admin: borra un pago de prueba/ficticio de una
+// vez (a diferencia de "Revocar acceso" o "Excluir del total", que dejan el
+// registro). No es para reembolsos reales: para esos casos usar "Revocar
+// acceso", que conserva el historial. Esto es solo para cargas de prueba.
+router.delete('/:id', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const enrollment = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
+    if (!enrollment) return res.status(404).json({ message: 'Pago no encontrado' });
+
+    await prisma.enrollment.delete({ where: { id: req.params.id } });
+
+    // Si el pago borrado había sumado al contador de alumnos del curso (solo
+    // lo suman los webhooks de Stripe/MP, no las altas manuales gratuitas),
+    // lo descontamos para no dejar la estadística inflada.
+    if (enrollment.paidAt && (enrollment.paymentProvider === 'stripe' || enrollment.paymentProvider === 'mercadopago')) {
+      await prisma.course.update({
+        where: { id: enrollment.courseId },
+        data:  { students: { decrement: 1 } },
+      }).catch(() => {}); // si el curso ya no existe, no hay nada que descontar
+    }
+
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Historial de pagos ────────────────────────────────────────────────────────
 // GET /api/payments/history
 router.get('/history', authenticate, async (req: Request, res: Response, next: NextFunction) => {

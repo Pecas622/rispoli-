@@ -1,5 +1,5 @@
 import { Fragment, useState, useEffect, useCallback } from 'react';
-import { Loader, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
+import { Loader, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, X, Trash2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { paymentsApi, enrollmentsApi } from '../services/api';
 
@@ -15,6 +15,8 @@ export default function AdminPayments() {
   const [confirmingPayment, setConfirmingPayment] = useState(null); // pago a confirmar antes de revocar
   const [revokingId,        setRevokingId]        = useState(null); // id en vuelo mientras se procesa
   const [togglingId,        setTogglingId]        = useState(null); // id en vuelo al incluir/excluir del total
+  const [deletingPayment,   setDeletingPayment]   = useState(null); // pago a confirmar antes de eliminar
+  const [removingId,        setRemovingId]        = useState(null); // id en vuelo mientras se elimina
 
   const [expandedId,     setExpandedId]     = useState(null); // pago con el detalle de cuotas abierto
   const [installments,   setInstallments]   = useState({});   // enrollmentId -> cuotas[]
@@ -60,6 +62,22 @@ export default function AdminPayments() {
       showToast(err.message || 'No se pudo actualizar', 'error');
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const confirmDelete = async () => {
+    const payment = deletingPayment;
+    setDeletingPayment(null);
+    setRemovingId(payment.id);
+    try {
+      await paymentsApi.remove(payment.id);
+      setPayments(prev => prev.filter(p => p.id !== payment.id));
+      setTotal(prev => Math.max(0, prev - 1));
+      showToast('Pago eliminado');
+    } catch (err) {
+      showToast(err.message || 'No se pudo eliminar el pago', 'error');
+    } finally {
+      setRemovingId(null);
     }
   };
 
@@ -199,6 +217,16 @@ export default function AdminPayments() {
                           >
                             {togglingId === p.id ? 'Guardando...' : p.excludeFromStats ? 'Incluir en el total' : 'Excluir del total'}
                           </button>
+                          <button
+                            className="btn btn-outline btn-sm"
+                            onClick={() => setDeletingPayment(p)}
+                            disabled={removingId === p.id}
+                            title="Borra el registro por completo — para cargas de prueba, no para reembolsos reales"
+                            style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
+                          >
+                            {removingId === p.id ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }}/> : <Trash2 size={12}/>}
+                            Eliminar
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -286,6 +314,33 @@ export default function AdminPayments() {
                 onClick={confirmRevoke}
               >
                 Revocar acceso
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deletingPayment && (
+        <div className="modal-overlay" onClick={() => setDeletingPayment(null)}>
+          <div className="modal" style={{ maxWidth: 380 }} onClick={e => e.stopPropagation()}>
+            <p className="modal-title">¿Eliminar este pago?</p>
+            <p style={{ fontSize: 14, color: 'var(--text-2)', marginBottom: 24, lineHeight: 1.6 }}>
+              Se borra por completo el pago de <strong style={{ color: 'var(--text)' }}>{deletingPayment.user?.name}</strong> por
+              {' '}<strong style={{ color: 'var(--text)' }}>{deletingPayment.course?.title}</strong>, junto con su acceso al curso
+              y el detalle de cuotas si tenía. No queda en el historial. Usá esto solo para cargas de prueba —
+              para un reembolso real usá "Revocar acceso", que sí deja registro. Esta acción no se puede deshacer.
+            </p>
+            <div className="form-actions">
+              <button className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }}
+                onClick={() => setDeletingPayment(null)}>
+                Cancelar
+              </button>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, justifyContent: 'center', background: 'var(--red)', borderColor: 'var(--red)' }}
+                onClick={confirmDelete}
+              >
+                Eliminar definitivamente
               </button>
             </div>
           </div>
