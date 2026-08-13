@@ -198,7 +198,7 @@ export default function AdminPayments() {
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           {p.status !== 'reembolsado' && (
                             <button
-                              className="btn btn-outline btn-sm"
+                              className="btn btn-outline btn-danger btn-sm"
                               onClick={() => setConfirmingPayment(p)}
                               disabled={revokingId === p.id}
                             >
@@ -214,11 +214,10 @@ export default function AdminPayments() {
                             {togglingId === p.id ? 'Guardando...' : p.excludeFromStats ? 'Incluir en el total' : 'Excluir del total'}
                           </button>
                           <button
-                            className="btn btn-outline btn-sm"
+                            className="btn btn-outline btn-danger btn-sm"
                             onClick={() => setDeletingPayment(p)}
                             disabled={removingId === p.id}
                             title="Borra el registro por completo — para cargas de prueba, no para reembolsos reales"
-                            style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
                           >
                             {removingId === p.id ? <Loader size={12} style={{ animation: 'spin 1s linear infinite' }}/> : <Trash2 size={12}/>}
                             Eliminar
@@ -248,7 +247,7 @@ export default function AdminPayments() {
                                     ? <span className="badge badge-green">Pagada {new Date(c.paidAt).toLocaleDateString('es-AR')}</span>
                                     : <span className="badge badge-red">Pendiente</span>}
                                   <button
-                                    className="btn btn-outline btn-sm"
+                                    className={`btn btn-outline btn-sm ${c.paidAt ? '' : 'btn-success'}`}
                                     onClick={() => toggleCuotaPaid(p.id, c)}
                                     disabled={togglingCuotaId === c.id}
                                     style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:4 }}
@@ -305,8 +304,8 @@ export default function AdminPayments() {
                 Cancelar
               </button>
               <button
-                className="btn btn-primary"
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--red)', borderColor: 'var(--red)' }}
+                className="btn btn-primary btn-danger"
+                style={{ flex: 1, justifyContent: 'center' }}
                 onClick={confirmRevoke}
               >
                 Revocar acceso
@@ -332,8 +331,8 @@ export default function AdminPayments() {
                 Cancelar
               </button>
               <button
-                className="btn btn-primary"
-                style={{ flex: 1, justifyContent: 'center', background: 'var(--red)', borderColor: 'var(--red)' }}
+                className="btn btn-primary btn-danger"
+                style={{ flex: 1, justifyContent: 'center' }}
                 onClick={confirmDelete}
               >
                 Eliminar definitivamente

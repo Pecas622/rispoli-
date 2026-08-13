@@ -54,15 +54,54 @@ tr:hover td { background: var(--bg-2); }
 .table-course-dur { font-size: 11px; color: var(--text-3); margin-top: 2px; }
 
 .action-btn {
-  width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border);
+  width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
   background: transparent; color: var(--text-2);
   display: inline-flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: var(--transition);
+  cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
-.action-btn:hover { border-color: var(--border-2); color: var(--text); background: var(--bg-2); }
-.action-btn.del:hover { color: var(--red); border-color: var(--red); background: var(--red-pale); }
+.action-btn:hover { border-color: var(--border-2); color: var(--text); background: var(--bg-2); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08); }
+.action-btn:active { transform: translateY(0); box-shadow: none; }
+.action-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+.action-btn.del:hover { color: var(--red); border-color: var(--red); background: var(--red-pale); box-shadow: 0 3px 10px rgba(239, 68, 68, 0.16); }
+.action-btn.content:hover { color: var(--violet-mid); border-color: var(--violet-mid); background: var(--violet-pale); box-shadow: 0 3px 10px rgba(111, 149, 232, 0.18); }
 
-.action-btn.content:hover { color: var(--violet-mid); border-color: var(--violet-mid); background: var(--violet-pale); }
+/* BUTTONS — pulido para el panel de admin (no toca .btn global del sitio) */
+.admin-page .btn {
+  border-radius: var(--r-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+.admin-page .btn:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+.admin-page .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.admin-page .btn-primary {
+  box-shadow: 0 1px 3px rgba(6, 4, 63, 0.16);
+}
+.admin-page .btn-primary:hover:not(:disabled) {
+  opacity: 1; background: var(--violet-mid); border-color: var(--violet-mid);
+  box-shadow: 0 6px 18px rgba(6, 4, 63, 0.22); transform: translateY(-1px);
+}
+
+.admin-page .btn-outline:hover:not(:disabled) {
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.07); transform: translateY(-1px);
+}
+
+/* Variantes semánticas: combinar con .btn-outline o .btn-primary */
+.admin-page .btn-outline.btn-danger { color: var(--red); border-color: var(--red-pale); }
+.admin-page .btn-outline.btn-danger:hover:not(:disabled) {
+  background: var(--red-pale); border-color: var(--red); color: var(--red);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.18);
+}
+.admin-page .btn-primary.btn-danger { background: var(--red); border-color: var(--red); box-shadow: 0 1px 3px rgba(239, 68, 68, 0.25); }
+.admin-page .btn-primary.btn-danger:hover:not(:disabled) {
+  opacity: 1; background: #dc2626; border-color: #dc2626;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.3);
+}
+
+.admin-page .btn-outline.btn-success { color: var(--green); border-color: var(--green-pale); }
+.admin-page .btn-outline.btn-success:hover:not(:disabled) {
+  background: var(--green-pale); border-color: var(--green); color: var(--green);
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.18);
+}
 
 /* MODAL */
 .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 24px; letter-spacing: -0.02em; }

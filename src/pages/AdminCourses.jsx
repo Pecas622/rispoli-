@@ -389,7 +389,7 @@ export default function AdminCourses() {
             <p style={{fontSize:14,color:'var(--text-2)',marginBottom:24}}>Esta acción no se puede deshacer.</p>
             <div style={{display:'flex',gap:10}}>
               <button onClick={()=>setDeleteId(null)} className="btn btn-outline" style={{flex:1,justifyContent:'center'}}>Cancelar</button>
-              <button onClick={()=>handleDelete(deleteId)} className="btn btn-primary" style={{flex:1,justifyContent:'center',background:'var(--red)',borderColor:'var(--red)'}}>Eliminar</button>
+              <button onClick={()=>handleDelete(deleteId)} className="btn btn-primary btn-danger" style={{flex:1,justifyContent:'center'}}>Eliminar</button>
             </div>
           </div>
         </div>
