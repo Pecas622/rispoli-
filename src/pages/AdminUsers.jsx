@@ -221,7 +221,7 @@ export default function AdminUsers() {
             </p>
             <div style={{display:'flex',gap:10}}>
               <button onClick={()=>setDeleteUser(null)} className="btn btn-outline" style={{flex:1,justifyContent:'center'}}>Cancelar</button>
-              <button onClick={confirmDelete} className="btn btn-primary" style={{flex:1,justifyContent:'center',background:'var(--red)',borderColor:'var(--red)'}}>Eliminar</button>
+              <button onClick={confirmDelete} className="btn btn-primary btn-danger" style={{flex:1,justifyContent:'center'}}>Eliminar</button>
             </div>
           </div>
         </div>
