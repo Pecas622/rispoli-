@@ -131,6 +131,7 @@ export default function AdminUsers() {
                     <th>Email</th>
                     <th>Teléfono</th>
                     <th>Rol</th>
+                    <th>Progreso</th>
                     <th>Registrado</th>
                     <th>Estado</th>
                     <th></th>
@@ -143,6 +144,23 @@ export default function AdminUsers() {
                       <td style={{fontSize:13,color:'var(--text-2)'}}>{u.email}</td>
                       <td style={{fontSize:13,color:'var(--text-2)'}}>{u.phone || '—'}</td>
                       <td><span className="badge badge-default">{u.role}</span></td>
+                      <td style={{minWidth:130}}>
+                        {u.progress?.coursesActive ? (
+                          <div style={{display:'flex',alignItems:'center',gap:8}}>
+                            <div className="progress-bar" style={{width:60,flexShrink:0}}>
+                              <div
+                                className="progress-fill"
+                                style={{width:`${u.progress.avgPercent}%`,background: u.progress.avgPercent===100 ? 'var(--green)' : 'var(--accent)'}}
+                              />
+                            </div>
+                            <span style={{fontSize:11.5,color:'var(--text-3)',whiteSpace:'nowrap'}}>
+                              {u.progress.coursesCompleted}/{u.progress.coursesActive} cursos · {u.progress.avgPercent}%
+                            </span>
+                          </div>
+                        ) : (
+                          <span style={{fontSize:12,color:'var(--text-3)'}}>Sin cursos</span>
+                        )}
+                      </td>
                       <td style={{fontSize:13,color:'var(--text-2)'}}>{new Date(u.createdAt).toLocaleDateString('es-AR')}</td>
                       <td>
                         {u.isBlocked
@@ -158,7 +176,7 @@ export default function AdminUsers() {
                     </tr>
                   ))}
                   {users.length === 0 && (
-                    <tr><td colSpan={7} style={{ textAlign:'center', padding:'32px 0', color:'var(--text-3)' }}>Sin usuarios</td></tr>
+                    <tr><td colSpan={8} style={{ textAlign:'center', padding:'32px 0', color:'var(--text-3)' }}>Sin usuarios</td></tr>
                   )}
                 </tbody>
               </table>
