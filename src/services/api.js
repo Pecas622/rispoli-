@@ -127,8 +127,6 @@ export const paymentsApi = {
     return api.get(`/payments${qs ? `?${qs}` : ''}`);
   },
   toggleExclude: (id, exclude) => api.patch(`/payments/${id}/exclude`, { exclude }),
-  getInstallments: (id) => api.get(`/payments/${id}/installments`),
-  markInstallment: (instId, paid) => api.patch(`/payments/installments/${instId}`, { paid }),
   remove: (id) => api.delete(`/payments/${id}`),
 };
 

@@ -17,43 +17,6 @@ function sixMonthsFromNow(): Date {
   return d;
 }
 
-// Suma meses a una fecha sin desbordar cuando el mes de destino tiene menos
-// días (ej. 31 de enero + 1 mes no puede "rebotar" al 3 de marzo).
-function addMonthsClamped(date: Date, months: number): Date {
-  const d = new Date(date);
-  const day = d.getDate();
-  d.setDate(1);
-  d.setMonth(d.getMonth() + months);
-  const diasDelMes = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  d.setDate(Math.min(day, diasDelMes));
-  return d;
-}
-
-// Genera las filas de cuotas de un pago financiado (>1 cuota) como punto de
-// partida para que el admin las marque a mano: monto dividido en partes
-// iguales (el resto de redondeo va a la última) y vencimiento mensual desde
-// la fecha de pago. Se ejecuta al aprobarse el pago; si ya existen (ej. un
-// reintento del webhook) no las vuelve a crear. `skipDuplicates` cubre el caso
-// de dos llamadas concurrentes (el webhook y un admin abriendo el detalle al
-// mismo tiempo) que pasan el chequeo de "existing" antes de que la otra escriba.
-async function ensureInstallments(enrollmentId: string, totalAmount: number, count: number, paidAt: Date) {
-  if (count <= 1) return;
-
-  const existing = await prisma.installment.count({ where: { enrollmentId } });
-  if (existing > 0) return;
-
-  const base = Math.floor((totalAmount / count) * 100) / 100;
-  const rows = Array.from({ length: count }, (_, i) => {
-    const number = i + 1;
-    const dueDate = addMonthsClamped(paidAt, i);
-    const isLast = number === count;
-    const amount = isLast ? Math.round((totalAmount - base * (count - 1)) * 100) / 100 : base;
-    return { enrollmentId, number, amount, dueDate };
-  });
-
-  await prisma.installment.createMany({ data: rows, skipDuplicates: true });
-}
-
 // Webhooks de Mercado Pago.
 // Doc: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
 
@@ -494,16 +457,11 @@ router.post('/mercadopago/webhook', async (req: Request, res: Response) => {
         // reprocesar, siempre converge al mismo valor correcto en vez de
         // ir corriéndose cada vez.
         const paidAt = payment.date_approved ? new Date(payment.date_approved) : new Date();
-        const enrollment = await prisma.enrollment.upsert({
+        await prisma.enrollment.upsert({
           where:  { userId_courseId: { userId, courseId } },
           update: { paidAt, refundedAt: null, expiresAt, mpPaymentId: paymentId, amount, installments, paymentProvider: 'mercadopago', currency: 'ARS' },
           create: { userId, courseId, mpPaymentId: paymentId, paidAt, expiresAt, amount, installments, paymentProvider: 'mercadopago', currency: 'ARS' },
         });
-
-        if (installments && installments > 1) {
-          ensureInstallments(enrollment.id, amount, installments, paidAt).catch(err =>
-            console.error('[MP Webhook] Error generando cuotas:', err));
-        }
 
         await prisma.course.update({
           where: { id: courseId },
@@ -689,48 +647,6 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
 
     res.json({ payments, total, page, totalPages: Math.max(1, Math.ceil(total / limit)) });
   } catch (err) {
-    next(err);
-  }
-});
-
-// GET /api/payments/:id/installments — admin: detalle de cuotas de un pago.
-// Si el pago es en cuotas y todavía no tiene filas generadas (ej. compras
-// hechas antes de este cambio), las genera ahora mismo.
-router.get('/:id/installments', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const enrollment = await prisma.enrollment.findUnique({ where: { id: req.params.id } });
-    if (!enrollment) return res.status(404).json({ message: 'Pago no encontrado' });
-
-    if (enrollment.installments && enrollment.installments > 1 && enrollment.amount && enrollment.paidAt) {
-      await ensureInstallments(enrollment.id, enrollment.amount, enrollment.installments, enrollment.paidAt);
-    }
-
-    const installmentPayments = await prisma.installment.findMany({
-      where:   { enrollmentId: enrollment.id },
-      orderBy: { number: 'asc' },
-    });
-    res.json({ installments: installmentPayments });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// PATCH /api/payments/installments/:instId — admin: marca una cuota puntual
-// como pagada o pendiente (a mano — ver nota en el modelo Installment).
-router.patch('/installments/:instId', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { paid } = req.body as { paid?: unknown };
-    if (typeof paid !== 'boolean') {
-      return res.status(400).json({ message: 'Falta el campo "paid" (booleano)' });
-    }
-
-    const updated = await prisma.installment.update({
-      where: { id: req.params.instId },
-      data:  { paidAt: paid ? new Date() : null },
-    });
-    res.json({ installment: updated });
-  } catch (err: any) {
-    if (err?.code === 'P2025') return res.status(404).json({ message: 'Cuota no encontrada' });
     next(err);
   }
 });
