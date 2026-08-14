@@ -50,7 +50,55 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
       prisma.user.count({ where }),
     ]);
 
-    res.json({ users, total, page, totalPages: Math.max(1, Math.ceil(total / limit)) });
+    // Progreso agregado por alumno (solo cursos con acceso activo: pagos y no
+    // reembolsados) para la columna "Progreso" de la tabla. Se resuelve en dos
+    // consultas para toda la página en vez de una por usuario.
+    const userIds = users.map(u => u.id);
+    const [enrollments, progressRows] = await Promise.all([
+      prisma.enrollment.findMany({
+        where: { userId: { in: userIds }, paidAt: { not: null }, refundedAt: null },
+        select: {
+          userId: true,
+          course: { select: { modules: { select: { lessons: { select: { id: true } } } } } },
+        },
+      }),
+      prisma.lessonProgress.findMany({
+        where: { userId: { in: userIds } },
+        select: { userId: true, lessonId: true },
+      }),
+    ]);
+
+    const completedByUser = new Map<string, Set<string>>();
+    for (const p of progressRows) {
+      if (!completedByUser.has(p.userId)) completedByUser.set(p.userId, new Set());
+      completedByUser.get(p.userId)!.add(p.lessonId);
+    }
+
+    const acc = new Map<string, { sumPercent: number; count: number; completed: number }>();
+    for (const e of enrollments) {
+      const lessonIds = e.course.modules.flatMap(m => m.lessons.map(l => l.id));
+      const completedSet = completedByUser.get(e.userId) ?? new Set();
+      const completedLessons = lessonIds.filter(id => completedSet.has(id)).length;
+      const percent = lessonIds.length ? Math.round((completedLessons / lessonIds.length) * 100) : 0;
+
+      const cur = acc.get(e.userId) ?? { sumPercent: 0, count: 0, completed: 0 };
+      cur.sumPercent += percent;
+      cur.count += 1;
+      if (percent === 100) cur.completed += 1;
+      acc.set(e.userId, cur);
+    }
+
+    const usersWithProgress = users.map(u => {
+      const cur = acc.get(u.id);
+      return {
+        ...u,
+        progress: cur
+          ? { coursesActive: cur.count, coursesCompleted: cur.completed, avgPercent: Math.round(cur.sumPercent / cur.count) }
+          : { coursesActive: 0, coursesCompleted: 0, avgPercent: 0 },
+      };
+    });
+
+    res.json({ users: usersWithProgress, total, page, totalPages: Math.max(1, Math.ceil(total / limit)) });
   } catch (err) {
     next(err);
   }
