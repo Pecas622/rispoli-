@@ -1,5 +1,5 @@
-import { Fragment, useState, useEffect, useCallback } from 'react';
-import { Loader, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, X, Trash2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Loader, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { paymentsApi, enrollmentsApi } from '../services/api';
 
@@ -17,10 +17,6 @@ export default function AdminPayments() {
   const [togglingId,        setTogglingId]        = useState(null); // id en vuelo al incluir/excluir del total
   const [deletingPayment,   setDeletingPayment]   = useState(null); // pago a confirmar antes de eliminar
   const [removingId,        setRemovingId]        = useState(null); // id en vuelo mientras se elimina
-
-  const [expandedId,     setExpandedId]     = useState(null); // pago con el detalle de cuotas abierto
-  const [installments,   setInstallments]   = useState({});   // enrollmentId -> cuotas[]
-  const [togglingCuotaId, setTogglingCuotaId] = useState(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -80,36 +76,6 @@ export default function AdminPayments() {
     }
   };
 
-  const toggleExpand = async (payment) => {
-    const next = expandedId === payment.id ? null : payment.id;
-    setExpandedId(next);
-    if (next && !installments[payment.id]) {
-      try {
-        const res = await paymentsApi.getInstallments(payment.id);
-        setInstallments(prev => ({ ...prev, [payment.id]: res.installments }));
-      } catch (err) {
-        showToast(err.message || 'No se pudieron cargar las cuotas', 'error');
-        setExpandedId(null);
-      }
-    }
-  };
-
-  const toggleCuotaPaid = async (enrollmentId, cuota) => {
-    setTogglingCuotaId(cuota.id);
-    const nextPaid = !cuota.paidAt;
-    try {
-      const res = await paymentsApi.markInstallment(cuota.id, nextPaid);
-      setInstallments(prev => ({
-        ...prev,
-        [enrollmentId]: prev[enrollmentId].map(c => c.id === cuota.id ? res.installment : c),
-      }));
-    } catch (err) {
-      showToast(err.message || 'No se pudo actualizar la cuota', 'error');
-    } finally {
-      setTogglingCuotaId(null);
-    }
-  };
-
   // Recaudado/promedio se calculan aparte por moneda (mezclar ARS y USD en
   // una sola suma no significa nada) y sin contar reembolsados ni excluidos.
   const countedPayments = payments.filter(p => p.status !== 'reembolsado' && !p.excludeFromStats);
@@ -165,8 +131,7 @@ export default function AdminPayments() {
                 </thead>
                 <tbody>
                   {payments.map(p => (
-                    <Fragment key={p.id}>
-                    <tr style={p.excludeFromStats ? { opacity: 0.5 } : undefined}>
+                    <tr key={p.id} style={p.excludeFromStats ? { opacity: 0.5 } : undefined}>
                       <td>
                         <div style={{fontSize:13,fontWeight:600}}>{p.user?.name ?? '—'}</div>
                         <div style={{fontSize:11,color:'var(--text-3)'}}>{p.user?.email}</div>
@@ -176,15 +141,7 @@ export default function AdminPayments() {
                         {p.currency === 'USD' ? 'USD ' : '$'}{(p.amount ?? 0).toLocaleString()}
                       </td>
                       <td style={{fontSize:13,color:'var(--text-2)'}}>
-                        {p.installments > 1 ? (
-                          <button
-                            onClick={() => toggleExpand(p)}
-                            style={{ display:'flex', alignItems:'center', gap:4, background:'none', border:'none', cursor:'pointer', color:'var(--violet)', fontSize:13, fontWeight:600, padding:0 }}
-                          >
-                            {p.installments}x
-                            {expandedId === p.id ? <ChevronUp size={13}/> : <ChevronDown size={13}/>}
-                          </button>
-                        ) : p.installments === 1 ? 'Único' : '—'}
+                        {p.installments > 1 ? `${p.installments}x` : p.installments === 1 ? 'Único' : '—'}
                       </td>
                       <td style={{fontSize:13,color:'var(--text-2)',textTransform:'capitalize'}}>{p.provider ?? '—'}</td>
                       <td style={{fontSize:13,color:'var(--text-2)'}}>{p.paidAt ? new Date(p.paidAt).toLocaleDateString('es-AR') : '—'}</td>
@@ -225,50 +182,6 @@ export default function AdminPayments() {
                         </div>
                       </td>
                     </tr>
-                    {expandedId === p.id && (
-                      <tr>
-                        <td colSpan={8} style={{ background:'var(--bg-2)', padding:'12px 16px' }}>
-                          {!installments[p.id] ? (
-                            <div style={{ display:'flex', justifyContent:'center', padding:'12px 0' }}>
-                              <Loader size={18} style={{ animation: 'spin 1s linear infinite', color: 'var(--violet)' }} />
-                            </div>
-                          ) : (
-                            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                              {(installments[p.id] ?? []).map(c => (
-                                <div key={c.id} style={{ display:'flex', alignItems:'center', gap:12, fontSize:13 }}>
-                                  <span style={{ width:60, color:'var(--text-2)' }}>Cuota {c.number}/{p.installments}</span>
-                                  <span style={{ width:100, fontWeight:600 }}>
-                                    {p.currency === 'USD' ? 'USD ' : '$'}{c.amount.toLocaleString()}
-                                  </span>
-                                  <span style={{ width:110, color:'var(--text-3)' }}>
-                                    {c.dueDate ? new Date(c.dueDate).toLocaleDateString('es-AR') : '—'}
-                                  </span>
-                                  {c.paidAt
-                                    ? <span className="badge badge-green">Pagada {new Date(c.paidAt).toLocaleDateString('es-AR')}</span>
-                                    : <span className="badge badge-red">Pendiente</span>}
-                                  <button
-                                    className={`btn btn-outline btn-sm ${c.paidAt ? '' : 'btn-success'}`}
-                                    onClick={() => toggleCuotaPaid(p.id, c)}
-                                    disabled={togglingCuotaId === c.id}
-                                    style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:4 }}
-                                  >
-                                    {togglingCuotaId === c.id
-                                      ? 'Guardando...'
-                                      : c.paidAt
-                                        ? <><X size={12}/> Marcar pendiente</>
-                                        : <><Check size={12}/> Marcar pagada</>}
-                                  </button>
-                                </div>
-                              ))}
-                              {(installments[p.id] ?? []).length === 0 && (
-                                <span style={{ fontSize:13, color:'var(--text-3)' }}>Sin cuotas registradas.</span>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    )}
-                    </Fragment>
                   ))}
                   {payments.length === 0 && (
                     <tr><td colSpan={8} style={{ textAlign:'center', padding:'32px 0', color:'var(--text-3)' }}>Sin pagos todavía</td></tr>
