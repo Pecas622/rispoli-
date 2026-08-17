@@ -568,7 +568,12 @@ export default function CourseDetail() {
                             </button>
                           </div>
                           <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}>
-                            <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:8}}>{`En cuotas sin interés ${formatPrice(coursePrice * promoMultiplier, region)}`}</p>
+                            <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:4}}>En cuotas sin interés</p>
+                            <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:2}}>
+                              <span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * promoMultiplier, region)}</span>
+                              {promoApplied && <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>}
+                            </div>
+                            <p style={{fontSize:11,color:'var(--text-3)',marginBottom:10}}>6 pagos de {formatPrice((coursePrice * promoMultiplier)/6, region)}</p>
                             <PayButton
                               onConfirm={handleEnroll}
                               label={`Pagar 6 x ${formatPrice((coursePrice * promoMultiplier)/6, region)}`}
@@ -579,13 +584,19 @@ export default function CourseDetail() {
                           </div>
                         </div>
                       ) : (
-                        <PayButton
-                          onConfirm={handleEnroll}
-                          label={checkoutLabel}
-                          enrolling={enrolling}
-                          className="btn btn-primary"
-                          style={{width:'100%',justifyContent:'center',padding:'13px',marginTop:16}}
-                        />
+                        <>
+                          <div style={{display:'flex',alignItems:'baseline',gap:8,margin:'4px 0 12px'}}>
+                            <span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * promoMultiplier, region)}</span>
+                            {promoApplied && <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>}
+                          </div>
+                          <PayButton
+                            onConfirm={handleEnroll}
+                            label={checkoutLabel}
+                            enrolling={enrolling}
+                            className="btn btn-primary"
+                            style={{width:'100%',justifyContent:'center',padding:'13px'}}
+                          />
+                        </>
                       )}
                     </>
                   )}
