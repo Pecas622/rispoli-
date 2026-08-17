@@ -11,6 +11,7 @@ const emptyForm = {
   title: '', subtitle: '', description: '',
   category: categories[1], level: levels[1], modality: modalities[1],
   duration: '', hours: '', price: '', originalPrice: '', priceUSD: '', originalPriceUSD: '', transferCode: '',
+  promoCode: '', promoDiscountPercent: '', promoExpiresAt: '',
     image: '', previewVideo: '', featured: false, published: true,
   tags: '', requirements: '', includes: '', learningObjectives: '', targetAudience: '',
   instructorName: '', instructorRole: '', instructorAvatar: '', instructorBio: '',
@@ -32,6 +33,9 @@ function formToPayload(form) {
     priceUSD:         form.priceUSD ? Number(form.priceUSD) : undefined,
     originalPriceUSD: form.originalPriceUSD ? Number(form.originalPriceUSD) : undefined,
     transferCode:     form.transferCode || undefined,
+    promoCode:            form.promoCode || undefined,
+    promoDiscountPercent: form.promoDiscountPercent ? Number(form.promoDiscountPercent) : undefined,
+    promoExpiresAt:       form.promoExpiresAt || undefined,
     image:            form.image || undefined,
         previewVideo:     form.previewVideo || undefined,
     featured:         form.featured,
@@ -48,6 +52,14 @@ function formToPayload(form) {
   };
 }
 
+// datetime-local necesita "yyyy-MM-ddTHH:mm" en hora local, sin segundos ni Z.
+function toDatetimeLocal(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 // Convierte un curso real (de la API) al shape del form (todo string, para inputs controlados)
 function courseToForm(c) {
   return {
@@ -55,6 +67,7 @@ function courseToForm(c) {
     category: c.category ?? categories[1], level: c.level ?? levels[1], modality: c.modality ?? modalities[1],
     duration: c.duration ?? '', hours: c.hours ?? '',
     price: c.price ?? '', originalPrice: c.originalPrice ?? '', priceUSD: c.priceUSD ?? '', originalPriceUSD: c.originalPriceUSD ?? '', transferCode: c.transferCode ?? '',
+    promoCode: c.promoCode ?? '', promoDiscountPercent: c.promoDiscountPercent ?? '', promoExpiresAt: toDatetimeLocal(c.promoExpiresAt),
         image: c.image ?? '', previewVideo: c.previewVideo ?? '', featured: !!c.featured, published: c.published ?? true,
     tags: (c.tags ?? []).join(', '),
     requirements: (c.requirements ?? []).join('\n'),
@@ -283,6 +296,20 @@ export default function AdminCourses() {
               <div className="form-field">
                 <label>Código de descuento por transferencia (10% off, opcional)</label>
                 <input className="input" placeholder="TRANSFER10" value={form.transferCode} onChange={set('transferCode')} />
+              </div>
+              <div className="form-row">
+                <div className="form-field">
+                  <label>Código de promo temporal (opcional, ej. campañas)</label>
+                  <input className="input" placeholder="GO10K" value={form.promoCode} onChange={set('promoCode')} />
+                </div>
+                <div className="form-field">
+                  <label>% de descuento de la promo</label>
+                  <input className="input" type="number" min="1" max="100" placeholder="10" value={form.promoDiscountPercent} onChange={set('promoDiscountPercent')} />
+                </div>
+              </div>
+              <div className="form-field">
+                <label>Vencimiento de la promo</label>
+                <input className="input" type="datetime-local" value={form.promoExpiresAt} onChange={set('promoExpiresAt')} />
               </div>
               <div className="form-row">
                 <div className="form-field">

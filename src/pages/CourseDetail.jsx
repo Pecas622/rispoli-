@@ -59,6 +59,61 @@ function PayButton({ onConfirm, label, enrolling, className, style }) {
   );
 }
 
+// Cupón temporal con cuenta regresiva. El vencimiento viene del backend
+// (course.promoExpiresAt) — el timer local solo lo va mostrando, no decide
+// si sigue vigente: eso lo valida el servidor de nuevo al armar el pago.
+function PromoBanner({ course, promoInput, setPromoInput, promoApplied, setPromoApplied, promoError, setPromoError }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!course.promoCode || !course.promoDiscountPercent || !course.promoExpiresAt) return null;
+  const msLeft = new Date(course.promoExpiresAt).getTime() - now;
+  if (msLeft <= 0) return null;
+
+  const totalSeconds = Math.floor(msLeft / 1000);
+  const days    = Math.floor(totalSeconds / 86400);
+  const hours   = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = n => String(n).padStart(2, '0');
+
+  const applyCode = () => {
+    if (promoInput.trim().toUpperCase() === course.promoCode.toUpperCase()) {
+      setPromoApplied(true);
+      setPromoError(false);
+    } else {
+      setPromoError(true);
+    }
+  };
+
+  return (
+    <div className="promo-banner">
+      {promoApplied ? (
+        <p className="promo-banner-applied">🔥 Código {course.promoCode} aplicado — {course.promoDiscountPercent}% extra de descuento</p>
+      ) : (
+        <>
+          <p className="promo-banner-title">🔥 Festejamos 10.000 seguidores — Código {course.promoCode} 🔥</p>
+          <p className="promo-banner-countdown">{days}d {pad(hours)}h {pad(minutes)}m {pad(seconds)}s</p>
+          <div className="promo-banner-form">
+            <input
+              className="input"
+              placeholder="Ingresá el código"
+              value={promoInput}
+              onChange={e => { setPromoInput(e.target.value); setPromoError(false); }}
+              onKeyDown={e => e.key === 'Enter' && applyCode()}
+            />
+            <button type="button" className="btn btn-outline btn-sm" onClick={applyCode}>Aplicar</button>
+          </div>
+          {promoError && <p className="promo-banner-error">Código inválido</p>}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -68,6 +123,9 @@ export default function CourseDetail() {
   const [progress, setProgress] = useState(EMPTY_PROGRESS);
   const [openModule, setOpenModule] = useState(0);
   const [enrolling, setEnrolling] = useState(false); const [installments] = useState(6);
+  const [promoInput,   setPromoInput]   = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+  const [promoError,   setPromoError]   = useState(false);
   const reviewsRef = useRef(null);   // sección de reseñas (destino del scroll)
   const reviewsTrackRef = useRef(null);
   const [reviewIndex, setReviewIndex] = useState(0);
@@ -240,6 +298,8 @@ export default function CourseDetail() {
   const { current: coursePrice, original: courseOriginal } = getRegionPrice(course, region, dolarRate);
   const discount  = courseOriginal > 0 ? Math.round((1 - coursePrice / courseOriginal) * 100) : 0;
   const checkoutLabel = getCheckoutLabel(region);
+  // Se apila sobre cualquier otro descuento ya aplicado (lista o transferencia).
+  const promoMultiplier = promoApplied ? (1 - course.promoDiscountPercent / 100) : 1;
 
   const instructor = {
     name:   course.instructorName   ?? course.instructor?.name   ?? 'Por definir',
@@ -325,18 +385,21 @@ export default function CourseDetail() {
     currency: region === 'AR' ? 'ARS' : 'USD',
   });
 
+  const promoCodeParam = promoApplied ? { promoCode: course.promoCode } : {};
+
   const handleEnroll = async () => {
     // AddToCart = intención de compra. Se dispara aunque el usuario no haya
     // iniciado sesión: el clic en "Comprar" ya es una señal válida para Meta.
-    track('AddToCart', checkoutEventData(coursePrice));
+    const price = coursePrice * promoMultiplier;
+    track('AddToCart', checkoutEventData(price));
 
     if (!user) { setAuthModal('register'); return; }
     if (region === 'AR') {
       setEnrolling(true);
       try {
-        const { url } = await paymentsApi.checkoutMercadoPago(course.id, { installments });
+        const { url } = await paymentsApi.checkoutMercadoPago(course.id, { installments, ...promoCodeParam });
         // InitiateCheckout = recién acá entra de verdad a la pasarela de pago.
-        track('InitiateCheckout', checkoutEventData(coursePrice));
+        track('InitiateCheckout', checkoutEventData(price));
         window.location.href = url;
       } catch (err) {
         showToast(err.message || 'No se pudo iniciar el pago. Probá de nuevo en unos minutos.', 'error');
@@ -347,8 +410,8 @@ export default function CourseDetail() {
     // Pagos internacionales (Stripe, USD)
     setEnrolling(true);
     try {
-      const { url } = await paymentsApi.checkout(course.id);
-      track('InitiateCheckout', checkoutEventData(coursePrice));
+      const { url } = await paymentsApi.checkout(course.id, promoCodeParam);
+      track('InitiateCheckout', checkoutEventData(price));
       window.location.href = url;
     } catch (err) {
       showToast(err.message || 'No se pudo iniciar el pago. Probá de nuevo en unos minutos.', 'error');
@@ -357,14 +420,15 @@ export default function CourseDetail() {
   };
 
   const handleEnrollTransfer = async () => {
-    // Mismo embudo que el pago normal, pero con el precio con 10% de descuento.
-    const transferPrice = coursePrice * 0.9;
+    // Mismo embudo que el pago normal, pero con el precio con 10% de descuento
+    // (y el de la promo encima, si está aplicada).
+    const transferPrice = coursePrice * 0.9 * promoMultiplier;
     track('AddToCart', checkoutEventData(transferPrice));
 
     if (!user) { setAuthModal('register'); return; }
     setEnrolling(true);
     try {
-      const { url } = await paymentsApi.checkoutMercadoPago(course.id, { transferDiscount: true });
+      const { url } = await paymentsApi.checkoutMercadoPago(course.id, { transferDiscount: true, ...promoCodeParam });
       track('InitiateCheckout', checkoutEventData(transferPrice));
       window.location.href = url;
     } catch (err) {
@@ -481,25 +545,33 @@ export default function CourseDetail() {
                         {discount > 0 && <span className="enroll-price-was">{formatPrice(courseOriginal, region)}</span>}
                         {discount > 0 && <span className="enroll-discount">-{discount}%</span>}
                       </div>
+
+                      <PromoBanner
+                        course={course}
+                        promoInput={promoInput} setPromoInput={setPromoInput}
+                        promoApplied={promoApplied} setPromoApplied={setPromoApplied}
+                        promoError={promoError} setPromoError={setPromoError}
+                      />
+
                       {region === 'AR' && course.transferCode ? (
                         <div className="enroll-includes">
                           <p className="enroll-includes-title">Formas de pago</p>
                           <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px',marginBottom:10}}>
                             <p style={{fontSize:12,fontWeight:700,color:'var(--green)',marginBottom:4}}>10% OFF — Pagando por transferencia</p>
                             <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:2}}>
-                              <span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * 0.9, region)}</span>
+                              <span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * 0.9 * promoMultiplier, region)}</span>
                               <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>
                             </div>
                             <p style={{fontSize:11,color:'var(--text-3)',marginBottom:10}}>Pago único</p>
                             <button onClick={handleEnrollTransfer} className="btn btn-primary btn-sm" style={{width:'100%',justifyContent:'center'}} disabled={enrolling}>
-                              {enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar ${formatPrice(coursePrice * 0.9, region)} por transferencia`}
+                              {enrolling ? <><div className="spinner" /> Procesando...</> : `Pagar ${formatPrice(coursePrice * 0.9 * promoMultiplier, region)} por transferencia`}
                             </button>
                           </div>
                           <div style={{border:'1px solid var(--border)',borderRadius:'var(--r-sm)',padding:'12px 14px'}}>
-                            <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:8}}>{`En cuotas sin interés ${formatPrice(coursePrice, region)}`}</p>
+                            <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:8}}>{`En cuotas sin interés ${formatPrice(coursePrice * promoMultiplier, region)}`}</p>
                             <PayButton
                               onConfirm={handleEnroll}
-                              label={`Pagar 6 x ${formatPrice(coursePrice/6, region)}`}
+                              label={`Pagar 6 x ${formatPrice((coursePrice * promoMultiplier)/6, region)}`}
                               enrolling={enrolling}
                               className="btn btn-primary btn-sm"
                               style={{width:'100%',justifyContent:'center'}}

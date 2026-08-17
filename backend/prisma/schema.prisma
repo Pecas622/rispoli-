@@ -88,6 +88,13 @@ model Course {
   requirements     String[]
   includes         String[]
   transferCode     String?  @map("transfer_code") // cupón de 10% off pagando por transferencia (ej. "TRANSFER10")
+  // Cupón temporal (ej. campañas de redes) que se suma a los descuentos que
+  // ya tenga el curso. El alumno lo tipea a mano en la tarjeta de pago; se
+  // valida en el servidor contra el código y la fecha de vencimiento, nunca
+  // confiando en el precio que mande el navegador.
+  promoCode            String?   @map("promo_code")
+  promoDiscountPercent Int?      @map("promo_discount_percent")
+  promoExpiresAt       DateTime? @map("promo_expires_at")
   certifiedBy      String?  @map("certified_by") // entidad que avala el certificado (default: Go Travel Academy)
   learningObjectives String[] @map("learning_objectives")
   targetAudience     String[] @map("target_audience")

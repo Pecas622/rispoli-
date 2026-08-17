@@ -17,6 +17,20 @@ function sixMonthsFromNow(): Date {
   return d;
 }
 
+// Valida el cupón que mandó el navegador contra el curso: nunca se confía en
+// un porcentaje o precio final que venga del cliente, solo en si el código
+// coincide y sigue vigente. Devuelve 0 si no aplica.
+function resolvePromoDiscount(
+  course: { promoCode: string | null; promoDiscountPercent: number | null; promoExpiresAt: Date | null },
+  inputCode: unknown,
+): number {
+  if (!course.promoCode || !course.promoDiscountPercent || !course.promoExpiresAt) return 0;
+  if (course.promoExpiresAt < new Date()) return 0;
+  if (typeof inputCode !== 'string') return 0;
+  if (inputCode.trim().toUpperCase() !== course.promoCode.toUpperCase()) return 0;
+  return course.promoDiscountPercent;
+}
+
 // Webhooks de Mercado Pago.
 // Doc: https://www.mercadopago.com.ar/developers/es/docs/your-integrations/notifications/webhooks
 
@@ -185,9 +199,11 @@ router.post(
       }
 
       // Usar priceUSD para Stripe (pagos internacionales)
-      const unitAmount = course.priceUSD != null
+      const baseAmount = course.priceUSD != null
         ? Math.round(course.priceUSD * 100)
         : Math.round(course.price * 100);
+      const promoPercent = resolvePromoDiscount(course, req.body?.promoCode);
+      const unitAmount = promoPercent ? Math.round(baseAmount * (1 - promoPercent / 100)) : baseAmount;
 
       const session = await stripe.checkout.sessions.create({
         mode:   'payment',
@@ -554,7 +570,9 @@ router.post(
       }
 
       const applyTransferDiscount = !!req.body?.transferDiscount && !!course.transferCode;
-      const unitPrice = applyTransferDiscount ? Math.round(course.price * 0.9) : course.price;
+      const promoPercent = resolvePromoDiscount(course, req.body?.promoCode);
+      let unitPrice = applyTransferDiscount ? Math.round(course.price * 0.9) : course.price;
+      if (promoPercent) unitPrice = Math.round(unitPrice * (1 - promoPercent / 100));
       // Pago por transferencia = pago único; compra normal = hasta 6 cuotas (elegidas por el usuario).
       const installments = applyTransferDiscount ? 1 : Math.min(6, Math.max(1, Number(req.body?.installments) || 1));
 

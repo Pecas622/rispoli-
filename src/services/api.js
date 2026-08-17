@@ -119,7 +119,7 @@ export const paymentsApi = {
   // Se adjuntan las cookies de Meta (_fbp/_fbc): el pago se confirma después
   // por webhook, cuando ya no hay navegador del cual leerlas, y sin ellas el
   // evento Purchase pierde calidad de coincidencia.
-  checkout:            (courseId) => api.post(`/payments/checkout/${courseId}`, { ...fbCookies() }),
+  checkout:            (courseId, body = {}) => api.post(`/payments/checkout/${courseId}`, { ...body, ...fbCookies() }),
   checkoutMercadoPago: (courseId, body = {}) => api.post(`/payments/mercadopago/${courseId}`, { ...body, ...fbCookies() }),
   history:             ()         => api.get('/payments/history'),
   adminList: (params = {}) => {
