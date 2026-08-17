@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Award, Lock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Award, Lock } from 'lucide-react';
 import { courses as mockCourses, testimonials } from '../data/courses';
 import { coursesApi, progressApi, paymentsApi, reviewsApi } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -26,36 +26,13 @@ function extractVimeoId(url = '') {
   return url.match(/vimeo\.com\/(?:video\/)?(\d+)/)?.[1] ?? '';
 }
 
-// Botón de pago con tarjeta: al tocarlo, primero avisa que compras grandes
-// pueden requerir que el banco autorice el pago (en vez de que el alumno se
-// entere recién si le rechaza), y recién con la confirmación dispara el pago.
+// Botón de pago con tarjeta: dispara el pago directo al primer click, sin
+// paso de confirmación intermedio (generaba fricción y frenaba compras).
 function PayButton({ onConfirm, label, enrolling, className, style }) {
-  const [confirming, setConfirming] = useState(false);
-
-  if (!confirming) {
-    return (
-      <button type="button" onClick={() => setConfirming(true)} className={className} style={style} disabled={enrolling}>
-        {label}
-      </button>
-    );
-  }
-
   return (
-    <div className="pay-confirm" style={style}>
-      <p className="pay-confirm-text">
-        <AlertTriangle size={13} />
-        Compras grandes a veces requieren que tu banco autorice el pago. Si no sale al primer
-        intento, no te preocupes: no se te cobra nada y podés reintentar.
-      </p>
-      <div className="pay-confirm-actions">
-        <button type="button" className="btn btn-outline btn-sm" onClick={() => setConfirming(false)} disabled={enrolling}>
-          Cancelar
-        </button>
-        <button type="button" className={className} style={{ flex: 1, justifyContent: 'center' }} onClick={onConfirm} disabled={enrolling}>
-          {enrolling ? <><div className="spinner" /> Procesando...</> : 'Confirmar y pagar'}
-        </button>
-      </div>
-    </div>
+    <button type="button" onClick={onConfirm} className={className} style={style} disabled={enrolling}>
+      {enrolling ? <><div className="spinner" /> Procesando...</> : label}
+    </button>
   );
 }
 
