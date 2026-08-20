@@ -248,7 +248,7 @@ export default function Home() {
                 <img key={p} src={`https://images.unsplash.com/${p}?w=40&q=80`} alt="" className="avatar-sm" />
               ))}
             </div>
-            <span>Más de 12.000 agentes certificados</span>
+            <span>Más de 3.000 agentes certificados</span>
           </div>
         </div>
       </section>
