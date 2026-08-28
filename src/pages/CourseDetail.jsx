@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Award, Lock } from 'lucide-react';
+import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Award, Lock, Tag, Check } from 'lucide-react';
 import { courses as mockCourses, testimonials } from '../data/courses';
 import { coursesApi, progressApi, paymentsApi, reviewsApi } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -36,46 +36,24 @@ function PayButton({ onConfirm, label, enrolling, className, style }) {
   );
 }
 
-// Elige qué cupón destacar en el banner cuando el curso tiene varios activos:
-// prioriza el que venza antes (más urgente); si ninguno tiene vencimiento,
-// destaca el más nuevo. Los demás igual funcionan si el alumno los tipea.
-function featuredCoupon(coupons) {
-  const active = coupons.filter(c => !c.expiresAt || new Date(c.expiresAt) > new Date());
-  if (active.length === 0) return null;
-  const withExpiry = active.filter(c => c.expiresAt).sort((a, b) => new Date(a.expiresAt) - new Date(b.expiresAt));
-  return withExpiry[0] ?? active[0];
-}
-
-// El alumno tipea el código a mano; el match acá es solo para la vista
-// previa del precio. Se valida de nuevo en el servidor al armar el pago —
-// nunca se confía en lo que decida el navegador.
+// A propósito no anuncia qué código existe ni cuánto descuenta: son cupones
+// que se reparten a mano (ej. seguimiento de carritos abandonados), no una
+// promo pública. Por default queda colapsado en un link discreto; el alumno
+// necesita ya tener el código para que sirva de algo. El match acá es solo
+// para la vista previa del precio — se valida de nuevo en el servidor al
+// armar el pago, nunca se confía en lo que decida el navegador.
 function PromoBanner({ course, promoInput, setPromoInput, appliedCoupon, setAppliedCoupon, promoError, setPromoError }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
+  const [open, setOpen] = useState(false);
   const coupons = course.coupons ?? [];
-  const featured = featuredCoupon(coupons);
-  if (!featured) return null;
-
-  const msLeft = featured.expiresAt ? new Date(featured.expiresAt).getTime() - now : null;
-  if (msLeft !== null && msLeft <= 0) return null;
-
-  const pad = n => String(n).padStart(2, '0');
-  let countdown = null;
-  if (msLeft !== null) {
-    const totalSeconds = Math.floor(msLeft / 1000);
-    const days    = Math.floor(totalSeconds / 86400);
-    const hours   = Math.floor((totalSeconds % 86400) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    countdown = `${days}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
-  }
+  const hasActiveCoupon = coupons.some(c => !c.expiresAt || new Date(c.expiresAt) > new Date());
+  if (!hasActiveCoupon) return null;
 
   const applyCode = () => {
-    const match = coupons.find(c => c.code.toUpperCase() === promoInput.trim().toUpperCase());
+    const now = new Date();
+    const match = coupons.find(c =>
+      c.code.toUpperCase() === promoInput.trim().toUpperCase() &&
+      (!c.expiresAt || new Date(c.expiresAt) > now)
+    );
     if (match) {
       setAppliedCoupon(match);
       setPromoError(false);
@@ -84,27 +62,34 @@ function PromoBanner({ course, promoInput, setPromoInput, appliedCoupon, setAppl
     }
   };
 
+  if (appliedCoupon) {
+    return (
+      <p className="promo-banner-applied"><Check size={14}/> Cupón {appliedCoupon.code} aplicado — {appliedCoupon.discountPercent}% de descuento</p>
+    );
+  }
+
+  if (!open) {
+    return (
+      <button type="button" className="promo-toggle" onClick={() => setOpen(true)}>
+        <Tag size={13}/> Ingresar cupón de descuento
+      </button>
+    );
+  }
+
   return (
     <div className="promo-banner">
-      {appliedCoupon ? (
-        <p className="promo-banner-applied">🔥 Código {appliedCoupon.code} aplicado — {appliedCoupon.discountPercent}% extra de descuento</p>
-      ) : (
-        <>
-          <p className="promo-banner-title">🔥 Código de descuento: {featured.code} 🔥</p>
-          {countdown && <p className="promo-banner-countdown">{countdown}</p>}
-          <div className="promo-banner-form">
-            <input
-              className="input"
-              placeholder="Ingresá el código"
-              value={promoInput}
-              onChange={e => { setPromoInput(e.target.value); setPromoError(false); }}
-              onKeyDown={e => e.key === 'Enter' && applyCode()}
-            />
-            <button type="button" className="btn btn-outline btn-sm" onClick={applyCode}>Aplicar</button>
-          </div>
-          {promoError && <p className="promo-banner-error">Código inválido</p>}
-        </>
-      )}
+      <div className="promo-banner-form">
+        <input
+          className="input"
+          placeholder="Ingresá el código"
+          value={promoInput}
+          autoFocus
+          onChange={e => { setPromoInput(e.target.value); setPromoError(false); }}
+          onKeyDown={e => e.key === 'Enter' && applyCode()}
+        />
+        <button type="button" className="btn btn-outline btn-sm" onClick={applyCode}>Aplicar</button>
+      </div>
+      {promoError && <p className="promo-banner-error">Código inválido</p>}
     </div>
   );
 }
