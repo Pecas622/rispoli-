@@ -53,6 +53,9 @@ export const coursesApi = {
   create: (data) => api.post('/courses', data),
   update: (id, data) => api.patch(`/courses/${id}`, data),
   delete: (id)   => api.delete(`/courses/${id}`),
+  addCoupon:    (courseId, data)          => api.post(`/courses/${courseId}/coupons`, data),
+  updateCoupon: (courseId, couponId, data) => api.patch(`/courses/${courseId}/coupons/${couponId}`, data),
+  removeCoupon: (courseId, couponId)      => api.delete(`/courses/${courseId}/coupons/${couponId}`),
 };
 
 // ── Reviews ───────────────────────────────────────────────

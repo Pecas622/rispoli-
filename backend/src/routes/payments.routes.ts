@@ -17,18 +17,20 @@ function sixMonthsFromNow(): Date {
   return d;
 }
 
-// Valida el cupón que mandó el navegador contra el curso: nunca se confía en
-// un porcentaje o precio final que venga del cliente, solo en si el código
-// coincide y sigue vigente. Devuelve 0 si no aplica.
-function resolvePromoDiscount(
-  course: { promoCode: string | null; promoDiscountPercent: number | null; promoExpiresAt: Date | null },
-  inputCode: unknown,
-): number {
-  if (!course.promoCode || !course.promoDiscountPercent || !course.promoExpiresAt) return 0;
-  if (course.promoExpiresAt < new Date()) return 0;
-  if (typeof inputCode !== 'string') return 0;
-  if (inputCode.trim().toUpperCase() !== course.promoCode.toUpperCase()) return 0;
-  return course.promoDiscountPercent;
+// Valida el cupón que mandó el navegador contra los cupones cargados para
+// ese curso: nunca se confía en un porcentaje o precio final que venga del
+// cliente, solo en si el código coincide con uno vigente en la base.
+// Aplica a cualquier medio de pago (transferencia, cuotas o Stripe).
+// Devuelve 0 si no aplica.
+async function resolveCouponDiscount(courseId: string, inputCode: unknown): Promise<number> {
+  if (typeof inputCode !== 'string' || !inputCode.trim()) return 0;
+
+  const coupon = await prisma.coupon.findUnique({
+    where: { courseId_code: { courseId, code: inputCode.trim().toUpperCase() } },
+  });
+  if (!coupon) return 0;
+  if (coupon.expiresAt && coupon.expiresAt < new Date()) return 0;
+  return coupon.discountPercent;
 }
 
 // Webhooks de Mercado Pago.
@@ -202,7 +204,7 @@ router.post(
       const baseAmount = course.priceUSD != null
         ? Math.round(course.priceUSD * 100)
         : Math.round(course.price * 100);
-      const promoPercent = resolvePromoDiscount(course, req.body?.promoCode);
+      const promoPercent = await resolveCouponDiscount(course.id, req.body?.promoCode);
       const unitAmount = promoPercent ? Math.round(baseAmount * (1 - promoPercent / 100)) : baseAmount;
 
       const session = await stripe.checkout.sessions.create({
@@ -570,7 +572,7 @@ router.post(
       }
 
       const applyTransferDiscount = !!req.body?.transferDiscount && !!course.transferCode;
-      const promoPercent = resolvePromoDiscount(course, req.body?.promoCode);
+      const promoPercent = await resolveCouponDiscount(course.id, req.body?.promoCode);
       let unitPrice = applyTransferDiscount ? Math.round(course.price * 0.9) : course.price;
       if (promoPercent) unitPrice = Math.round(unitPrice * (1 - promoPercent / 100));
       // Pago por transferencia = pago único; compra normal = hasta 6 cuotas (elegidas por el usuario).

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Search, X, Check, LayoutList, Loader } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Check, LayoutList, Loader, Tag } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { coursesApi } from '../services/api';
 import { courses as mockCourses, categories, levels, modalities } from '../data/courses';
@@ -11,7 +11,6 @@ const emptyForm = {
   title: '', subtitle: '', description: '',
   category: categories[1], level: levels[1], modality: modalities[1],
   duration: '', hours: '', price: '', originalPrice: '', priceUSD: '', originalPriceUSD: '', transferCode: '',
-  promoCode: '', promoDiscountPercent: '', promoExpiresAt: '',
     image: '', previewVideo: '', featured: false, published: true,
   tags: '', requirements: '', includes: '', learningObjectives: '', targetAudience: '',
   instructorName: '', instructorRole: '', instructorAvatar: '', instructorBio: '',
@@ -33,9 +32,6 @@ function formToPayload(form) {
     priceUSD:         form.priceUSD ? Number(form.priceUSD) : undefined,
     originalPriceUSD: form.originalPriceUSD ? Number(form.originalPriceUSD) : undefined,
     transferCode:     form.transferCode || undefined,
-    promoCode:            form.promoCode || undefined,
-    promoDiscountPercent: form.promoDiscountPercent ? Number(form.promoDiscountPercent) : undefined,
-    promoExpiresAt:       form.promoExpiresAt || undefined,
     image:            form.image || undefined,
         previewVideo:     form.previewVideo || undefined,
     featured:         form.featured,
@@ -52,14 +48,6 @@ function formToPayload(form) {
   };
 }
 
-// datetime-local necesita "yyyy-MM-ddTHH:mm" en hora local, sin segundos ni Z.
-function toDatetimeLocal(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 // Convierte un curso real (de la API) al shape del form (todo string, para inputs controlados)
 function courseToForm(c) {
   return {
@@ -67,7 +55,6 @@ function courseToForm(c) {
     category: c.category ?? categories[1], level: c.level ?? levels[1], modality: c.modality ?? modalities[1],
     duration: c.duration ?? '', hours: c.hours ?? '',
     price: c.price ?? '', originalPrice: c.originalPrice ?? '', priceUSD: c.priceUSD ?? '', originalPriceUSD: c.originalPriceUSD ?? '', transferCode: c.transferCode ?? '',
-    promoCode: c.promoCode ?? '', promoDiscountPercent: c.promoDiscountPercent ?? '', promoExpiresAt: toDatetimeLocal(c.promoExpiresAt),
         image: c.image ?? '', previewVideo: c.previewVideo ?? '', featured: !!c.featured, published: c.published ?? true,
     tags: (c.tags ?? []).join(', '),
     requirements: (c.requirements ?? []).join('\n'),
@@ -77,6 +64,65 @@ function courseToForm(c) {
     instructorName: c.instructorName ?? '', instructorRole: c.instructorRole ?? '',
     instructorAvatar: c.instructorAvatar ?? '', instructorBio: c.instructorBio ?? '',
   };
+}
+
+// Cupones de descuento del curso: se pueden cargar varios, cada uno aplica a
+// cualquier medio de pago (transferencia, cuotas o Stripe) una vez que el
+// alumno lo tipea en la ficha del curso.
+function CouponsField({ coupons, onAdd, onRemove, addingCoupon, removingCouponId }) {
+  const [code, setCode] = useState('');
+  const [percent, setPercent] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
+
+  const submit = () => {
+    if (!code.trim() || !percent) return;
+    onAdd({ code: code.trim(), discountPercent: Number(percent), expiresAt: expiresAt || undefined });
+    setCode(''); setPercent(''); setExpiresAt('');
+  };
+
+  return (
+    <div className="form-field">
+      <label>Cupones de descuento (aplican en cualquier medio de pago)</label>
+
+      {coupons.length > 0 && (
+        <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:10 }}>
+          {coupons.map(c => {
+            const expired = c.expiresAt && new Date(c.expiresAt) < new Date();
+            return (
+              <div key={c.id} style={{ display:'flex', alignItems:'center', gap:10, fontSize:13, padding:'7px 10px', border:'1px solid var(--border)', borderRadius:'var(--r-sm)' }}>
+                <Tag size={13} style={{ color: expired ? 'var(--text-3)' : 'var(--violet-mid)', flexShrink:0 }} />
+                <strong style={{ fontFamily:'monospace' }}>{c.code}</strong>
+                <span style={{ color:'var(--text-2)' }}>{c.discountPercent}% off</span>
+                <span style={{ color:'var(--text-3)', fontSize:12 }}>
+                  {c.expiresAt ? `${expired ? 'Venció' : 'Vence'} ${new Date(c.expiresAt).toLocaleString('es-AR')}` : 'Sin vencimiento'}
+                </span>
+                <button
+                  type="button"
+                  className="action-btn del"
+                  style={{ marginLeft:'auto', width:26, height:26 }}
+                  onClick={() => onRemove(c.id)}
+                  disabled={removingCouponId === c.id}
+                  title="Eliminar cupón"
+                >
+                  {removingCouponId === c.id ? <Loader size={12} style={{ animation:'spin 1s linear infinite' }}/> : <Trash2 size={12}/>}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={{ display:'flex', gap:8 }}>
+        <input className="input" placeholder="GO10K" style={{ flex:1 }} value={code} onChange={e => setCode(e.target.value)} />
+        <input className="input" type="number" min="1" max="100" placeholder="% off" style={{ width:80 }} value={percent} onChange={e => setPercent(e.target.value)} />
+        <input className="input" type="datetime-local" style={{ width:190 }} value={expiresAt} onChange={e => setExpiresAt(e.target.value)} title="Vencimiento (opcional)" />
+        <button type="button" className="btn btn-outline btn-sm" onClick={submit} disabled={addingCoupon || !code.trim() || !percent}>
+          {addingCoupon ? <Loader size={12} style={{ animation:'spin 1s linear infinite' }}/> : <Plus size={12}/>} Agregar
+        </button>
+      </div>
+      <p style={{ fontSize:11, color:'var(--text-3)', marginTop:6 }}>Vencimiento opcional — sin fecha, el cupón queda activo indefinidamente.</p>
+    </div>
+  );
 }
 
 export default function AdminCourses() {
@@ -90,6 +136,10 @@ export default function AdminCourses() {
   const [modal, setModal] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [form, setForm] = useState(emptyForm);
+
+  const [coupons, setCoupons] = useState([]);
+  const [addingCoupon, setAddingCoupon] = useState(false);
+  const [removingCouponId, setRemovingCouponId] = useState(null);
 
   const loadCourses = useCallback(() => {
     if (!USE_API) { setCourses(mockCourses); setLoading(false); return; }
@@ -108,7 +158,32 @@ export default function AdminCourses() {
   );
 
   const openCreate = () => { setForm(emptyForm); setModal('create'); };
-  const openEdit = c => { setForm(courseToForm(c)); setModal(c); };
+  const openEdit = c => { setForm(courseToForm(c)); setCoupons(c.coupons ?? []); setModal(c); };
+
+  const addCoupon = async (data) => {
+    setAddingCoupon(true);
+    try {
+      const res = await coursesApi.addCoupon(modal.id, data);
+      setCoupons(prev => [res.coupon, ...prev]);
+      showToast('Cupón agregado');
+    } catch (err) {
+      showToast(err.message || 'No se pudo agregar el cupón', 'error');
+    } finally {
+      setAddingCoupon(false);
+    }
+  };
+
+  const removeCoupon = async (couponId) => {
+    setRemovingCouponId(couponId);
+    try {
+      await coursesApi.removeCoupon(modal.id, couponId);
+      setCoupons(prev => prev.filter(c => c.id !== couponId));
+    } catch (err) {
+      showToast(err.message || 'No se pudo eliminar el cupón', 'error');
+    } finally {
+      setRemovingCouponId(null);
+    }
+  };
 
   const handleSave = async () => {
     const isCreate = modal === 'create';
@@ -297,20 +372,17 @@ export default function AdminCourses() {
                 <label>Código de descuento por transferencia (10% off, opcional)</label>
                 <input className="input" placeholder="TRANSFER10" value={form.transferCode} onChange={set('transferCode')} />
               </div>
-              <div className="form-row">
-                <div className="form-field">
-                  <label>Código de promo temporal (opcional, ej. campañas)</label>
-                  <input className="input" placeholder="GO10K" value={form.promoCode} onChange={set('promoCode')} />
-                </div>
-                <div className="form-field">
-                  <label>% de descuento de la promo</label>
-                  <input className="input" type="number" min="1" max="100" placeholder="10" value={form.promoDiscountPercent} onChange={set('promoDiscountPercent')} />
-                </div>
-              </div>
-              <div className="form-field">
-                <label>Vencimiento de la promo</label>
-                <input className="input" type="datetime-local" value={form.promoExpiresAt} onChange={set('promoExpiresAt')} />
-              </div>
+
+              {modal !== 'create' && (
+                <CouponsField
+                  coupons={coupons}
+                  onAdd={addCoupon}
+                  onRemove={removeCoupon}
+                  addingCoupon={addingCoupon}
+                  removingCouponId={removingCouponId}
+                />
+              )}
+
               <div className="form-row">
                 <div className="form-field">
                   <label>Duración</label>

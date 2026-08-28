@@ -33,9 +33,6 @@ const courseSchema = z.object({
   requirements:     z.array(z.string()).optional(),
   includes:         z.array(z.string()).optional(),
   transferCode:     z.string().optional(),
-  promoCode:            z.string().optional(),
-  promoDiscountPercent: z.number().int().min(1).max(100).optional(),
-  promoExpiresAt:       z.string().optional().transform(v => (v ? new Date(v) : undefined)),
   certifiedBy:      z.string().optional(),
   learningObjectives: z.array(z.string()).optional(),
   targetAudience:     z.array(z.string()).optional(),
@@ -72,6 +69,9 @@ router.get('/', optionalAuth, async (req: Request, res: Response, next: NextFunc
             enrollments: { where: { paidAt: { not: null }, refundedAt: null } },
           },
         },
+        // Solo el admin ve los cupones acá (los necesita el panel de gestión
+        // de cursos); a un visitante público no le sirven en el listado.
+        ...(isAdmin && { coupons: { orderBy: { createdAt: 'desc' } } }),
       },
     });
 
@@ -118,6 +118,7 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response, next: NextF
           },
         },
         _count: { select: { enrollments: { where: { paidAt: { not: null }, refundedAt: null } } } },
+        coupons: { orderBy: { createdAt: 'desc' } },
       },
     });
 
@@ -132,9 +133,19 @@ router.get('/:id', optionalAuth, async (req: Request, res: Response, next: NextF
       _count: true,
     });
 
+    // El admin ve todos los cupones (incluidos vencidos, para poder
+    // reactivarlos editando la fecha); un visitante público solo los que
+    // siguen vigentes — no tiene sentido anunciar códigos ya vencidos.
+    const isAdmin = req.user?.role === 'ADMIN';
+    const now = new Date();
+    const coupons = isAdmin
+      ? course.coupons
+      : course.coupons.filter(c => !c.expiresAt || c.expiresAt > now);
+
     res.json({
       course: {
         ...course,
+        coupons,
         students: STUDENTS_BASE + course._count.enrollments,
         rating:  reviewAgg._count > 0 ? round1(reviewAgg._avg.rating ?? 0) : 0,
         reviews: reviewAgg._count,
@@ -173,6 +184,56 @@ router.delete('/:id', authenticate, requireAdmin, async (req: Request, res: Resp
     await prisma.course.delete({ where: { id: req.params.id } });
     res.json({ message: 'Curso eliminado' });
   } catch (err) {
+    next(err);
+  }
+});
+
+// ── Cupones de descuento (admin) ────────────────────────────────────────────
+// Varios por curso, aplican a cualquier medio de pago (se validan de nuevo
+// en el servidor al armar el pago — ver resolveCouponDiscount en payments.routes.ts).
+const couponSchema = z.object({
+  code:            z.string().trim().min(3),
+  discountPercent: z.number().int().min(1).max(100),
+  expiresAt:       z.string().optional().transform(v => (v ? new Date(v) : null)),
+});
+
+// POST /api/courses/:courseId/coupons — admin
+router.post('/:courseId/coupons', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = couponSchema.parse(req.body);
+    const coupon = await prisma.coupon.create({
+      data: { ...data, code: data.code.toUpperCase(), courseId: req.params.courseId },
+    });
+    res.status(201).json({ coupon });
+  } catch (err: any) {
+    if (err?.code === 'P2002') return res.status(400).json({ message: 'Ya existe un cupón con ese código para este curso' });
+    next(err);
+  }
+});
+
+// PATCH /api/courses/:courseId/coupons/:couponId — admin
+router.patch('/:courseId/coupons/:couponId', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = couponSchema.partial().parse(req.body);
+    const coupon = await prisma.coupon.update({
+      where: { id: req.params.couponId },
+      data:  { ...data, ...(data.code && { code: data.code.toUpperCase() }) },
+    });
+    res.json({ coupon });
+  } catch (err: any) {
+    if (err?.code === 'P2002') return res.status(400).json({ message: 'Ya existe un cupón con ese código para este curso' });
+    if (err?.code === 'P2025') return res.status(404).json({ message: 'Cupón no encontrado' });
+    next(err);
+  }
+});
+
+// DELETE /api/courses/:courseId/coupons/:couponId — admin
+router.delete('/:courseId/coupons/:couponId', authenticate, requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await prisma.coupon.delete({ where: { id: req.params.couponId } });
+    res.json({ message: 'Cupón eliminado' });
+  } catch (err: any) {
+    if (err?.code === 'P2025') return res.status(404).json({ message: 'Cupón no encontrado' });
     next(err);
   }
 });

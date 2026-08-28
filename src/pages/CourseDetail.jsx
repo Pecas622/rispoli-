@@ -36,30 +36,48 @@ function PayButton({ onConfirm, label, enrolling, className, style }) {
   );
 }
 
-// Cupón temporal con cuenta regresiva. El vencimiento viene del backend
-// (course.promoExpiresAt) — el timer local solo lo va mostrando, no decide
-// si sigue vigente: eso lo valida el servidor de nuevo al armar el pago.
-function PromoBanner({ course, promoInput, setPromoInput, promoApplied, setPromoApplied, promoError, setPromoError }) {
+// Elige qué cupón destacar en el banner cuando el curso tiene varios activos:
+// prioriza el que venza antes (más urgente); si ninguno tiene vencimiento,
+// destaca el más nuevo. Los demás igual funcionan si el alumno los tipea.
+function featuredCoupon(coupons) {
+  const active = coupons.filter(c => !c.expiresAt || new Date(c.expiresAt) > new Date());
+  if (active.length === 0) return null;
+  const withExpiry = active.filter(c => c.expiresAt).sort((a, b) => new Date(a.expiresAt) - new Date(b.expiresAt));
+  return withExpiry[0] ?? active[0];
+}
+
+// El alumno tipea el código a mano; el match acá es solo para la vista
+// previa del precio. Se valida de nuevo en el servidor al armar el pago —
+// nunca se confía en lo que decida el navegador.
+function PromoBanner({ course, promoInput, setPromoInput, appliedCoupon, setAppliedCoupon, promoError, setPromoError }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  if (!course.promoCode || !course.promoDiscountPercent || !course.promoExpiresAt) return null;
-  const msLeft = new Date(course.promoExpiresAt).getTime() - now;
-  if (msLeft <= 0) return null;
+  const coupons = course.coupons ?? [];
+  const featured = featuredCoupon(coupons);
+  if (!featured) return null;
 
-  const totalSeconds = Math.floor(msLeft / 1000);
-  const days    = Math.floor(totalSeconds / 86400);
-  const hours   = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
+  const msLeft = featured.expiresAt ? new Date(featured.expiresAt).getTime() - now : null;
+  if (msLeft !== null && msLeft <= 0) return null;
+
   const pad = n => String(n).padStart(2, '0');
+  let countdown = null;
+  if (msLeft !== null) {
+    const totalSeconds = Math.floor(msLeft / 1000);
+    const days    = Math.floor(totalSeconds / 86400);
+    const hours   = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    countdown = `${days}d ${pad(hours)}h ${pad(minutes)}m ${pad(seconds)}s`;
+  }
 
   const applyCode = () => {
-    if (promoInput.trim().toUpperCase() === course.promoCode.toUpperCase()) {
-      setPromoApplied(true);
+    const match = coupons.find(c => c.code.toUpperCase() === promoInput.trim().toUpperCase());
+    if (match) {
+      setAppliedCoupon(match);
       setPromoError(false);
     } else {
       setPromoError(true);
@@ -68,12 +86,12 @@ function PromoBanner({ course, promoInput, setPromoInput, promoApplied, setPromo
 
   return (
     <div className="promo-banner">
-      {promoApplied ? (
-        <p className="promo-banner-applied">🔥 Código {course.promoCode} aplicado — {course.promoDiscountPercent}% extra de descuento</p>
+      {appliedCoupon ? (
+        <p className="promo-banner-applied">🔥 Código {appliedCoupon.code} aplicado — {appliedCoupon.discountPercent}% extra de descuento</p>
       ) : (
         <>
-          <p className="promo-banner-title">🔥 Festejamos 10.000 seguidores — Código {course.promoCode} 🔥</p>
-          <p className="promo-banner-countdown">{days}d {pad(hours)}h {pad(minutes)}m {pad(seconds)}s</p>
+          <p className="promo-banner-title">🔥 Código de descuento: {featured.code} 🔥</p>
+          {countdown && <p className="promo-banner-countdown">{countdown}</p>}
           <div className="promo-banner-form">
             <input
               className="input"
@@ -100,9 +118,9 @@ export default function CourseDetail() {
   const [progress, setProgress] = useState(EMPTY_PROGRESS);
   const [openModule, setOpenModule] = useState(0);
   const [enrolling, setEnrolling] = useState(false); const [installments] = useState(6);
-  const [promoInput,   setPromoInput]   = useState('');
-  const [promoApplied, setPromoApplied] = useState(false);
-  const [promoError,   setPromoError]   = useState(false);
+  const [promoInput,    setPromoInput]    = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null); // cupón matcheado: {code, discountPercent}
+  const [promoError,    setPromoError]    = useState(false);
   const reviewsRef = useRef(null);   // sección de reseñas (destino del scroll)
   const reviewsTrackRef = useRef(null);
   const [reviewIndex, setReviewIndex] = useState(0);
@@ -276,7 +294,7 @@ export default function CourseDetail() {
   const discount  = courseOriginal > 0 ? Math.round((1 - coursePrice / courseOriginal) * 100) : 0;
   const checkoutLabel = getCheckoutLabel(region);
   // Se apila sobre cualquier otro descuento ya aplicado (lista o transferencia).
-  const promoMultiplier = promoApplied ? (1 - course.promoDiscountPercent / 100) : 1;
+  const promoMultiplier = appliedCoupon ? (1 - appliedCoupon.discountPercent / 100) : 1;
 
   const instructor = {
     name:   course.instructorName   ?? course.instructor?.name   ?? 'Por definir',
@@ -362,7 +380,7 @@ export default function CourseDetail() {
     currency: region === 'AR' ? 'ARS' : 'USD',
   });
 
-  const promoCodeParam = promoApplied ? { promoCode: course.promoCode } : {};
+  const promoCodeParam = appliedCoupon ? { promoCode: appliedCoupon.code } : {};
 
   const handleEnroll = async () => {
     // AddToCart = intención de compra. Se dispara aunque el usuario no haya
@@ -526,7 +544,7 @@ export default function CourseDetail() {
                       <PromoBanner
                         course={course}
                         promoInput={promoInput} setPromoInput={setPromoInput}
-                        promoApplied={promoApplied} setPromoApplied={setPromoApplied}
+                        appliedCoupon={appliedCoupon} setAppliedCoupon={setAppliedCoupon}
                         promoError={promoError} setPromoError={setPromoError}
                       />
 
@@ -548,7 +566,7 @@ export default function CourseDetail() {
                             <p style={{fontSize:12,fontWeight:700,color:'var(--violet-mid)',marginBottom:4}}>En cuotas sin interés</p>
                             <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:2}}>
                               <span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * promoMultiplier, region)}</span>
-                              {promoApplied && <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>}
+                              {appliedCoupon && <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>}
                             </div>
                             <p style={{fontSize:11,color:'var(--text-3)',marginBottom:10}}>6 pagos de {formatPrice((coursePrice * promoMultiplier)/6, region)}</p>
                             <PayButton
@@ -564,7 +582,7 @@ export default function CourseDetail() {
                         <>
                           <div style={{display:'flex',alignItems:'baseline',gap:8,margin:'4px 0 12px'}}>
                             <span style={{fontSize:18,fontWeight:800}}>{formatPrice(coursePrice * promoMultiplier, region)}</span>
-                            {promoApplied && <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>}
+                            {appliedCoupon && <span style={{fontSize:12,color:'var(--text-3)',textDecoration:'line-through'}}>{formatPrice(coursePrice, region)}</span>}
                           </div>
                           <PayButton
                             onConfirm={handleEnroll}

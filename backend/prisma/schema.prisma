@@ -88,13 +88,6 @@ model Course {
   requirements     String[]
   includes         String[]
   transferCode     String?  @map("transfer_code") // cupón de 10% off pagando por transferencia (ej. "TRANSFER10")
-  // Cupón temporal (ej. campañas de redes) que se suma a los descuentos que
-  // ya tenga el curso. El alumno lo tipea a mano en la tarjeta de pago; se
-  // valida en el servidor contra el código y la fecha de vencimiento, nunca
-  // confiando en el precio que mande el navegador.
-  promoCode            String?   @map("promo_code")
-  promoDiscountPercent Int?      @map("promo_discount_percent")
-  promoExpiresAt       DateTime? @map("promo_expires_at")
   certifiedBy      String?  @map("certified_by") // entidad que avala el certificado (default: Go Travel Academy)
   learningObjectives String[] @map("learning_objectives")
   targetAudience     String[] @map("target_audience")
@@ -108,8 +101,29 @@ model Course {
   modules       Module[]
   enrollments   Enrollment[]
   courseReviews Review[]
+  coupons       Coupon[]
 
   @@map("courses")
+}
+
+// Cupones de descuento por curso (ej. campañas de redes). Se pueden cargar
+// varios por curso desde el panel; el alumno tipea el código a mano en la
+// tarjeta de pago y se valida en el servidor — nunca se confía en el precio
+// que mande el navegador. El descuento se suma sobre los que ya tenga el
+// curso (transferencia, etc.) y aplica a cualquier medio de pago (Mercado
+// Pago o Stripe, en cuotas o pago único).
+model Coupon {
+  id              String    @id @default(cuid())
+  courseId        String    @map("course_id")
+  code            String
+  discountPercent Int       @map("discount_percent")
+  expiresAt       DateTime? @map("expires_at") // null = sin vencimiento
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, code])
+  @@map("coupons")
 }
 
 model Module {
