@@ -12,7 +12,7 @@ import { isStorageReady, uploadFile } from '../lib/storage';
 
 const router = Router();
 
-const MAX_MB = 25;
+const MAX_MB = 50;
 
 // Extensiones permitidas: material de clase, no ejecutables.
 const EXT_PERMITIDAS = [

@@ -11,6 +11,9 @@ const EXT_TYPE = {
 
 const TYPE_ICONS = { pdf: FileText, zip: Archive, image: Image, code: Code };
 
+// Debe coincidir con MAX_MB del backend (uploads.routes.ts).
+const MAX_MB = 50;
+
 function fileType(name) {
   const ext = name.split('.').pop().toLowerCase();
   return EXT_TYPE[ext] || 'file';
@@ -38,6 +41,10 @@ export default function UploadResources({ resources, onChange }) {
     setError('');
     const subidos = [];
     for (const f of files) {
+      if (f.size > MAX_MB * 1048576) {
+        setError(`${f.name}: pesa ${fmtSize(f.size)}. El máximo es ${MAX_MB} MB — comprimí el archivo e intentá de nuevo.`);
+        continue;
+      }
       try {
         const { url } = await uploadsApi.upload(f);
         subidos.push({
