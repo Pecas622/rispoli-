@@ -106,7 +106,6 @@ export default function CourseDetail() {
   const [promoInput,    setPromoInput]    = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null); // cupón matcheado: {code, discountPercent}
   const [promoError,    setPromoError]    = useState(false);
-  const reviewsRef = useRef(null);   // sección de reseñas (destino del scroll)
   const reviewsTrackRef = useRef(null);
   const [reviewIndex, setReviewIndex] = useState(0);
   const [reviewPages, setReviewPages] = useState(1);
@@ -307,15 +306,6 @@ export default function CourseDetail() {
   // ── Carrusel de reseñas ─────────────────────────────────────────────────────
   // El track scrollea con scroll-snap: en mobile se desliza con el dedo y en
   // desktop con las flechas. Cada "página" es un ancho completo del track.
-  // Scrolleamos la ventana a mano (y no con scrollIntoView) porque este último
-  // también desplaza los contenedores scrolleables anidados: movía el carrusel.
-  const scrollToReviews = () => {
-    const el = reviewsRef.current;
-    if (!el) return;
-    const y = el.getBoundingClientRect().top + window.scrollY - 80; // 80 = navbar
-    window.scrollTo({ top: y, behavior: 'smooth' });
-  };
-
   const slideReviews = (dir) => {
     const track = reviewsTrackRef.current;
     if (track) track.scrollBy({ left: dir * track.clientWidth, behavior: 'smooth' });
@@ -478,16 +468,6 @@ export default function CourseDetail() {
               )}
 
               <div className="detail-meta-row">
-                <button
-                  type="button"
-                  className="detail-meta-item detail-meta-link"
-                  onClick={scrollToReviews}
-                  title="Ver las reseñas de los alumnos"
-                >
-                  <Star size={13} fill="#F59E0B" color="#F59E0B" />
-                  <strong>{reviewsRating}</strong>{' '}
-                  ({reviewsCount.toLocaleString()} reseñas)
-                </button>
                 <span className="detail-meta-item"><Users size={13} /> +{course.students.toLocaleString()} estudiantes</span>
                 {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
                 {course.hours && <span className="detail-meta-item"><BookOpen size={13} /> {course.hours}h de contenido</span>}
@@ -748,7 +728,7 @@ export default function CourseDetail() {
 
               {/* ── Reseñas de alumnos ── */}
               {courseReviews.length > 0 && (
-                <div className="detail-section" ref={reviewsRef}>
+                <div className="detail-section">
                   <div className="reviews-head">
                     <h2 className="detail-section-title">Reseñas de alumnos</h2>
                     <div className="reviews-summary">

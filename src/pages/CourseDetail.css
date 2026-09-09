@@ -86,14 +86,6 @@
 .detail-meta-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
 .detail-meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); }
 .detail-meta-item strong { color: var(--text); }
-/* La calificación es un atajo a las reseñas: se ve igual, pero es clickeable */
-.detail-meta-link {
-  background: none; border: none; padding: 0; font: inherit;
-  cursor: pointer; border-bottom: 1px dashed transparent;
-  transition: var(--transition);
-}
-.detail-meta-link:hover { color: var(--accent); border-bottom-color: var(--border-2); }
-
 .instructor-mini { display: flex; align-items: center; gap: 12px; }
 .instructor-mini img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
 .instructor-mini-name { font-size: 13px; font-weight: 600; }
@@ -408,9 +400,10 @@
     grid-template-areas: "info" "checkout" "learn";
     gap: 32px;
   }
-  /* Mobile: el video queda entre el cuadro de pago y "Con este curso aprenderás" */
+  /* Mobile: el video va antes del cuadro de pago, así se ve a Lucio antes que
+     los precios; "Con este curso aprenderás" queda debajo del cuadro */
   .detail-layout.has-video {
-    grid-template-areas: "info" "checkout" "video" "learn";
+    grid-template-areas: "info" "video" "checkout" "learn";
   }
   .enroll-card, .progress-card { position: static; }
   .detail-cols { grid-template-columns: 1fr; }
