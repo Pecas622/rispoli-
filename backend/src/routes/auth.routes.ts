@@ -21,7 +21,7 @@ const registerSchema = z.object({
   name:     z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   email:    emailField,
   phone:    z.string().min(6, 'Teléfono inválido'),
-  dni:      z.string().trim().refine(v => v.replace(/\D/g, '').length >= 6, 'Documento inválido'),
+  dni:      z.string().trim().min(1, 'Documento requerido').max(40), // campo libre: cada país tiene su formato
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
 });
 

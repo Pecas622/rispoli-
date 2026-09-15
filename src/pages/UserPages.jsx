@@ -259,10 +259,6 @@ export function Perfil() {
       showToast('Revisá el teléfono: falta el código de país o faltan dígitos', 'error');
       return;
     }
-    if (dni.trim() && dni.replace(/\D/g, '').length < 6) {
-      showToast('Revisá el documento: faltan dígitos', 'error');
-      return;
-    }
     setSaving(true);
     await updateProfile({
       name,

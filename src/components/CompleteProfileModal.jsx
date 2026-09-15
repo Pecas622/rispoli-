@@ -32,7 +32,7 @@ export default function CompleteProfileModal() {
       data.phone = `${findCountry(phoneCountry)?.dial ?? ''}${digits}`;
     }
     if (needsDni) {
-      if (dni.replace(/\D/g, '').length < 6) { setError('Documento incompleto'); return; }
+      if (!dni.trim()) { setError('Ingresá tu documento'); return; }
       data.dni = dni.trim();
     }
     setError('');

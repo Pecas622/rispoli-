@@ -71,8 +71,7 @@ export default function AuthModal() {
       if (!form.lastName.trim()) e.lastName = 'Requerido';
       if (!form.phone.trim()) e.phone = 'Requerido';
       else if (form.phone.replace(/\D/g, '').length < 6) e.phone = 'Teléfono incompleto';
-      if (!form.dni.trim()) e.dni = 'Requerido';
-      else if (form.dni.replace(/\D/g, '').length < 6) e.dni = 'Documento incompleto';
+      if (!form.dni.trim()) e.dni = 'Requerido'; // campo libre: cada país tiene su formato
     }
     if (!form.email.trim()) e.email = 'Requerido';
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Email inválido';
