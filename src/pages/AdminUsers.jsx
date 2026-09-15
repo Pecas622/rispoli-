@@ -130,6 +130,7 @@ export default function AdminUsers() {
                     <th>Nombre</th>
                     <th>Email</th>
                     <th>Teléfono</th>
+                    <th>Documento</th>
                     <th>Rol</th>
                     <th>Progreso</th>
                     <th>Registrado</th>
@@ -143,6 +144,7 @@ export default function AdminUsers() {
                       <td style={{fontSize:13,fontWeight:600}}>{u.name}</td>
                       <td style={{fontSize:13,color:'var(--text-2)'}}>{u.email}</td>
                       <td style={{fontSize:13,color:'var(--text-2)'}}>{u.phone || '—'}</td>
+                      <td style={{fontSize:13,color:'var(--text-2)'}}>{u.dni || '—'}</td>
                       <td><span className="badge badge-default">{u.role}</span></td>
                       <td style={{minWidth:130}}>
                         {u.progress?.coursesActive ? (
@@ -252,7 +254,7 @@ export default function AdminUsers() {
             <button className="modal-close-btn" onClick={()=>setDetailUser(null)}><X size={14}/></button>
             <p className="modal-title">{detailUser.name}</p>
             <p style={{fontSize:13,color:'var(--text-3)',marginTop:-16,marginBottom:20}}>
-              {detailUser.email}{detailUser.phone ? ` · ${detailUser.phone}` : ''}
+              {detailUser.email}{detailUser.phone ? ` · ${detailUser.phone}` : ''}{detailUser.dni ? ` · Doc. ${detailUser.dni}` : ''}
             </p>
 
             <p style={{fontSize:12,fontWeight:600,color:'var(--text-3)',textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:10}}>Cursos inscriptos</p>

@@ -259,10 +259,6 @@ export function Perfil() {
       showToast('Revisá el teléfono: falta el código de país o faltan dígitos', 'error');
       return;
     }
-    if (dni.trim() && dni.replace(/\D/g, '').length < 6) {
-      showToast('Revisá el DNI: faltan dígitos', 'error');
-      return;
-    }
     setSaving(true);
     await updateProfile({
       name,
@@ -332,11 +328,11 @@ export function Perfil() {
               <p className="perfil-field-note">Incluí el código de país (por ejemplo +54).</p>
             </div>
             <div className="perfil-field">
-              <label>DNI</label>
+              <label>Documento de identidad</label>
               <input
-                className="input" type="text" inputMode="numeric" value={dni}
+                className="input" type="text" value={dni}
                 onChange={e => setDni(e.target.value)}
-                placeholder="12345678"
+                placeholder="Número de documento"
               />
             </div>
 

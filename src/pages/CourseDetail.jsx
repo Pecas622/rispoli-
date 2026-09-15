@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Star, Clock, Users, BookOpen, Play, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Award, Lock, Tag, Check } from 'lucide-react';
+import { ArrowLeft, Star, Clock, BookOpen, Play, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Award, Lock, Tag, Check } from 'lucide-react';
 import { courses as mockCourses, testimonials } from '../data/courses';
 import { coursesApi, progressApi, paymentsApi, reviewsApi } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -106,6 +106,7 @@ export default function CourseDetail() {
   const [promoInput,    setPromoInput]    = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null); // cupón matcheado: {code, discountPercent}
   const [promoError,    setPromoError]    = useState(false);
+  const reviewsRef = useRef(null);   // sección de reseñas (destino del scroll)
   const reviewsTrackRef = useRef(null);
   const [reviewIndex, setReviewIndex] = useState(0);
   const [reviewPages, setReviewPages] = useState(1);
@@ -306,6 +307,15 @@ export default function CourseDetail() {
   // ── Carrusel de reseñas ─────────────────────────────────────────────────────
   // El track scrollea con scroll-snap: en mobile se desliza con el dedo y en
   // desktop con las flechas. Cada "página" es un ancho completo del track.
+  // Scrolleamos la ventana a mano (y no con scrollIntoView) porque este último
+  // también desplaza los contenedores scrolleables anidados: movía el carrusel.
+  const scrollToReviews = () => {
+    const el = reviewsRef.current;
+    if (!el) return;
+    const y = el.getBoundingClientRect().top + window.scrollY - 80; // 80 = navbar
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  };
+
   const slideReviews = (dir) => {
     const track = reviewsTrackRef.current;
     if (track) track.scrollBy({ left: dir * track.clientWidth, behavior: 'smooth' });
@@ -468,7 +478,19 @@ export default function CourseDetail() {
               )}
 
               <div className="detail-meta-row">
-                <span className="detail-meta-item"><Users size={13} /> +{course.students.toLocaleString()} estudiantes</span>
+                <button
+                  type="button"
+                  className="detail-meta-item detail-meta-link"
+                  onClick={scrollToReviews}
+                  title="Ver las reseñas de los alumnos"
+                >
+                  <span className="detail-meta-stars" aria-label={`${reviewsRating} de 5 estrellas`}>
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <Star key={i} size={13} fill={i < Math.round(Number(reviewsRating)) ? '#F59E0B' : 'none'} color="#F59E0B" />
+                    ))}
+                  </span>
+                  reseñas
+                </button>
                 {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
                 {course.hours && <span className="detail-meta-item"><BookOpen size={13} /> {course.hours}h de contenido</span>}
               </div>
@@ -728,7 +750,7 @@ export default function CourseDetail() {
 
               {/* ── Reseñas de alumnos ── */}
               {courseReviews.length > 0 && (
-                <div className="detail-section">
+                <div className="detail-section" ref={reviewsRef}>
                   <div className="reviews-head">
                     <h2 className="detail-section-title">Reseñas de alumnos</h2>
                     <div className="reviews-summary">
