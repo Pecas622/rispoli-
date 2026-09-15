@@ -242,10 +242,13 @@ model Enrollment {
 }
 
 model LessonProgress {
-  id          String   @id @default(cuid())
-  userId      String   @map("user_id")
-  lessonId    String   @map("lesson_id")
-  completedAt DateTime @default(now()) @map("completed_at")
+  id            String    @id @default(cuid())
+  userId        String    @map("user_id")
+  lessonId      String    @map("lesson_id")
+  // NULL = la clase no está marcada como completada (puede igual tener
+  // video_position guardado, de "continuar donde lo dejé").
+  completedAt   DateTime? @map("completed_at")
+  videoPosition Float     @default(0) @map("video_position")
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)

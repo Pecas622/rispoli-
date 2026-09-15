@@ -112,9 +112,12 @@ export const usersApi = {
 
 // ── Progress ──────────────────────────────────────────────
 export const progressApi = {
-  getCourse:      (courseId)  => api.get(`/progress/${courseId}`),
-  completeLesson: (lessonId)  => api.post(`/progress/lesson/${lessonId}`, {}),
-  uncompleteLesson: (lessonId) => api.delete(`/progress/lesson/${lessonId}`),
+  getCourse:        (courseId)  => api.get(`/progress/${courseId}`),
+  completeLesson:   (lessonId)  => api.post(`/progress/lesson/${lessonId}`, {}),
+  uncompleteLesson: (lessonId)  => api.delete(`/progress/lesson/${lessonId}`),
+  // "Continuar donde lo dejé": guarda el segundo del video sin marcar la
+  // clase como completada.
+  savePosition:     (lessonId, position) => api.patch(`/progress/lesson/${lessonId}/position`, { position }),
 };
 
 // ── Payments ──────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle, Circle, Play, Lock,
@@ -18,7 +18,88 @@ function extractVimeoId(url = '') {
   return url.match(/vimeo\.com\/(\d+)/)?.[1] ?? '';
 }
 
-function VideoPlayer({ videoType, videoUrl }) {
+// Cada cuántos segundos de reproducción real se guarda la posición.
+const SAVE_EVERY_SECONDS = 8;
+// No vale la pena retomar si quedó a menos de esto del inicio.
+const MIN_RESUME_SECONDS = 5;
+
+function VideoPlayer({ videoType, videoUrl, lessonId, savedPosition, onSavePosition }) {
+  const iframeRef = useRef(null);
+  const videoRef  = useRef(null);
+
+  // "Continuar donde lo dejé" para Vimeo: sin sumar el SDK de Vimeo, se habla
+  // con el iframe por postMessage (requiere ?api=1 en la URL del embed).
+  useEffect(() => {
+    if (videoType !== 'vimeo') return;
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    let ready = false;
+    let lastSaved = 0;
+    let lastSeconds = 0;
+
+    const send = (method, value) => {
+      iframe.contentWindow?.postMessage(JSON.stringify({ method, value }), 'https://player.vimeo.com');
+    };
+
+    const onMessage = (e) => {
+      if (e.source !== iframe.contentWindow) return;
+      let data;
+      try { data = JSON.parse(e.data); } catch { return; }
+
+      if (data.event === 'ready' && !ready) {
+        ready = true;
+        send('addEventListener', 'timeupdate');
+        if (savedPosition > MIN_RESUME_SECONDS) send('setCurrentTime', savedPosition);
+      }
+      if (data.event === 'timeupdate' && typeof data.data?.seconds === 'number') {
+        lastSeconds = data.data.seconds;
+        if (lastSeconds - lastSaved >= SAVE_EVERY_SECONDS) {
+          lastSaved = lastSeconds;
+          onSavePosition(lastSeconds);
+        }
+      }
+    };
+
+    window.addEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      // Guarda el resto de progreso que no llegó a los 8s al salir de la clase.
+      if (lastSeconds - lastSaved >= 1) onSavePosition(lastSeconds);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoType, lessonId]);
+
+  // Mismo comportamiento para el <video> nativo, con los eventos del DOM.
+  useEffect(() => {
+    if (videoType !== 'url' && videoType !== 'upload') return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    let lastSaved = 0;
+
+    const onLoadedMetadata = () => {
+      if (savedPosition > MIN_RESUME_SECONDS && savedPosition < video.duration - 1) {
+        video.currentTime = savedPosition;
+      }
+    };
+    const onTimeUpdate = () => {
+      if (video.currentTime - lastSaved >= SAVE_EVERY_SECONDS) {
+        lastSaved = video.currentTime;
+        onSavePosition(video.currentTime);
+      }
+    };
+
+    video.addEventListener('loadedmetadata', onLoadedMetadata);
+    video.addEventListener('timeupdate', onTimeUpdate);
+    return () => {
+      video.removeEventListener('loadedmetadata', onLoadedMetadata);
+      video.removeEventListener('timeupdate', onTimeUpdate);
+      if (video.currentTime - lastSaved >= 1) onSavePosition(video.currentTime);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoType, lessonId]);
+
   if (!videoType || videoType === 'none' || !videoUrl) {
     return (
       <div className="learn-no-video">
@@ -48,7 +129,8 @@ function VideoPlayer({ videoType, videoUrl }) {
     return (
       <div className="learn-video-wrap" onContextMenu={noDownload}>
         <iframe
-          src={`https://player.vimeo.com/video/${id}?badge=0&byline=0&portrait=0&title=0&sidedock=0&dnt=1`}
+          ref={iframeRef}
+          src={`https://player.vimeo.com/video/${id}?badge=0&byline=0&portrait=0&title=0&sidedock=0&dnt=1&api=1`}
           title="Video clase" allowFullScreen
         />
       </div>
@@ -58,6 +140,7 @@ function VideoPlayer({ videoType, videoUrl }) {
   return (
     <div className="learn-video-wrap" onContextMenu={noDownload}>
       <video
+        ref={videoRef}
         src={videoUrl} controls
         controlsList="nodownload nofullscreen"
         disablePictureInPicture
@@ -272,6 +355,7 @@ export default function Learn() {
   const [modules, setModules]   = useState([]);
   const [unlocked, setUnlocked] = useState(false);
   const [completedIds, setCompletedIds] = useState(new Set());
+  const [positions, setPositions] = useState({}); // { lessonId: segundos }
   const [activeLessonId, setActiveLessonId] = useState(null);
   const [collapsed, setCollapsed] = useState({});
   const [loading, setLoading]   = useState(true);
@@ -285,7 +369,7 @@ export default function Learn() {
     Promise.all([
       coursesApi.get(id),
       modulesApi.list(id),
-      progressApi.getCourse(id).catch(() => ({ completedLessonIds: [] })),
+      progressApi.getCourse(id).catch(() => ({ completedLessonIds: [], positions: {} })),
     ])
       .then(([courseRes, modulesRes, progressRes]) => {
         if (cancelled) return;
@@ -293,6 +377,7 @@ export default function Learn() {
         setModules(modulesRes.modules);
         setUnlocked(!!modulesRes.unlocked);
         setCompletedIds(new Set(progressRes.completedLessonIds ?? []));
+        setPositions(progressRes.positions ?? {});
 
         const firstLesson = modulesRes.modules?.[0]?.lessons?.[0];
         if (firstLesson) setActiveLessonId(firstLesson.id);
@@ -348,6 +433,12 @@ export default function Learn() {
     } finally {
       setMarking(false);
     }
+  };
+
+  // Best-effort: si falla no interrumpe la reproducción ni molesta al alumno.
+  const saveVideoPosition = (lessonId, seconds) => {
+    setPositions(prev => ({ ...prev, [lessonId]: seconds }));
+    progressApi.savePosition(lessonId, seconds).catch(() => {});
   };
 
   const goNext = () => {
@@ -429,7 +520,16 @@ export default function Learn() {
               <h1 className="learn-lesson-title">{activeLesson.title}</h1>
               {activeLesson.moduleTitle && <p className="learn-lesson-module">{activeLesson.moduleTitle}</p>}
 
-              {hasVideo && <VideoPlayer videoType={activeLesson.videoType} videoUrl={activeLesson.videoUrl} />}
+              {hasVideo && (
+                <VideoPlayer
+                  key={activeLesson.id}
+                  videoType={activeLesson.videoType}
+                  videoUrl={activeLesson.videoUrl}
+                  lessonId={activeLesson.id}
+                  savedPosition={positions[activeLesson.id] ?? 0}
+                  onSavePosition={(seconds) => saveVideoPosition(activeLesson.id, seconds)}
+                />
+              )}
               {hasText && <TextContent content={activeLesson.content} />}
               {!hasVideo && !hasText && (
                 <div className="learn-no-video">
