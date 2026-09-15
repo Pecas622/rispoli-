@@ -4,7 +4,7 @@ import { COUNTRY_CODES, DEFAULT_COUNTRY, findCountry } from '../utils/countries'
 import { detectCountry } from '../utils/currency';
 
 // Alumnos que entran por Google no pasan por el formulario de registro, así
-// que se quedan sin teléfono ni DNI (Google no los provee). Este modal los
+// que se quedan sin teléfono ni documento (Google no los provee). Este modal los
 // bloquea hasta que los completen, para que no queden cuentas incompletas.
 export default function CompleteProfileModal() {
   const { user, updateProfile, logout } = useApp();
@@ -32,7 +32,7 @@ export default function CompleteProfileModal() {
       data.phone = `${findCountry(phoneCountry)?.dial ?? ''}${digits}`;
     }
     if (needsDni) {
-      if (dni.replace(/\D/g, '').length < 6) { setError('DNI incompleto'); return; }
+      if (dni.replace(/\D/g, '').length < 6) { setError('Documento incompleto'); return; }
       data.dni = dni.trim();
     }
     setError('');
@@ -78,10 +78,10 @@ export default function CompleteProfileModal() {
           {needsDni && (
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--text-3)', marginBottom: 6 }}>
-                DNI
+                Documento de identidad
               </label>
               <input
-                className="input" type="text" inputMode="numeric" placeholder="12345678"
+                className="input" type="text" placeholder="Número de documento"
                 value={dni} onChange={e => setDni(e.target.value)}
                 autoFocus={!needsPhone}
               />
