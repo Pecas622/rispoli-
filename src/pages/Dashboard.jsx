@@ -18,6 +18,24 @@ const sidebarLinks = [
   { label: 'Perfil',        icon: User,     to: '/perfil' },
 ];
 
+// Ids de Purchase ya enviados desde este navegador (ver el efecto de respaldo
+// en el Dashboard). Se guardan los últimos 20; localStorage puede no estar
+// disponible (modo privado, etc.), en cuyo caso se comporta como antes.
+const PURCHASES_KEY = 'meta_purchases_enviados';
+function purchasesEnviados() {
+  try { return JSON.parse(localStorage.getItem(PURCHASES_KEY)) || []; } catch { return []; }
+}
+function yaSeEnvioPurchase(eventId) {
+  return purchasesEnviados().includes(eventId);
+}
+function recordarPurchase(eventId) {
+  try {
+    const lista = purchasesEnviados().filter(id => id !== eventId);
+    lista.push(eventId);
+    localStorage.setItem(PURCHASES_KEY, JSON.stringify(lista.slice(-20)));
+  } catch { /* sin localStorage no hay memoria entre visitas, pero tampoco rompe */ }
+}
+
 export default function Dashboard() {
   const { user, logout, enrollments, enrollmentsLoading } = useApp();
   const [activeNav, setActiveNav]       = useState('/dashboard');
@@ -49,6 +67,13 @@ export default function Dashboard() {
   // que el webhook (purchase_<id>) para que Meta lo deduplique en vez de
   // contar la venta dos veces. "sid" (Stripe) y "payment_id" (Mercado Pago,
   // que MP agrega solo al volver) son los mismos ids que arma el webhook.
+  //
+  // Se recuerda en localStorage qué ids ya se enviaron: la URL de "pago
+  // exitoso" queda guardada en el historial del navegador aunque después la
+  // limpiemos, y si el alumno vuelve a entrar por ahí días más tarde el
+  // Purchase se volvería a disparar con un id que Meta ya no puede cruzar
+  // con el del servidor (la ventana de deduplicación es de 48 h): lo contaba
+  // como una compra nueva.
   const purchaseTracked = useRef(false);
   useEffect(() => {
     if (paymentStatus !== 'success' || purchaseTracked.current) return;
@@ -60,6 +85,8 @@ export default function Dashboard() {
     if (!eventId) return; // sin id no se puede deduplicar con el webhook: mejor no mandar nada que duplicar la venta
 
     purchaseTracked.current = true;
+    if (yaSeEnvioPurchase(eventId)) return;
+    recordarPurchase(eventId);
     const course = allCourses.find(c => c.id === paidCourseId);
     pixelTrack('Purchase', {
       value:        course?.priceUSD ?? course?.price ?? 0,
