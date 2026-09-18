@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Star, Clock, Users, BookOpen } from 'lucide-react';
+import { Star, Clock, BookOpen } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice } from '../utils/pricing';
 import './CourseCard.css';
@@ -63,12 +63,14 @@ export default function CourseCard({ course }) {
           </div>
         )}
 
-        {/* Meta */}
-        <div className="cc-meta">
-          {course.duration && <span className="cc-meta-item"><Clock size={11} /> {course.duration}</span>}
-          {course.hours    && <span className="cc-meta-item"><BookOpen size={11} /> {course.hours}h</span>}
-          <span className="cc-meta-item"><Users size={11} /> +{course.students.toLocaleString()}</span>
-        </div>
+        {/* Meta — solo si hay algo que mostrar: un curso sin duración ni horas
+            (ej. uno "Próximamente") no deja una fila vacía */}
+        {(course.duration || course.hours) && (
+          <div className="cc-meta">
+            {course.duration && <span className="cc-meta-item"><Clock size={11} /> {course.duration}</span>}
+            {course.hours    && <span className="cc-meta-item"><BookOpen size={11} /> {course.hours}h</span>}
+          </div>
+        )}
       </div>
 
       {/* Footer */}
