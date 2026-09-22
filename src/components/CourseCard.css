@@ -129,25 +129,20 @@
 
 /* Footer */
 .cc-footer {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: flex-end;
   padding: 12px 20px 16px;
   border-top: 1px solid var(--border);
   margin-top: auto;
 }
 
-.cc-price {
-  display: flex; align-items: baseline; gap: 7px;
+.cc-soon-label {
+  margin-right: auto;
+  font-size: 15px; font-weight: 700;
+  color: var(--text-2); letter-spacing: -0.01em;
 }
 
-.cc-price-now {
-  font-size: 17px; font-weight: 700;
-  color: var(--text); letter-spacing: -0.02em;
-}
-
-.cc-price-was {
-  font-size: 12px; text-decoration: line-through;
-  color: var(--text-3);
-}
+/* Tarjeta "próximamente" de la home: nota en lugar del botón */
+.cc-soon-note { font-size: 13px; font-weight: 600; color: #2E63D6; }
 
 .cc-cta-btn {
   display: inline-flex; align-items: center;

@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Plus, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { ArrowRight, Plus, ChevronLeft, ChevronRight, Check, Video, Award, Briefcase, Globe } from 'lucide-react';
 import { courses as mockCourses, testimonials, faqs } from '../data/courses';
 import { coursesApi } from '../services/api';
 import CourseCard from '../components/CourseCard';
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { getRegionPrice, formatPrice } from '../utils/pricing';
 import { useSEO } from '../hooks/useSEO';
 import './Home.css';
 
@@ -16,31 +15,33 @@ const ALLIES = [
   { name: 'Go Travel Academy', src: '/logoo.png', color: '#2E63D6', plain: true },
 ];
 
+// Pilares de la plataforma: van en el hero, en lugar del carrusel de cursos
+// con precios (el precio solo se muestra en la ficha de cada curso).
+const PILLARS = [
+  { icon: Video,     title: '100% online',        desc: 'Clases grabadas, a tu ritmo y desde cualquier lugar.' },
+  { icon: Award,     title: 'Certificado',        desc: 'Al terminar cada curso. El de Agente de Viajes, avalado por la Universidad del Aconcagua.' },
+  { icon: Briefcase, title: 'Casos reales',       desc: 'Sistemas y situaciones del trabajo diario en turismo.' },
+  { icon: Globe,     title: 'Toda Latinoamérica', desc: 'Alumnos de toda la región aprendiendo con nosotros.' },
+];
+
 const LEARN = [
-  'Cotizar vuelos y hoteles',
-  'Armar paquetes turísticos',
-  'Manejar clientes reales',
-  'Evitar errores comunes de venta',
-  'Usar sistemas profesionales como el NDC y centrales de reservas de servicios terrestres',
+  'Cursos para trabajar en turismo: desde agente de viajes hasta destinos específicos',
+  'Clases 100% online y grabadas, para ver a tu ritmo desde cualquier país',
+  'Casos reales y sistemas profesionales del rubro',
+  'Docentes que trabajan hoy en la industria',
+  'Acompañamiento para dar el salto a vender viajes',
 ];
 
 const INCLUDES = [
-  'Certificado avalado por la Universidad del Aconcagua',
-  'Formación práctica con casos reales',
-  'Acceso a clases grabadas',
-  'Uso de sistemas profesionales',
+  'Certificado al finalizar cada curso',
+  'Acceso inmediato a las clases grabadas',
+  'Material descargable de cada clase',
+  'Foro de preguntas por clase, respondidas por el equipo',
 ];
 
 const HIGHLIGHTS = [
-  { title: 'Formación práctica', desc: 'Aprendé con casos reales.' },
-  { title: 'Herramientas', desc: 'Sistemas del rubro turístico y preparación para trabajar en turismo.' },
-];
-
-const AVATAR_IDS = [
-  'photo-1544005313-94ddf0286df2',
-  'photo-1539571696357-5a69c17a67c6',
-  'photo-1487412720507-e7ab37603c6f',
-  'photo-1506794778202-cad84cf45f1d',
+  { title: 'Formación práctica', desc: 'Aprendé con casos reales, no con teoría.' },
+  { title: 'Herramientas del rubro', desc: 'Sistemas profesionales y preparación real para trabajar en turismo.' },
 ];
 
 const ORG_JSON_LD = {
@@ -57,7 +58,7 @@ const ORG_JSON_LD = {
 };
 
 export default function Home() {
-  const { setAuthModal, region, dolarRate } = useApp();
+  const { setAuthModal } = useApp();
   const [openFaq, setOpenFaq] = useState(null);
   const [courses, setCourses] = useState(USE_API ? [] : mockCourses);
 
@@ -68,42 +69,20 @@ export default function Home() {
     coursesApi.list().then(res => setCourses(res.courses)).catch(() => setCourses([]));
   }, []);
 
-  // Carrusel de cursos: los cursos reales en venta + el próximo a lanzar. Central + laterales, bucle infinito.
-  // El match ignora mayúsculas/minúsculas: los títulos vienen de la base y
-  // pueden cambiar de capitalización sin que el curso se caiga del carrusel.
-  const carouselCourses = ['agente de viajes', 'florida al completo']
-    .map(title => courses.find(c => c.title?.toLowerCase().trim() === title))
-    .filter(Boolean);
+  // "Los más elegidos": los cursos en venta primero y, al final, el próximo a
+  // lanzar (precio 0) como tarjeta "próximamente".
   const comingSoon = courses.find(c => c.price === 0);
-  const slides = [
-    ...carouselCourses.map(c => ({ ...c, kind: 'course' })),
-    ...(comingSoon ? [{
-      kind: 'soon',
-      id: comingSoon.id,
-      category: 'Próximamente',
-      title: comingSoon.title,
-      subtitle: comingSoon.subtitle ?? '',
-      image: comingSoon.image,
-    }] : []),
+  const featured = [
+    ...courses.filter(c => c.price > 0).map(c => ({ ...c, kind: 'course' })),
+    ...(comingSoon ? [{ ...comingSoon, kind: 'soon', subtitle: comingSoon.subtitle ?? '' }] : []),
   ];
-  const n = slides.length;
-  const [activeIndex, setActiveIndex] = useState(0);
-  const nextSlide = () => setActiveIndex(i => (i + 1) % n);
-  const prevSlide = () => setActiveIndex(i => (i - 1 + n) % n);
-  const slidePos = (i) => {
-    const r = ((i - activeIndex) % n + n) % n;
-    if (r === 0) return 'is-center';
-    if (r === 1) return 'is-right';
-    if (r === n - 1) return 'is-left';
-    return 'is-hidden';
-  };
 
-  // Barra fija con CTA a cursos: aparece cuando el carrusel queda arriba (fuera de vista)
-  const carouselRef = useRef(null);
+  // Barra fija con CTA a cursos: aparece cuando los pilares del hero quedan arriba (fuera de vista)
+  const pillarsRef = useRef(null);
   const [showCtaBar, setShowCtaBar] = useState(false);
   useEffect(() => {
     const onScroll = () => {
-      const el = carouselRef.current;
+      const el = pillarsRef.current;
       if (el) setShowCtaBar(el.getBoundingClientRect().bottom < 70);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -163,92 +142,15 @@ export default function Home() {
             por la Universidad del Aconcagua.
           </p>
 
-          {/* Carrusel de cursos, justo debajo del texto secundario */}
-          <div className="hc-block" ref={carouselRef}>
-            <div className="hc-carousel">
-              <button className="hc-arrow hc-arrow-prev" onClick={prevSlide} aria-label="Anterior">
-                <ChevronLeft size={22} />
-              </button>
-
-              <div className="hc-stage">
-                {slides.map((s, i) => {
-                  const { current: slidePriceNow, original: slidePriceWas } =
-                    s.kind === 'course' ? getRegionPrice(s, region, dolarRate) : {};
-                  // Los cursos ya en venta: toda la card lleva al curso (como en
-                  // el grid). Las "próximamente" no tienen a dónde ir todavía,
-                  // así que solo recentran el carrusel al tocarlas.
-                  const CardTag  = s.kind === 'course' ? Link : 'article';
-                  const cardProp = s.kind === 'course'
-                    ? { to: `/cursos/${s.id}` }
-                    : { onClick: () => { if (slidePos(i) !== 'is-center') setActiveIndex(i); } };
-                  return (
-                  <CardTag
-                    className={`hc-card ${slidePos(i)} ${s.kind === 'soon' ? 'hc-card-soon' : ''}`}
-                    key={s.id}
-                    {...cardProp}
-                  >
-                    <div className="hc-card-media">
-                      <img src={s.image} alt={s.title} />
-                      <span className={`hc-badge ${s.kind === 'soon' ? 'hc-badge-soon' : ''}`}>
-                        {s.kind === 'course' ? `Certificado por ${s.certifiedBy || 'Go Travel Academy'}` : s.category}
-                      </span>
-                    </div>
-                    <div className="hc-card-body">
-                      <h3 className="hc-card-title">{s.title}</h3>
-                      <p className="hc-card-sub">{s.subtitle}</p>
-                      {s.kind === 'course' ? (
-                        <>
-                          <div className="hc-card-meta">
-                            <span>{s.level}</span><span>·</span><span>{s.duration}</span>
-                          </div>
-                          <div className="hc-card-foot">
-                            <div className="hc-price-group">
-                              <span className="hc-price">{formatPrice(slidePriceNow, region)}</span>
-                              {slidePriceWas > slidePriceNow && (
-                                <span className="hc-price-was">{formatPrice(slidePriceWas, region)}</span>
-                              )}
-                            </div>
-                            <span className="hc-card-btn">Ver curso</span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="hc-card-meta"><span>Muy pronto</span></div>
-                          <div className="hc-card-foot">
-                            <span className="hc-soon-note">Lanzamiento próximo</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </CardTag>
-                  );
-                })}
+          {/* Pilares de la plataforma (reemplaza al carrusel de cursos con precios) */}
+          <div className="hero-pillars" ref={pillarsRef}>
+            {PILLARS.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="hero-pillar">
+                <span className="hero-pillar-icon"><Icon size={20} strokeWidth={2} /></span>
+                <h3 className="hero-pillar-title">{title}</h3>
+                <p className="hero-pillar-desc">{desc}</p>
               </div>
-
-              <button className="hc-arrow hc-arrow-next" onClick={nextSlide} aria-label="Siguiente">
-                <ChevronRight size={22} />
-              </button>
-            </div>
-
-            <div className="hc-dots">
-              {slides.map((s, i) => (
-                <button
-                  key={s.id}
-                  className={`hc-dot ${activeIndex === i ? 'active' : ''}`}
-                  onClick={() => setActiveIndex(i)}
-                  aria-label={`Ir al curso ${i + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="hero-trust">
-            <div className="avatars">
-              {AVATAR_IDS.map(p => (
-                <img key={p} src={`https://images.unsplash.com/${p}?w=40&q=80`} alt="" className="avatar-sm" />
-              ))}
-            </div>
-            <span>Más de 3.000 agentes certificados</span>
+            ))}
           </div>
         </div>
       </section>
@@ -353,7 +255,7 @@ export default function Home() {
 
           <div className="course-info-grid">
             <div className="course-info-card">
-              <h3 className="course-info-title">¿Qué vas a aprender?</h3>
+              <h3 className="course-info-title">¿Qué vas a encontrar en Go Travel Academy?</h3>
               <ul className="course-info-list">
                 {LEARN.map(item => (
                   <li key={item}><Check size={18} strokeWidth={2.5} /><span>{item}</span></li>
@@ -361,7 +263,7 @@ export default function Home() {
               </ul>
             </div>
             <div className="course-info-card course-info-card--includes">
-              <h3 className="course-info-title">¿Qué incluye este curso?</h3>
+              <h3 className="course-info-title">¿Qué incluyen los cursos?</h3>
               <ul className="course-info-list">
                 {INCLUDES.map(item => (
                   <li key={item}><Check size={18} strokeWidth={2.5} /><span>{item}</span></li>
@@ -400,7 +302,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid-auto">
-            {slides.map(s => (
+            {featured.map(s => (
               s.kind === 'course'
                 ? <CourseCard key={s.id} course={s} />
                 : (
@@ -417,7 +319,7 @@ export default function Home() {
                       <p className="cc-soon-desc">{s.subtitle}</p>
                     </div>
                     <div className="cc-footer">
-                      <span className="hc-soon-note">Lanzamiento próximo</span>
+                      <span className="cc-soon-note">Lanzamiento próximo</span>
                     </div>
                   </article>
                 )
