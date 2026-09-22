@@ -285,11 +285,6 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="course-info-cta">
-            <Link to="/cursos" className="btn btn-primary btn-lg">
-              Ver cursos <ArrowRight size={16} />
-            </Link>
-          </div>
         </div>
       </section>
 
@@ -402,11 +397,6 @@ export default function Home() {
                 aria-label={`Testimonio ${i + 1}`}
               />
             ))}
-          </div>
-          <div className="test-cta">
-            <Link to="/cursos" className="btn btn-outline btn-lg">
-              Ver cursos <ArrowRight size={16} />
-            </Link>
           </div>
         </div>
       </section>
