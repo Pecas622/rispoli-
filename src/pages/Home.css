@@ -650,6 +650,24 @@
   .test-card-wrap:last-child  { margin-right: 9%; }
   .test-arrow { position: static; transform: none; order: 1; width: 42px; height: 42px; }
   .test-dots { margin-top: 12px; }
+  /* Todas las tarjetas de la misma altura (la más alta manda), contenido
+     arriba; el texto se recorta a 6 líneas y un "Leer más" sutil lo expande
+     (solo aparece si de verdad se recortó). */
+  .testimonial-card--solo { height: 100%; justify-content: flex-start; }
+  .test-body { flex: none; }
+  /* El pie no se parte en dos filas con un rol largo: nombre y rol ocupan
+     el ancho que queda al lado del avatar y el rol baja de línea ahí. */
+  .test-footer { flex-wrap: nowrap; }
+  .test-footer > div { flex: 1; min-width: 0; }
+  .test-body.is-clamped {
+    display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .test-more {
+    align-self: flex-start; margin-top: -8px;
+    background: none; border: none; padding: 0; cursor: pointer;
+    font: inherit; font-size: 13px; font-weight: 600; color: #2E63D6;
+  }
 }
 
 /* ── CTA STRIP ───────────────────────────────────────────── */

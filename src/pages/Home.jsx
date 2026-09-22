@@ -77,20 +77,39 @@ export default function Home() {
     ...(comingSoon ? [{ ...comingSoon, kind: 'soon', subtitle: comingSoon.subtitle ?? '' }] : []),
   ];
 
-  // Barra fija con CTA a cursos: aparece cuando los pilares del hero quedan arriba (fuera de vista)
-  const pillarsRef = useRef(null);
+  // Barra fija con CTA a cursos: aparece recién cuando la sección "Cursos
+  // destacados" llega a la parte de arriba de la pantalla (debajo del navbar).
+  const coursesRef = useRef(null);
   const [showCtaBar, setShowCtaBar] = useState(false);
   useEffect(() => {
     const onScroll = () => {
-      const el = pillarsRef.current;
-      if (el) setShowCtaBar(el.getBoundingClientRect().bottom < 70);
+      const el = coursesRef.current;
+      if (el) setShowCtaBar(el.getBoundingClientRect().top <= 80);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Testimonios: carrusel de a uno, con auto-avance cada 4s (se reinicia al interactuar)
+  // Testimonios: en celular el texto se recorta a unas líneas con un "Leer
+  // más" que lo expande. Solo se ofrece el botón en las reseñas que
+  // realmente quedaron recortadas (se mide al montar y al cambiar el ancho).
+  const testBodyRefs = useRef([]);
+  const [clampedTests, setClampedTests] = useState([]);   // índices recortados
+  const [expandedTests, setExpandedTests] = useState([]); // índices expandidos
+  useEffect(() => {
+    const measure = () => {
+      setClampedTests(testBodyRefs.current.flatMap((el, i) =>
+        el && el.scrollHeight > el.clientHeight + 1 ? [i] : []));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [expandedTests]);
+  const toggleTest = (i) => setExpandedTests(prev =>
+    prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]);
+
+  // Testimonios: carrusel de a uno, con auto-avance cada 6s (se reinicia al interactuar)
   const [testIndex, setTestIndex] = useState(0);
   const nextTest = () => setTestIndex(i => (i + 1) % testimonials.length);
   const prevTest = () => setTestIndex(i => (i - 1 + testimonials.length) % testimonials.length);
@@ -179,7 +198,7 @@ export default function Home() {
           </p>
 
           {/* Pilares de la plataforma (reemplaza al carrusel de cursos con precios) */}
-          <div className="hero-pillars" ref={pillarsRef}>
+          <div className="hero-pillars">
             {PILLARS.map(({ icon: Icon, title, desc }) => (
               <div key={title} className="hero-pillar">
                 <span className="hero-pillar-icon"><Icon size={20} strokeWidth={2} /></span>
@@ -222,70 +241,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      {/* ── TESTIMONIALS ────────────────────────────────── */}
-      <section className="testimonials-section">
-        <div className="container">
-          <div className="section-header centered">
-            <p className="section-eyebrow">Testimonios</p>
-            <h2 className="section-title">Resultados reales de agentes reales</h2>
-            <p className="section-lead">Historias de agentes que usaron Go Travel Academy para dar el salto en su carrera.</p>
-          </div>
-          <div className="test-carousel">
-            <button className="test-arrow test-arrow-prev" onClick={prevTest} aria-label="Anterior">
-              <ChevronLeft size={22} />
-            </button>
-
-            <div
-              className="test-stage"
-              ref={testTrackRef}
-              onScroll={onTestScroll}
-              onTouchStart={() => { testTouching.current = true; }}
-              onTouchEnd={() => { testTouching.current = false; }}
-            >
-              {testimonials.map((t, i) => (
-                <div
-                  key={t.id}
-                  className={`test-card-wrap ${testPos(i)}`}
-                  onClick={() => { if (testPos(i) !== 'is-center') setTestIndex(i); }}
-                >
-                  <div className="testimonial-card testimonial-card--solo">
-                    <div className="test-stars">
-                      {[...Array(t.rating)].map((_, i2) => (
-                        <svg key={i2} width="15" height="15" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                      ))}
-                    </div>
-                    <p className="test-body">"{t.text}"</p>
-                    <div className="test-footer">
-                      <img src={t.avatar} alt={t.name} className="test-avatar" />
-                      <div>
-                        <div className="test-name">{t.name}</div>
-                        <div className="test-role">{t.role}</div>
-                      </div>
-                      <div className="test-course-tag">{t.course}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button className="test-arrow test-arrow-next" onClick={nextTest} aria-label="Siguiente">
-              <ChevronRight size={22} />
-            </button>
-          </div>
-
-          <div className="test-dots">
-            {testimonials.map((t, i) => (
-              <button
-                key={t.id}
-                className={`test-dot ${testIndex === i ? 'active' : ''}`}
-                onClick={() => setTestIndex(i)}
-                aria-label={`Testimonio ${i + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ── WHY US ──────────────────────────────────────── */}
       <section className="why-section">
@@ -332,7 +287,7 @@ export default function Home() {
       </section>
 
       {/* ── FEATURED COURSES ────────────────────────────── */}
-      <section className="courses-section">
+      <section className="courses-section" ref={coursesRef}>
         <div className="container">
           <div className="section-header split">
             <div>
@@ -365,6 +320,80 @@ export default function Home() {
                     </div>
                   </article>
                 )
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ────────────────────────────────── */}
+      <section className="testimonials-section">
+        <div className="container">
+          <div className="section-header centered">
+            <p className="section-eyebrow">Testimonios</p>
+            <h2 className="section-title">Resultados reales de agentes reales</h2>
+            <p className="section-lead">Historias de agentes que usaron Go Travel Academy para dar el salto en su carrera.</p>
+          </div>
+          <div className="test-carousel">
+            <button className="test-arrow test-arrow-prev" onClick={prevTest} aria-label="Anterior">
+              <ChevronLeft size={22} />
+            </button>
+
+            <div
+              className="test-stage"
+              ref={testTrackRef}
+              onScroll={onTestScroll}
+              onTouchStart={() => { testTouching.current = true; }}
+              onTouchEnd={() => { testTouching.current = false; }}
+            >
+              {testimonials.map((t, i) => (
+                <div
+                  key={t.id}
+                  className={`test-card-wrap ${testPos(i)}`}
+                  onClick={() => { if (testPos(i) !== 'is-center') setTestIndex(i); }}
+                >
+                  <div className="testimonial-card testimonial-card--solo">
+                    <div className="test-stars">
+                      {[...Array(t.rating)].map((_, i2) => (
+                        <svg key={i2} width="15" height="15" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                      ))}
+                    </div>
+                    <p
+                      className={`test-body ${expandedTests.includes(i) ? '' : 'is-clamped'}`}
+                      ref={el => { testBodyRefs.current[i] = el; }}
+                    >
+                      "{t.text}"
+                    </p>
+                    {(clampedTests.includes(i) || expandedTests.includes(i)) && (
+                      <button type="button" className="test-more" onClick={e => { e.stopPropagation(); toggleTest(i); }}>
+                        {expandedTests.includes(i) ? 'Leer menos' : 'Leer más'}
+                      </button>
+                    )}
+                    <div className="test-footer">
+                      <img src={t.avatar} alt={t.name} className="test-avatar" />
+                      <div>
+                        <div className="test-name">{t.name}</div>
+                        <div className="test-role">{t.role}</div>
+                      </div>
+                      <div className="test-course-tag">{t.course}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button className="test-arrow test-arrow-next" onClick={nextTest} aria-label="Siguiente">
+              <ChevronRight size={22} />
+            </button>
+          </div>
+
+          <div className="test-dots">
+            {testimonials.map((t, i) => (
+              <button
+                key={t.id}
+                className={`test-dot ${testIndex === i ? 'active' : ''}`}
+                onClick={() => setTestIndex(i)}
+                aria-label={`Testimonio ${i + 1}`}
+              />
             ))}
           </div>
         </div>
