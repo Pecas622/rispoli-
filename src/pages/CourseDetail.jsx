@@ -654,6 +654,23 @@ export default function CourseDetail() {
                 )}
 
                 {modulesWithIdx.map((mod, i) => {
+                  // Sin comprar: el programa es texto plano (cada módulo con sus
+                  // clases), nada que abrir ni cerrar ni que parezca un botón.
+                  if (!enrolled) return (
+                    <div key={i} className="module-plain">
+                      <div className="module-plain-head">
+                        <div className="module-num">{String(i + 1).padStart(2, '0')}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="module-label">{mod.week}</div>
+                          <div className="module-name">{mod.title}</div>
+                        </div>
+                      </div>
+                      <ul className="module-plain-topics">
+                        {mod.topics.map(t => <li key={t}>{t}</li>)}
+                      </ul>
+                    </div>
+                  );
+
                   const modDone = enrolled && completedCount >= mod.endIdx;
                   const modInProgress = enrolled && completedCount > mod.startIdx && completedCount < mod.endIdx;
 

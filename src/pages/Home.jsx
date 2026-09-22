@@ -102,8 +102,44 @@ export default function Home() {
     if (r === nT - 1) return 'is-left';
     return 'is-hidden';
   };
+  // En celular el carrusel es una pista con scroll nativo (se arrastra con el
+  // dedo). Cuando cambia el índice (flechas, puntos, autoavance) se desplaza
+  // la pista hasta esa tarjeta; y cuando la persona arrastra, se lee qué
+  // tarjeta quedó centrada para actualizar el índice.
+  const testTrackRef = useRef(null);
+  const testTouching = useRef(false);
+  const testSnapTimer = useRef(null);
+  const isTestTrack = () => window.matchMedia('(max-width: 768px)').matches;
+  const testCardOffset = (track, card) => card.offsetLeft - (track.clientWidth - card.offsetWidth) / 2;
   useEffect(() => {
-    const id = setInterval(() => setTestIndex(i => (i + 1) % testimonials.length), 4000);
+    const track = testTrackRef.current;
+    if (!track || !isTestTrack()) return;
+    const card = track.children[testIndex];
+    if (card) track.scrollTo({ left: testCardOffset(track, card), behavior: 'smooth' });
+  }, [testIndex]);
+  const onTestScroll = () => {
+    const track = testTrackRef.current;
+    if (!track || !isTestTrack()) return;
+    clearTimeout(testSnapTimer.current);
+    // 150 ms sin eventos de scroll = la pista se detuvo (un desplazamiento
+    // suave en curso dispara eventos en cada cuadro, así que no se lee a mitad).
+    testSnapTimer.current = setTimeout(() => {
+      let best = 0, bestDist = Infinity;
+      [...track.children].forEach((card, i) => {
+        const d = Math.abs(testCardOffset(track, card) - track.scrollLeft);
+        if (d < bestDist) { bestDist = d; best = i; }
+      });
+      setTestIndex(best);
+    }, 150);
+  };
+
+  // Autoavance cada 6 s. Se reinicia al interactuar (cambia testIndex) y no
+  // avanza mientras hay un dedo apoyado en la pista.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (testTouching.current) return;
+      setTestIndex(i => (i + 1) % testimonials.length);
+    }, 6000);
     return () => clearInterval(id);
   }, [testIndex]);
 
@@ -200,7 +236,13 @@ export default function Home() {
               <ChevronLeft size={22} />
             </button>
 
-            <div className="test-stage">
+            <div
+              className="test-stage"
+              ref={testTrackRef}
+              onScroll={onTestScroll}
+              onTouchStart={() => { testTouching.current = true; }}
+              onTouchEnd={() => { testTouching.current = false; }}
+            >
               {testimonials.map((t, i) => (
                 <div
                   key={t.id}

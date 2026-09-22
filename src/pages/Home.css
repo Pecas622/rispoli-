@@ -627,6 +627,31 @@
 .test-dot { width: 9px; height: 9px; border-radius: 50%; border: none; padding: 0; background: var(--gray-2); cursor: pointer; transition: var(--transition); }
 .test-dot.active { background: #2E63D6; width: 26px; border-radius: 5px; }
 
+/* Celular: el carrusel pasa a ser una pista con scroll nativo (se arrastra
+   con el dedo, con snap por tarjeta). La tarjeta ocupa el 82% del ancho y la
+   siguiente asoma al costado; las flechas van debajo para no tapar el texto
+   y la altura es la de la tarjeta (no se corta la reseña). */
+@media (max-width: 768px) {
+  .test-carousel { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .test-stage {
+    flex: 0 0 100%; height: auto; overflow-x: auto; overflow-y: hidden;
+    display: flex; align-items: stretch; gap: 12px; padding: 6px 0 22px;
+    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .test-stage::-webkit-scrollbar { display: none; }
+  .test-card-wrap,
+  .test-card-wrap.is-center, .test-card-wrap.is-left, .test-card-wrap.is-right, .test-card-wrap.is-hidden {
+    position: static; flex: 0 0 82%; width: auto;
+    transform: none; opacity: 1; filter: none; pointer-events: auto; cursor: default;
+    scroll-snap-align: center; transition: none;
+  }
+  .test-card-wrap:first-child { margin-left: 9%; }
+  .test-card-wrap:last-child  { margin-right: 9%; }
+  .test-arrow { position: static; transform: none; order: 1; width: 42px; height: 42px; }
+  .test-dots { margin-top: 12px; }
+}
+
 /* ── CTA STRIP ───────────────────────────────────────────── */
 .cta-strip {
   background: linear-gradient(135deg, #06043F 0%, #0D0A6B 100%);
