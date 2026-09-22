@@ -122,6 +122,15 @@
   transition: var(--transition);
 }
 .hero-cta-btn:hover { background: #2554BC; transform: translateY(-1px); }
+.hero-cta-btn { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+/* Enlace secundario junto al botón principal: lleva a "¿Qué incluye?" */
+.hero-cta-link {
+  font-size: 15px; font-weight: 600; color: #2E63D6; text-decoration: none;
+  padding: 10px 6px; border-bottom: 1px dashed transparent; transition: var(--transition);
+}
+.hero-cta-link:hover { border-bottom-color: #2E63D6; }
+/* Para que el ancla no quede tapada por el navbar fijo */
+.why-section { scroll-margin-top: 80px; }
 
 .hero-freebie {
   display: inline-flex; align-items: center; gap: 6px;
@@ -624,6 +633,7 @@
 .test-arrow-next { right: 4px; }
 .test-arrow:hover { background: #2E63D6; color: #fff; border-color: #2E63D6; }
 .test-dots { display: flex; gap: 8px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+.test-cta { display: flex; justify-content: center; margin-top: 28px; }
 .test-dot { width: 9px; height: 9px; border-radius: 50%; border: none; padding: 0; background: var(--gray-2); cursor: pointer; transition: var(--transition); }
 .test-dot.active { background: #2E63D6; width: 26px; border-radius: 5px; }
 
