@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Star, Clock, BookOpen } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { getRegionPrice, formatPrice } from '../utils/pricing';
+import { getRegionPrice } from '../utils/pricing';
 import './CourseCard.css';
 
 const levelColor = {
@@ -73,16 +73,9 @@ export default function CourseCard({ course }) {
         )}
       </div>
 
-      {/* Footer */}
+      {/* Footer: sin precio — el precio solo se muestra en la ficha del curso */}
       <div className="cc-footer">
-        {comingSoon ? (
-          <span className="cc-price-now">Próximamente</span>
-        ) : (
-          <div className="cc-price">
-            <span className="cc-price-now">{formatPrice(current, region)}</span>
-            {discount > 0 && <span className="cc-price-was">{formatPrice(original, region)}</span>}
-          </div>
-        )}
+        {comingSoon && <span className="cc-soon-label">Próximamente</span>}
         <span className="cc-cta-btn">Ver curso</span>
       </div>
     </Link>

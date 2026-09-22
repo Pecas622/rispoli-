@@ -88,7 +88,10 @@
 .detail-meta-item strong { color: var(--text); }
 /* Las estrellas son un atajo a las reseñas: se ven como un dato más, pero son clickeables */
 .detail-meta-link {
-  background: none; border: none; padding: 0; font: inherit;
+  background: none; border: none; padding: 0;
+  /* Mismo tamaño y color que los otros datos de la fila: "font: inherit"
+     tomaba la letra del contenedor (más grande) y desentonaba */
+  font-family: inherit; font-size: 13px; line-height: inherit; color: var(--text-2);
   cursor: pointer; border-bottom: 1px dashed transparent;
   transition: var(--transition);
 }
@@ -265,6 +268,20 @@
 
 .module-chevron { color: var(--text-3); transition: transform 0.2s; flex-shrink: 0; }
 .module-chevron.open { transform: rotate(180deg); }
+
+/* Programa para quien no compró: texto plano, sin caja, sin hover ni desplegable */
+.module-plain { padding: 16px 0; border-bottom: 1px solid var(--border); }
+.module-plain:last-child { border-bottom: none; }
+.module-plain-head { display: flex; align-items: flex-start; gap: 14px; }
+.module-plain-topics { list-style: none; margin: 10px 0 0 42px; padding: 0; display: grid; gap: 6px; }
+.module-plain-topics li {
+  position: relative; padding-left: 14px;
+  font-size: 13px; line-height: 1.5; color: var(--text-2); overflow-wrap: break-word;
+}
+.module-plain-topics li::before {
+  content: ''; position: absolute; left: 0; top: 8px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--border-2);
+}
 
 .mod-status-pill {
   font-size: 11px; font-weight: 600;

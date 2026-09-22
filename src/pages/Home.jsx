@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Plus, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { ArrowRight, Plus, ChevronLeft, ChevronRight, Check, Video, Award, Briefcase, Globe } from 'lucide-react';
 import { courses as mockCourses, testimonials, faqs } from '../data/courses';
 import { coursesApi } from '../services/api';
 import CourseCard from '../components/CourseCard';
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { getRegionPrice, formatPrice } from '../utils/pricing';
 import { useSEO } from '../hooks/useSEO';
 import './Home.css';
 
@@ -16,31 +15,33 @@ const ALLIES = [
   { name: 'Go Travel Academy', src: '/logoo.png', color: '#2E63D6', plain: true },
 ];
 
+// Pilares de la plataforma: van en el hero, en lugar del carrusel de cursos
+// con precios (el precio solo se muestra en la ficha de cada curso).
+const PILLARS = [
+  { icon: Video,     title: '100% online',        desc: 'Clases grabadas, a tu ritmo y desde cualquier lugar.' },
+  { icon: Award,     title: 'Certificado',        desc: 'Al terminar cada curso. El de Agente de Viajes, avalado por la Universidad del Aconcagua.' },
+  { icon: Briefcase, title: 'Casos reales',       desc: 'Sistemas y situaciones del trabajo diario en turismo.' },
+  { icon: Globe,     title: 'Toda Latinoamérica', desc: 'Alumnos de toda la región aprendiendo con nosotros.' },
+];
+
 const LEARN = [
-  'Cotizar vuelos y hoteles',
-  'Armar paquetes turísticos',
-  'Manejar clientes reales',
-  'Evitar errores comunes de venta',
-  'Usar sistemas profesionales como el NDC y centrales de reservas de servicios terrestres',
+  'Cursos para trabajar en turismo: desde agente de viajes hasta destinos específicos',
+  'Clases 100% online y grabadas, para ver a tu ritmo desde cualquier país',
+  'Casos reales y sistemas profesionales del rubro',
+  'Docentes que trabajan hoy en la industria',
+  'Acompañamiento para dar el salto a vender viajes',
 ];
 
 const INCLUDES = [
-  'Certificado avalado por la Universidad del Aconcagua',
-  'Formación práctica con casos reales',
-  'Acceso a clases grabadas',
-  'Uso de sistemas profesionales',
+  'Certificado al finalizar cada curso',
+  'Acceso inmediato a las clases grabadas',
+  'Material descargable de cada clase',
+  'Foro de preguntas por clase, respondidas por el equipo',
 ];
 
 const HIGHLIGHTS = [
-  { title: 'Formación práctica', desc: 'Aprendé con casos reales.' },
-  { title: 'Herramientas', desc: 'Sistemas del rubro turístico y preparación para trabajar en turismo.' },
-];
-
-const AVATAR_IDS = [
-  'photo-1544005313-94ddf0286df2',
-  'photo-1539571696357-5a69c17a67c6',
-  'photo-1487412720507-e7ab37603c6f',
-  'photo-1506794778202-cad84cf45f1d',
+  { title: 'Formación práctica', desc: 'Aprendé con casos reales, no con teoría.' },
+  { title: 'Herramientas del rubro', desc: 'Sistemas profesionales y preparación real para trabajar en turismo.' },
 ];
 
 const ORG_JSON_LD = {
@@ -57,7 +58,7 @@ const ORG_JSON_LD = {
 };
 
 export default function Home() {
-  const { setAuthModal, region, dolarRate } = useApp();
+  const { setAuthModal } = useApp();
   const [openFaq, setOpenFaq] = useState(null);
   const [courses, setCourses] = useState(USE_API ? [] : mockCourses);
 
@@ -68,50 +69,47 @@ export default function Home() {
     coursesApi.list().then(res => setCourses(res.courses)).catch(() => setCourses([]));
   }, []);
 
-  // Carrusel de cursos: los cursos reales en venta + el próximo a lanzar. Central + laterales, bucle infinito.
-  // El match ignora mayúsculas/minúsculas: los títulos vienen de la base y
-  // pueden cambiar de capitalización sin que el curso se caiga del carrusel.
-  const carouselCourses = ['agente de viajes', 'florida al completo']
-    .map(title => courses.find(c => c.title?.toLowerCase().trim() === title))
-    .filter(Boolean);
+  // "Los más elegidos": los cursos en venta primero y, al final, el próximo a
+  // lanzar (precio 0) como tarjeta "próximamente".
   const comingSoon = courses.find(c => c.price === 0);
-  const slides = [
-    ...carouselCourses.map(c => ({ ...c, kind: 'course' })),
-    ...(comingSoon ? [{
-      kind: 'soon',
-      id: comingSoon.id,
-      category: 'Próximamente',
-      title: comingSoon.title,
-      subtitle: comingSoon.subtitle ?? '',
-      image: comingSoon.image,
-    }] : []),
+  const featured = [
+    ...courses.filter(c => c.price > 0).map(c => ({ ...c, kind: 'course' })),
+    ...(comingSoon ? [{ ...comingSoon, kind: 'soon', subtitle: comingSoon.subtitle ?? '' }] : []),
   ];
-  const n = slides.length;
-  const [activeIndex, setActiveIndex] = useState(0);
-  const nextSlide = () => setActiveIndex(i => (i + 1) % n);
-  const prevSlide = () => setActiveIndex(i => (i - 1 + n) % n);
-  const slidePos = (i) => {
-    const r = ((i - activeIndex) % n + n) % n;
-    if (r === 0) return 'is-center';
-    if (r === 1) return 'is-right';
-    if (r === n - 1) return 'is-left';
-    return 'is-hidden';
-  };
 
-  // Barra fija con CTA a cursos: aparece cuando el carrusel queda arriba (fuera de vista)
-  const carouselRef = useRef(null);
+  // Barra fija con CTA a cursos: aparece recién cuando la sección "Cursos
+  // destacados" llega a la parte de arriba de la pantalla (debajo del navbar).
+  const coursesRef = useRef(null);
   const [showCtaBar, setShowCtaBar] = useState(false);
   useEffect(() => {
     const onScroll = () => {
-      const el = carouselRef.current;
-      if (el) setShowCtaBar(el.getBoundingClientRect().bottom < 70);
+      const el = coursesRef.current;
+      if (el) setShowCtaBar(el.getBoundingClientRect().top <= 80);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Testimonios: carrusel de a uno, con auto-avance cada 4s (se reinicia al interactuar)
+  // Testimonios: en celular el texto se recorta a unas líneas con un "Leer
+  // más" que lo expande. Solo se ofrece el botón en las reseñas que
+  // realmente quedaron recortadas (se mide al montar y al cambiar el ancho).
+  const testBodyRefs = useRef([]);
+  const [clampedTests, setClampedTests] = useState([]);   // índices recortados
+  const [expandedTests, setExpandedTests] = useState([]); // índices expandidos
+  useEffect(() => {
+    const measure = () => {
+      setClampedTests(testBodyRefs.current.flatMap((el, i) =>
+        el && el.scrollHeight > el.clientHeight + 1 ? [i] : []));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [expandedTests]);
+  const toggleTest = (i) => setExpandedTests(prev =>
+    prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]);
+
+  // Testimonios: carrusel de a uno, con auto-avance cada 6s (se reinicia al interactuar)
   const [testIndex, setTestIndex] = useState(0);
   const nextTest = () => setTestIndex(i => (i + 1) % testimonials.length);
   const prevTest = () => setTestIndex(i => (i - 1 + testimonials.length) % testimonials.length);
@@ -123,8 +121,44 @@ export default function Home() {
     if (r === nT - 1) return 'is-left';
     return 'is-hidden';
   };
+  // En celular el carrusel es una pista con scroll nativo (se arrastra con el
+  // dedo). Cuando cambia el índice (flechas, puntos, autoavance) se desplaza
+  // la pista hasta esa tarjeta; y cuando la persona arrastra, se lee qué
+  // tarjeta quedó centrada para actualizar el índice.
+  const testTrackRef = useRef(null);
+  const testTouching = useRef(false);
+  const testSnapTimer = useRef(null);
+  const isTestTrack = () => window.matchMedia('(max-width: 768px)').matches;
+  const testCardOffset = (track, card) => card.offsetLeft - (track.clientWidth - card.offsetWidth) / 2;
   useEffect(() => {
-    const id = setInterval(() => setTestIndex(i => (i + 1) % testimonials.length), 4000);
+    const track = testTrackRef.current;
+    if (!track || !isTestTrack()) return;
+    const card = track.children[testIndex];
+    if (card) track.scrollTo({ left: testCardOffset(track, card), behavior: 'smooth' });
+  }, [testIndex]);
+  const onTestScroll = () => {
+    const track = testTrackRef.current;
+    if (!track || !isTestTrack()) return;
+    clearTimeout(testSnapTimer.current);
+    // 150 ms sin eventos de scroll = la pista se detuvo (un desplazamiento
+    // suave en curso dispara eventos en cada cuadro, así que no se lee a mitad).
+    testSnapTimer.current = setTimeout(() => {
+      let best = 0, bestDist = Infinity;
+      [...track.children].forEach((card, i) => {
+        const d = Math.abs(testCardOffset(track, card) - track.scrollLeft);
+        if (d < bestDist) { bestDist = d; best = i; }
+      });
+      setTestIndex(best);
+    }, 150);
+  };
+
+  // Autoavance cada 6 s. Se reinicia al interactuar (cambia testIndex) y no
+  // avanza mientras hay un dedo apoyado en la pista.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (testTouching.current) return;
+      setTestIndex(i => (i + 1) % testimonials.length);
+    }, 6000);
     return () => clearInterval(id);
   }, [testIndex]);
 
@@ -163,92 +197,15 @@ export default function Home() {
             por la Universidad del Aconcagua.
           </p>
 
-          {/* Carrusel de cursos, justo debajo del texto secundario */}
-          <div className="hc-block" ref={carouselRef}>
-            <div className="hc-carousel">
-              <button className="hc-arrow hc-arrow-prev" onClick={prevSlide} aria-label="Anterior">
-                <ChevronLeft size={22} />
-              </button>
-
-              <div className="hc-stage">
-                {slides.map((s, i) => {
-                  const { current: slidePriceNow, original: slidePriceWas } =
-                    s.kind === 'course' ? getRegionPrice(s, region, dolarRate) : {};
-                  // Los cursos ya en venta: toda la card lleva al curso (como en
-                  // el grid). Las "próximamente" no tienen a dónde ir todavía,
-                  // así que solo recentran el carrusel al tocarlas.
-                  const CardTag  = s.kind === 'course' ? Link : 'article';
-                  const cardProp = s.kind === 'course'
-                    ? { to: `/cursos/${s.id}` }
-                    : { onClick: () => { if (slidePos(i) !== 'is-center') setActiveIndex(i); } };
-                  return (
-                  <CardTag
-                    className={`hc-card ${slidePos(i)} ${s.kind === 'soon' ? 'hc-card-soon' : ''}`}
-                    key={s.id}
-                    {...cardProp}
-                  >
-                    <div className="hc-card-media">
-                      <img src={s.image} alt={s.title} />
-                      <span className={`hc-badge ${s.kind === 'soon' ? 'hc-badge-soon' : ''}`}>
-                        {s.kind === 'course' ? `Certificado por ${s.certifiedBy || 'Go Travel Academy'}` : s.category}
-                      </span>
-                    </div>
-                    <div className="hc-card-body">
-                      <h3 className="hc-card-title">{s.title}</h3>
-                      <p className="hc-card-sub">{s.subtitle}</p>
-                      {s.kind === 'course' ? (
-                        <>
-                          <div className="hc-card-meta">
-                            <span>{s.level}</span><span>·</span><span>{s.duration}</span>
-                          </div>
-                          <div className="hc-card-foot">
-                            <div className="hc-price-group">
-                              <span className="hc-price">{formatPrice(slidePriceNow, region)}</span>
-                              {slidePriceWas > slidePriceNow && (
-                                <span className="hc-price-was">{formatPrice(slidePriceWas, region)}</span>
-                              )}
-                            </div>
-                            <span className="hc-card-btn">Ver curso</span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="hc-card-meta"><span>Muy pronto</span></div>
-                          <div className="hc-card-foot">
-                            <span className="hc-soon-note">Lanzamiento próximo</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </CardTag>
-                  );
-                })}
+          {/* Pilares de la plataforma (reemplaza al carrusel de cursos con precios) */}
+          <div className="hero-pillars">
+            {PILLARS.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="hero-pillar">
+                <span className="hero-pillar-icon"><Icon size={20} strokeWidth={2} /></span>
+                <h3 className="hero-pillar-title">{title}</h3>
+                <p className="hero-pillar-desc">{desc}</p>
               </div>
-
-              <button className="hc-arrow hc-arrow-next" onClick={nextSlide} aria-label="Siguiente">
-                <ChevronRight size={22} />
-              </button>
-            </div>
-
-            <div className="hc-dots">
-              {slides.map((s, i) => (
-                <button
-                  key={s.id}
-                  className={`hc-dot ${activeIndex === i ? 'active' : ''}`}
-                  onClick={() => setActiveIndex(i)}
-                  aria-label={`Ir al curso ${i + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="hero-trust">
-            <div className="avatars">
-              {AVATAR_IDS.map(p => (
-                <img key={p} src={`https://images.unsplash.com/${p}?w=40&q=80`} alt="" className="avatar-sm" />
-              ))}
-            </div>
-            <span>Más de 3.000 agentes certificados</span>
+            ))}
           </div>
         </div>
       </section>
@@ -285,64 +242,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── TESTIMONIALS ────────────────────────────────── */}
-      <section className="testimonials-section">
-        <div className="container">
-          <div className="section-header centered">
-            <p className="section-eyebrow">Testimonios</p>
-            <h2 className="section-title">Resultados reales de agentes reales</h2>
-            <p className="section-lead">Historias de agentes que usaron Go Travel Academy para dar el salto en su carrera.</p>
-          </div>
-          <div className="test-carousel">
-            <button className="test-arrow test-arrow-prev" onClick={prevTest} aria-label="Anterior">
-              <ChevronLeft size={22} />
-            </button>
-
-            <div className="test-stage">
-              {testimonials.map((t, i) => (
-                <div
-                  key={t.id}
-                  className={`test-card-wrap ${testPos(i)}`}
-                  onClick={() => { if (testPos(i) !== 'is-center') setTestIndex(i); }}
-                >
-                  <div className="testimonial-card testimonial-card--solo">
-                    <div className="test-stars">
-                      {[...Array(t.rating)].map((_, i2) => (
-                        <svg key={i2} width="15" height="15" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                      ))}
-                    </div>
-                    <p className="test-body">"{t.text}"</p>
-                    <div className="test-footer">
-                      <img src={t.avatar} alt={t.name} className="test-avatar" />
-                      <div>
-                        <div className="test-name">{t.name}</div>
-                        <div className="test-role">{t.role}</div>
-                      </div>
-                      <div className="test-course-tag">{t.course}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button className="test-arrow test-arrow-next" onClick={nextTest} aria-label="Siguiente">
-              <ChevronRight size={22} />
-            </button>
-          </div>
-
-          <div className="test-dots">
-            {testimonials.map((t, i) => (
-              <button
-                key={t.id}
-                className={`test-dot ${testIndex === i ? 'active' : ''}`}
-                onClick={() => setTestIndex(i)}
-                aria-label={`Testimonio ${i + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── WHY US ──────────────────────────────────────── */}
       <section className="why-section">
         <div className="container">
@@ -353,7 +252,7 @@ export default function Home() {
 
           <div className="course-info-grid">
             <div className="course-info-card">
-              <h3 className="course-info-title">¿Qué vas a aprender?</h3>
+              <h3 className="course-info-title">¿Qué vas a encontrar en Go Travel Academy?</h3>
               <ul className="course-info-list">
                 {LEARN.map(item => (
                   <li key={item}><Check size={18} strokeWidth={2.5} /><span>{item}</span></li>
@@ -361,7 +260,7 @@ export default function Home() {
               </ul>
             </div>
             <div className="course-info-card course-info-card--includes">
-              <h3 className="course-info-title">¿Qué incluye este curso?</h3>
+              <h3 className="course-info-title">¿Qué incluyen los cursos?</h3>
               <ul className="course-info-list">
                 {INCLUDES.map(item => (
                   <li key={item}><Check size={18} strokeWidth={2.5} /><span>{item}</span></li>
@@ -388,7 +287,7 @@ export default function Home() {
       </section>
 
       {/* ── FEATURED COURSES ────────────────────────────── */}
-      <section className="courses-section">
+      <section className="courses-section" ref={coursesRef}>
         <div className="container">
           <div className="section-header split">
             <div>
@@ -400,7 +299,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid-auto">
-            {slides.map(s => (
+            {featured.map(s => (
               s.kind === 'course'
                 ? <CourseCard key={s.id} course={s} />
                 : (
@@ -417,10 +316,84 @@ export default function Home() {
                       <p className="cc-soon-desc">{s.subtitle}</p>
                     </div>
                     <div className="cc-footer">
-                      <span className="hc-soon-note">Lanzamiento próximo</span>
+                      <span className="cc-soon-note">Lanzamiento próximo</span>
                     </div>
                   </article>
                 )
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ────────────────────────────────── */}
+      <section className="testimonials-section">
+        <div className="container">
+          <div className="section-header centered">
+            <p className="section-eyebrow">Testimonios</p>
+            <h2 className="section-title">Resultados reales de agentes reales</h2>
+            <p className="section-lead">Historias de agentes que usaron Go Travel Academy para dar el salto en su carrera.</p>
+          </div>
+          <div className="test-carousel">
+            <button className="test-arrow test-arrow-prev" onClick={prevTest} aria-label="Anterior">
+              <ChevronLeft size={22} />
+            </button>
+
+            <div
+              className="test-stage"
+              ref={testTrackRef}
+              onScroll={onTestScroll}
+              onTouchStart={() => { testTouching.current = true; }}
+              onTouchEnd={() => { testTouching.current = false; }}
+            >
+              {testimonials.map((t, i) => (
+                <div
+                  key={t.id}
+                  className={`test-card-wrap ${testPos(i)}`}
+                  onClick={() => { if (testPos(i) !== 'is-center') setTestIndex(i); }}
+                >
+                  <div className="testimonial-card testimonial-card--solo">
+                    <div className="test-stars">
+                      {[...Array(t.rating)].map((_, i2) => (
+                        <svg key={i2} width="15" height="15" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                      ))}
+                    </div>
+                    <p
+                      className={`test-body ${expandedTests.includes(i) ? '' : 'is-clamped'}`}
+                      ref={el => { testBodyRefs.current[i] = el; }}
+                    >
+                      "{t.text}"
+                    </p>
+                    {(clampedTests.includes(i) || expandedTests.includes(i)) && (
+                      <button type="button" className="test-more" onClick={e => { e.stopPropagation(); toggleTest(i); }}>
+                        {expandedTests.includes(i) ? 'Leer menos' : 'Leer más'}
+                      </button>
+                    )}
+                    <div className="test-footer">
+                      <img src={t.avatar} alt={t.name} className="test-avatar" />
+                      <div>
+                        <div className="test-name">{t.name}</div>
+                        <div className="test-role">{t.role}</div>
+                      </div>
+                      <div className="test-course-tag">{t.course}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button className="test-arrow test-arrow-next" onClick={nextTest} aria-label="Siguiente">
+              <ChevronRight size={22} />
+            </button>
+          </div>
+
+          <div className="test-dots">
+            {testimonials.map((t, i) => (
+              <button
+                key={t.id}
+                className={`test-dot ${testIndex === i ? 'active' : ''}`}
+                onClick={() => setTestIndex(i)}
+                aria-label={`Testimonio ${i + 1}`}
+              />
             ))}
           </div>
         </div>
