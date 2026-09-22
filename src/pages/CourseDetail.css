@@ -88,7 +88,10 @@
 .detail-meta-item strong { color: var(--text); }
 /* Las estrellas son un atajo a las reseñas: se ven como un dato más, pero son clickeables */
 .detail-meta-link {
-  background: none; border: none; padding: 0; font: inherit;
+  background: none; border: none; padding: 0;
+  /* Mismo tamaño y color que los otros datos de la fila: "font: inherit"
+     tomaba la letra del contenedor (más grande) y desentonaba */
+  font-family: inherit; font-size: 13px; line-height: inherit; color: var(--text-2);
   cursor: pointer; border-bottom: 1px dashed transparent;
   transition: var(--transition);
 }

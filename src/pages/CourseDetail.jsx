@@ -489,7 +489,7 @@ export default function CourseDetail() {
                       <Star key={i} size={13} fill={i < Math.round(Number(reviewsRating)) ? '#F59E0B' : 'none'} color="#F59E0B" />
                     ))}
                   </span>
-                  reseñas
+                  Reseñas
                 </button>
                 {course.duration && <span className="detail-meta-item"><Clock size={13} /> {course.duration}</span>}
                 {course.hours && <span className="detail-meta-item"><BookOpen size={13} /> {course.hours}h de contenido</span>}
