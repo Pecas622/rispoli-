@@ -122,6 +122,15 @@
   transition: var(--transition);
 }
 .hero-cta-btn:hover { background: #2554BC; transform: translateY(-1px); }
+.hero-cta-btn { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+/* Enlace secundario junto al botón principal: lleva a "¿Qué incluye?" */
+.hero-cta-link {
+  font-size: 15px; font-weight: 600; color: #2E63D6; text-decoration: none;
+  padding: 10px 6px; border-bottom: 1px dashed transparent; transition: var(--transition);
+}
+.hero-cta-link:hover { border-bottom-color: #2E63D6; }
+/* Para que el ancla no quede tapada por el navbar fijo */
+.why-section { scroll-margin-top: 80px; }
 
 .hero-freebie {
   display: inline-flex; align-items: center; gap: 6px;
@@ -398,7 +407,6 @@
 .course-highlight h4 { font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
 .course-highlight p { font-size: 14px; color: var(--text-2); line-height: 1.55; }
 
-.course-info-cta { text-align: center; }
 
 /* ── BARRA FIJA CTA (aparece al pasar el carrusel) ───────── */
 .course-cta-bar {

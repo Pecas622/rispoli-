@@ -18,10 +18,10 @@ const ALLIES = [
 // Pilares de la plataforma: van en el hero, en lugar del carrusel de cursos
 // con precios (el precio solo se muestra en la ficha de cada curso).
 const PILLARS = [
-  { icon: Video,     title: '100% online',        desc: 'Clases grabadas, a tu ritmo y desde cualquier lugar.' },
-  { icon: Award,     title: 'Certificado',        desc: 'Al terminar cada curso. El de Agente de Viajes, avalado por la Universidad del Aconcagua.' },
-  { icon: Briefcase, title: 'Casos reales',       desc: 'Sistemas y situaciones del trabajo diario en turismo.' },
-  { icon: Globe,     title: 'Toda Latinoamérica', desc: 'Alumnos de toda la región aprendiendo con nosotros.' },
+  { icon: Video,     title: '100% online, a tu ritmo',                                 desc: 'Clases grabadas para ver cuando quieras, las veces que quieras.' },
+  { icon: Award,     title: 'Certificado avalado por la Universidad del Aconcagua',     desc: 'Al terminar el curso de Agente de Viajes recibís tu certificado con respaldo universitario.' },
+  { icon: Briefcase, title: 'Prácticas reales',                                        desc: 'Cotizás, armás paquetes y usás los sistemas del rubro, como en una agencia.' },
+  { icon: Globe,     title: 'Estudiá desde cualquier lugar de Latinoamérica',          desc: 'Acceso inmediato, desde cualquier país y en tu horario.' },
 ];
 
 const LEARN = [
@@ -207,6 +207,13 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          <div className="hero-cta">
+            <Link to="/cursos" className="hero-cta-btn">
+              Ver cursos <ArrowRight size={17} />
+            </Link>
+            <a href="#que-incluye" className="hero-cta-link">¿Qué incluye?</a>
+          </div>
         </div>
       </section>
 
@@ -243,7 +250,7 @@ export default function Home() {
       </div>
 
       {/* ── WHY US ──────────────────────────────────────── */}
-      <section className="why-section">
+      <section className="why-section" id="que-incluye">
         <div className="container">
           <div className="section-header centered">
             <p className="section-eyebrow">Por qué Go Travel Academy</p>
@@ -278,11 +285,6 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="course-info-cta">
-            <Link to="/cursos" className="btn btn-primary btn-lg">
-              Ver cursos <ArrowRight size={16} />
-            </Link>
-          </div>
         </div>
       </section>
 
