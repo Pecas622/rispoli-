@@ -5,7 +5,7 @@ import {
   Home, Download, User, LogOut, Receipt,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { coursesApi } from '../services/api';
+import { coursesApi, paymentsApi } from '../services/api';
 import { pixelTrack } from '../lib/pixel';
 import './Dashboard.css';
 
@@ -34,6 +34,30 @@ function recordarPurchase(eventId) {
     lista.push(eventId);
     localStorage.setItem(PURCHASES_KEY, JSON.stringify(lista.slice(-20)));
   } catch { /* sin localStorage no hay memoria entre visitas, pero tampoco rompe */ }
+}
+
+// Busca en el historial de pagos del alumno la fila de ESTE pago (por el id
+// de Stripe o de Mercado Pago que viene en la URL de vuelta).
+function buscarPagoEnHistorial(history, { sid, paymentId }) {
+  return (history || []).find(h =>
+    (sid && h.stripeSessionId === sid) || (paymentId && String(h.mpPaymentId) === String(paymentId))
+  ) || null;
+}
+
+// Monto real cobrado según el webhook (descuento por transferencia, cupón,
+// etc. ya aplicados). El webhook suele llegar en segundos; se reintenta un
+// par de veces y, si todavía no está, se devuelve null para usar el precio
+// de lista.
+async function montoRealDelPago(ids, intentos = 3, esperaMs = 2500) {
+  for (let i = 0; i < intentos; i++) {
+    try {
+      const { history } = await paymentsApi.history();
+      const pago = buscarPagoEnHistorial(history, ids);
+      if (pago && pago.amount > 0) return { value: pago.amount, currency: pago.currency };
+    } catch { /* sin red o sin sesión: se usa el precio de lista */ }
+    if (i < intentos - 1) await new Promise(r => setTimeout(r, esperaMs));
+  }
+  return null;
 }
 
 export default function Dashboard() {
@@ -86,15 +110,27 @@ export default function Dashboard() {
 
     purchaseTracked.current = true;
     if (yaSeEnvioPurchase(eventId)) return;
-    recordarPurchase(eventId);
     const course = allCourses.find(c => c.id === paidCourseId);
-    pixelTrack('Purchase', {
-      value:        course?.priceUSD ?? course?.price ?? 0,
-      currency:     sid ? 'USD' : 'ARS',
-      content_type: 'product',
-      content_ids:  [paidCourseId],
-      content_name: course?.title,
-    }, eventId);
+
+    // Monto: el real cobrado (del historial) y, si el webhook todavía no
+    // llegó, el precio de lista EN LA MONEDA DEL MEDIO DE PAGO. Antes se
+    // mandaba siempre el precio en dólares aunque la moneda fuera ARS, y
+    // Meta registraba compras de $370 en vez de $489.000.
+    const precioDeLista = sid
+      ? { value: course?.priceUSD ?? 0, currency: 'USD' }
+      : { value: course?.price    ?? 0, currency: 'ARS' };
+
+    montoRealDelPago({ sid, paymentId }).then(real => {
+      const { value, currency } = real ?? precioDeLista;
+      recordarPurchase(eventId);
+      pixelTrack('Purchase', {
+        value,
+        currency,
+        content_type: 'product',
+        content_ids:  [paidCourseId],
+        content_name: course?.title,
+      }, eventId);
+    });
   }, [paymentStatus, allCourses]);
 
   if (!user) return <Navigate to="/" />;
