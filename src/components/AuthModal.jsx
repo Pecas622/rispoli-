@@ -145,12 +145,15 @@ export default function AuthModal() {
       <div className="modal">
         <button className="modal-close-btn" style={{position:'absolute',top:14,right:14,width:28,height:28,borderRadius:6,background:'var(--bg-2)',border:'1px solid var(--border)',color:'var(--text-3)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}} onClick={close}><X size={14}/></button>
 
-        <h2 style={{fontSize:20,fontWeight:700,marginBottom:6,letterSpacing:'-0.02em'}}>
+        {/* El registro va sin subtítulo: el título conserva el espacio que dejaba el texto */}
+        <h2 style={{fontSize:20,fontWeight:700,marginBottom:isLogin ? 6 : 24,letterSpacing:'-0.02em'}}>
           {isLogin ? 'Iniciar sesión' : 'Crear cuenta'}
         </h2>
-        <p style={{fontSize:14,color:'var(--text-3)',marginBottom:24}}>
-          {isLogin ? 'Continuá aprendiendo donde lo dejaste' : 'Únete a más de 150.000 estudiantes'}
-        </p>
+        {isLogin && (
+          <p style={{fontSize:14,color:'var(--text-3)',marginBottom:24}}>
+            Continuá aprendiendo donde lo dejaste
+          </p>
+        )}
 
         {GOOGLE_CLIENT_ID && (
           <>
