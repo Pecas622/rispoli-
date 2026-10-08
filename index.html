@@ -2,6 +2,18 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
+    <!-- www.gotravelacademy.com → gotravelacademy.com, conservando ruta,
+         parámetros y ancla. Va primero, antes de Clarity y del Pixel. Sin esto
+         "www" funciona como un sitio aparte: la sesión y el localStorage no se
+         comparten, y quien paga desde www vuelve de Mercado Pago/Stripe al
+         dominio principal sin sesión (se pierde el Purchase de respaldo del
+         navegador). Se hace en el navegador y no en vercel.json porque así el
+         ?fbclid= de los anuncios llega intacto con seguridad. -->
+    <script>
+      if (location.hostname === 'www.gotravelacademy.com') {
+        location.replace('https://gotravelacademy.com' + location.pathname + location.search + location.hash);
+      }
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Verificación de dominio de Meta/Facebook: reemplazá el content por el código que te da Meta -->
