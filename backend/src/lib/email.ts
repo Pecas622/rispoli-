@@ -148,7 +148,44 @@ export async function sendWelcomeEmail(user: UserData) {
 }
 
 // ── Bienvenida al comprar un curso ────────────────────────────────────────────
+// Textos del mail de bienvenida que cambian según el curso comprado. El curso
+// se reconoce por su nombre (sin importar mayúsculas ni tildes), así que los
+// cursos de Universal y de Disney toman su texto apenas se cargan con esos
+// nombres. Cualquier otro curso recibe el texto general de siempre.
+interface TextosBienvenida {
+  objetivo:   string;   // "...hayas dado este paso para <objetivo> y comenzar a crecer..."
+  guiaTexto:  string;
+  guiaUrl:    string;
+  horarios:   string;   // frase que abre el párrafo de horarios
+  mientras?:  string;   // párrafo extra antes del cierre (solo cursos nuevos)
+}
+
+const BIENVENIDA_GENERAL: TextosBienvenida = {
+  objetivo:  'formarte como agente de viajes',
+  guiaTexto: 'Te dejamos una presentación de bienvenida con el paso a paso para que puedas hacer el curso con tranquilidad.',
+  guiaUrl:   process.env.WELCOME_GUIDE_URL ?? 'https://canva.link/nuzpidcbcdk5xcu',
+  horarios:  'Nuestros horarios de atención son de',
+};
+
+const BIENVENIDA_CURSO_NUEVO = {
+  guiaTexto: 'A continuación te dejamos una presentación de bienvenida, donde te vamos a detallar el paso a paso para que puedas realizar el curso con tranquilidad.',
+  horarios:  'Queremos contarte que nuestros horarios de atención y envío de accesos son de',
+  mientras:  'Mientras tanto, te damos la bienvenida a esta experiencia de formación pensada para que aprendas desde la práctica y con herramientas reales.',
+};
+
+function textosBienvenida(tituloCurso: string): TextosBienvenida {
+  const t = tituloCurso.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (t.includes('universal') || t.includes('seaworld') || t.includes('sea world')) {
+    return { ...BIENVENIDA_CURSO_NUEVO, objetivo: 'especializarte en Universal y SeaWorld', guiaUrl: 'https://canva.link/instructivo-universal-sea-world' };
+  }
+  if (t.includes('disney')) {
+    return { ...BIENVENIDA_CURSO_NUEVO, objetivo: 'especializarte en Walt Disney World', guiaUrl: 'https://canva.link/instructivo-disney-full' };
+  }
+  return BIENVENIDA_GENERAL;
+}
+
 export async function sendPurchaseWelcomeEmail(user: UserData, course: CourseData) {
+  const txt = textosBienvenida(course.title);
   await send({
     to:      user.email,
     subject: `¡Bienvenido/a a Go Travel Academy! 👋`,
@@ -172,7 +209,7 @@ export async function sendPurchaseWelcomeEmail(user: UserData, course: CourseDat
           </h2>
           <p style="margin:0 0 20px;color:#5a5955;font-size:15px;line-height:1.75;">
             ¡Bienvenido/a a <strong>Go Travel Academy</strong>! Estamos muy felices de que
-            hayas dado este paso para formarte como agente de viajes y comenzar a crecer
+            hayas dado este paso para ${txt.objetivo} y comenzar a crecer
             en el mundo del turismo ✈️
           </p>
           <p style="margin:0 0 24px;color:#5a5955;font-size:15px;line-height:1.75;">
@@ -197,20 +234,22 @@ export async function sendPurchaseWelcomeEmail(user: UserData, course: CourseDat
               👉 Antes de arrancar, mirá esta guía rápida
             </p>
             <p style="margin:0 0 14px;color:#5a5955;font-size:13.5px;line-height:1.6;">
-              Te dejamos una presentación de bienvenida con el paso a paso para que puedas
-              hacer el curso con tranquilidad.
+              ${txt.guiaTexto}
             </p>
-            <a href="${process.env.WELCOME_GUIDE_URL ?? 'https://canva.link/nuzpidcbcdk5xcu'}"
+            <a href="${txt.guiaUrl}"
                style="color:#06043F;font-size:14px;font-weight:600;text-decoration:underline;">
               Ver guía de bienvenida →
             </a>
           </div>
 
           <p style="margin:0 0 4px;color:#5a5955;font-size:14px;line-height:1.7;">
-            Nuestros horarios de atención son de <strong>lunes a viernes de 9:00 a
+            ${txt.horarios} <strong>lunes a viernes de 9:00 a
             18:00 hs</strong>. Dentro de ese rango estaremos respondiendo consultas y
             enviando usuarios y contraseñas correspondientes.
           </p>
+          ${txt.mientras ? `<p style="margin:12px 0 0;color:#5a5955;font-size:14px;line-height:1.7;">
+            ${txt.mientras}
+          </p>` : ''}
           <p style="margin:12px 0 0;color:#5a5955;font-size:14px;line-height:1.7;">
             Ante cualquier duda, podés escribirnos y con gusto te vamos a ayudar 😊
           </p>
