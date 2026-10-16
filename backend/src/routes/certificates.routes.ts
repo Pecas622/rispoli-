@@ -54,7 +54,7 @@ router.get('/admin', authenticate, requireAdmin, async (_req: Request, res: Resp
 
     const userIds = [...new Set(sinCertificado.map(e => e.userId))];
     const progressRows = userIds.length
-      ? await prisma.lessonProgress.findMany({ where: { userId: { in: userIds } }, select: { userId: true, lessonId: true } })
+      ? await prisma.lessonProgress.findMany({ where: { userId: { in: userIds }, completedAt: { not: null } }, select: { userId: true, lessonId: true } })
       : [];
     const completadasPorAlumno = new Map<string, Set<string>>();
     for (const p of progressRows) {
