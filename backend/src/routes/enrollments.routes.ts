@@ -29,7 +29,7 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
 
     // Add progress percentage for each course
     const progress = await prisma.lessonProgress.findMany({
-      where: { userId: req.user!.userId },
+      where: { userId: req.user!.userId, completedAt: { not: null } },
       select: { lessonId: true },
     });
     const completedIds = new Set(progress.map(p => p.lessonId));
@@ -78,7 +78,7 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
     if (!userId) return res.json({ enrollments });
 
     const progress = await prisma.lessonProgress.findMany({
-      where: { userId },
+      where: { userId, completedAt: { not: null } },
       select: { lessonId: true },
     });
     const completedIds = new Set(progress.map(p => p.lessonId));

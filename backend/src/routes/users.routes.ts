@@ -63,7 +63,7 @@ router.get('/', authenticate, requireAdmin, async (req: Request, res: Response, 
         },
       }),
       prisma.lessonProgress.findMany({
-        where: { userId: { in: userIds } },
+        where: { userId: { in: userIds }, completedAt: { not: null } },
         select: { userId: true, lessonId: true },
       }),
     ]);
