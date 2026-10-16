@@ -19,6 +19,7 @@ import { uploadsRouter }     from './routes/uploads.routes';
 import { reviewsRouter }     from './routes/reviews.routes';
 import { questionsRouter }   from './routes/questions.routes';
 import { contactRouter }     from './routes/contact.routes';
+import { certificatesRouter } from './routes/certificates.routes';
 import { errorMiddleware }   from './middleware/error.middleware';
 
 const app = express();
@@ -133,6 +134,7 @@ app.use('/api/events',      trackRouter);
 app.use('/api/catalog',     catalogRouter);
 app.use('/api/uploads',     uploadsRouter);
 app.use('/api/contact',     contactRouter);
+app.use('/api/certificates', certificatesRouter);
 
 // ── 404 ────────────────────────────────────────────────────
 app.use((_req, res) => {

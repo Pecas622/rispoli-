@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { authApi, enrollmentsApi, usersApi } from '../services/api';
+import { authApi, enrollmentsApi, usersApi, certificatesApi } from '../services/api';
 import { pixelTrack } from '../lib/pixel';
 import { detectCountry, getDolarRate } from '../utils/currency';
 
@@ -15,6 +15,7 @@ export function AppProvider({ children }) {
   const [pendingVerification, setPendingVerification] = useState(null); // { email }
   const [enrollments,        setEnrollments]       = useState([]);
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
+  const [certificates,       setCertificates]      = useState([]);   // PDFs cargados por el equipo
   const [region,             setRegion]            = useState(() => localStorage.getItem('region') || null);
   const [showRegionModal,    setShowRegionModal]   = useState(false);
   const [checkoutModal,      setCheckoutModal]     = useState(null); // curso en checkout demo, o null
@@ -66,6 +67,17 @@ export function AppProvider({ children }) {
   }, [user?.id]);
 
   useEffect(() => { refreshEnrollments(); }, [refreshEnrollments]);
+
+  // Certificados del alumno (los sube el equipo desde el panel). No dependen
+  // de que el acceso al curso siga vigente.
+  const refreshCertificates = useCallback(() => {
+    if (!USE_REAL_API || !user) { setCertificates([]); return; }
+    certificatesApi.mine()
+      .then(({ certificates }) => setCertificates(certificates ?? []))
+      .catch(() => setCertificates([]));
+  }, [user?.id]);
+
+  useEffect(() => { refreshCertificates(); }, [refreshCertificates]);
 
   useEffect(() => {
     if (toast) { const t = setTimeout(() => setToast(null), 3000); return () => clearTimeout(t); }
@@ -239,6 +251,7 @@ export function AppProvider({ children }) {
       pendingVerification, setPendingVerification,
       enrollCourse, isEnrolled,
       enrollments, enrollmentsLoading, refreshEnrollments,
+      certificates, refreshCertificates,
       toast, showToast,
       authModal, setAuthModal,
       checkoutModal, setCheckoutModal,

@@ -4,12 +4,14 @@ import { useApp } from '../context/AppContext';
 import AdminCourses from './AdminCourses';
 import AdminUsers from './AdminUsers';
 import AdminPayments from './AdminPayments';
+import AdminCertificates from './AdminCertificates';
 import './Admin.css';
 
 const TABS = [
   { id: 'courses',  label: 'Cursos' },
   { id: 'users',    label: 'Usuarios' },
   { id: 'payments', label: 'Pagos' },
+  { id: 'certificates', label: 'Certificados' },
 ];
 
 export default function Admin() {
@@ -42,6 +44,7 @@ export default function Admin() {
       {tab === 'courses'  && <AdminCourses />}
       {tab === 'users'    && <AdminUsers />}
       {tab === 'payments' && <AdminPayments />}
+      {tab === 'certificates' && <AdminCertificates />}
     </div>
   );
 }

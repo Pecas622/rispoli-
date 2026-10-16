@@ -547,6 +547,69 @@ export async function sendPaymentRejectedEmail(user: UserData, course: CourseDat
 // cancelled/charged_back). El acceso al curso ya se revoca en el webhook; esto
 // es lo que le avisa al alumno que pasó, en vez de que descubra que perdió el
 // acceso sin ninguna explicación.
+// ── Certificado disponible ───────────────────────────────────────────────────
+// Se manda cuando el equipo carga por primera vez el certificado de un alumno.
+export async function sendCertificateAvailableEmail(user: UserData, course: CourseData) {
+  const nombre = escapeHtml(user.name.split(' ')[0]);
+  const curso  = escapeHtml(course.title);
+  await send({
+    to:      user.email,
+    subject: `🎓 Tu certificado de ${course.title} ya está disponible`,
+    html: `
+<!DOCTYPE html><html lang="es">
+<body style="margin:0;padding:0;background:#f4f3ef;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
+  <tr><td align="center">
+    <table width="560" cellpadding="0" cellspacing="0"
+      style="background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e8e7e3;">
+      <tr>
+        <td style="background:#06043F;padding:28px 40px;">
+          <h1 style="margin:0;color:#fff;font-size:22px;font-weight:800;letter-spacing:-0.03em;">GO Travel Academy</h1>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:36px 40px;">
+          <p style="margin:0 0 6px;font-size:40px;line-height:1;">🎓</p>
+          <h2 style="margin:0 0 18px;font-size:21px;font-weight:700;color:#1e293b;">
+            ¡Felicitaciones, ${nombre}!
+          </h2>
+          <p style="margin:0 0 24px;font-size:15px;color:#5a5955;line-height:1.75;">
+            Tu certificado de <strong>${curso}</strong> ya está disponible en la plataforma.
+            Podés descargarlo en PDF desde la sección <strong>Certificados</strong> de tu cuenta.
+          </p>
+          <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+            <tr>
+              <td style="background:#06043F;border-radius:8px;padding:13px 28px;">
+                <a href="${process.env.FRONTEND_URL}/certificaciones"
+                   style="color:#fff;text-decoration:none;font-size:14px;font-weight:600;">
+                  Descargar mi certificado →
+                </a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:0;font-size:14px;color:#5a5955;line-height:1.7;">
+            Gracias por formarte con nosotros. Ante cualquier duda, respondé este mail y te ayudamos 😊
+          </p>
+          <p style="margin:24px 0 0;color:#5a5955;font-size:15px;">
+            <strong style="color:#0d0d0d;">Equipo de Go Travel Academy 💙</strong>
+          </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px 40px;border-top:1px solid #e8e7e3;background:#f4f3ef;">
+          <p style="margin:0;color:#94a3b8;font-size:12px;">
+            © 2026 GO Travel Academy ·
+            <a href="${process.env.FRONTEND_URL}" style="color:#6F95E8;">gotravelacademy.com</a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`,
+  });
+}
+
 export async function sendRefundEmail(user: UserData, course: CourseData) {
   await send({
     to:      user.email,
