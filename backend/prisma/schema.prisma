@@ -29,6 +29,7 @@ model User {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   enrollments Enrollment[]
+  certificates Certificate[]
   progress    LessonProgress[]
   passwordResetTokens PasswordResetToken[]
   reviews     Review[]
@@ -100,6 +101,7 @@ model Course {
 
   modules       Module[]
   enrollments   Enrollment[]
+  certificates  Certificate[]
   courseReviews Review[]
   coupons       Coupon[]
 
@@ -239,6 +241,26 @@ model Enrollment {
 
   @@unique([userId, courseId])
   @@map("enrollments")
+}
+
+// Certificado de un alumno para un curso: el equipo sube el PDF desde el panel
+// (pestaña Certificados) y el alumno lo descarga en /certificaciones. Va en una
+// tabla aparte de la inscripción para que el certificado se conserve aunque el
+// acceso al curso venza (6 meses) o se revoque.
+model Certificate {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  courseId   String   @map("course_id")
+  fileUrl    String   @map("file_url")
+  fileName   String?  @map("file_name")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("certificates")
 }
 
 model LessonProgress {

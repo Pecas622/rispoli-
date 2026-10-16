@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { Award, Download, User, BookOpen, CheckCircle, ArrowLeft, FileText, ExternalLink, Loader, Receipt } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { paymentsApi } from '../services/api';
+import { paymentsApi, certificateDownloadUrl } from '../services/api';
 import './UserPages.css';
 
 function PageShell({ icon: Icon, label, title, children }) {
@@ -49,72 +49,93 @@ function LoadingBlock() {
 }
 
 // ── Certificaciones ───────────────────────────────────────────────────────────
+// Los certificados los carga el equipo desde el panel (pestaña Certificados).
+// Mientras tanto, los cursos terminados al 100% figuran "en preparación".
 export function Certificaciones() {
-  const { user, enrollments, enrollmentsLoading, showToast } = useApp();
+  const { user, enrollments, enrollmentsLoading, certificates } = useApp();
   if (!user) return <Navigate to="/" />;
 
-  const completed = enrollments.filter(e => e.progressPercent === 100);
+  const conCertificado = new Set(certificates.map(c => c.courseId));
+  const enPreparacion  = enrollments.filter(e => e.progressPercent === 100 && !conCertificado.has(e.courseId));
 
   return (
     <PageShell icon={Award} label="Mis logros" title="Certificados">
-      {enrollmentsLoading ? (
+      {enrollmentsLoading && certificates.length === 0 ? (
         <LoadingBlock />
-      ) : completed.length === 0 ? (
+      ) : certificates.length === 0 && enPreparacion.length === 0 ? (
         <EmptyState
           icon={Award}
           title="Todavía no tenés certificados"
-          desc="Completá un curso al 100% para obtener tu certificado oficial avalado por la Universidad del Aconcagua."
+          desc="Cuando completes un curso, el equipo de Go Travel Academy te va a cargar tu certificado acá para que lo descargues en PDF."
           action={<Link to="/cursos" className="btn btn-primary">Explorar cursos <BookOpen size={14} /></Link>}
         />
       ) : (
         <div className="cert-grid">
-          {completed.map(e => (
-            <CertCard key={e.courseId} course={e.course} user={user} showToast={showToast} />
-          ))}
+          {certificates.map(c => <CertCard key={c.id} cert={c} user={user} />)}
+          {enPreparacion.map(e => <CertPendiente key={e.courseId} course={e.course} user={user} />)}
         </div>
       )}
     </PageShell>
   );
 }
 
-function CertCard({ course, user, showToast }) {
-  const certNum = `GTA-${new Date().getFullYear()}-${String(course.id).slice(-4).toUpperCase()}`;
-  const date = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
-
+function CertHeader({ title, user }) {
   return (
-    <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(6,4,63,0.06)' }}>
-      <div style={{ background: 'linear-gradient(135deg, #06043F 0%, #0D0A6B 100%)', padding: '28px 24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-          <div>
-            <p style={{ color: '#8CB0F4', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Certificado oficial</p>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>Go Travel Academy</p>
-          </div>
-          <Award size={28} color="#8CB0F4" />
+    <div style={{ background: 'linear-gradient(135deg, #06043F 0%, #0D0A6B 100%)', padding: '28px 24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div>
+          <p style={{ color: '#8CB0F4', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Certificado</p>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>Go Travel Academy</p>
         </div>
-        <h3 style={{ color: 'white', fontSize: 15, fontWeight: 700, lineHeight: 1.35, marginBottom: 8 }}>{course.title}</h3>
-        <p style={{ color: '#8CB0F4', fontSize: 11 }}>{user.name}</p>
+        <Award size={28} color="#8CB0F4" />
       </div>
+      <h3 style={{ color: 'white', fontSize: 15, fontWeight: 700, lineHeight: 1.35, marginBottom: 8 }}>{title}</h3>
+      <p style={{ color: '#8CB0F4', fontSize: 11 }}>{user.name}</p>
+    </div>
+  );
+}
 
+const certCardStyle = { background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(6,4,63,0.06)' };
+
+function CertCard({ cert, user }) {
+  const cargado = new Date(cert.updatedAt ?? cert.uploadedAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
+  return (
+    <div style={certCardStyle}>
+      <CertHeader title={cert.course?.title} user={user} />
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, flexWrap: 'wrap', gap: 4 }}>
-          <span style={{ color: 'var(--text-3)' }}>N°: <strong style={{ color: 'var(--text)' }}>{certNum}</strong></span>
-          <span style={{ color: 'var(--text-3)' }}>{date}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-          <CheckCircle size={13} color="var(--violet-mid)" />
-          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Verificado · Aval Universidad del Aconcagua</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CheckCircle size={13} color="var(--green)" />
+          <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            Disponible desde el {cargado} · Certificado por {cert.course?.certifiedBy || 'Go Travel Academy'}
+          </span>
         </div>
       </div>
-
       <div style={{ padding: '14px 20px', display: 'flex', gap: 8 }}>
-        <button className="btn btn-primary btn-sm" style={{ flex: 1, justifyContent: 'center' }}
-          onClick={() => showToast('Descarga de PDF disponible próximamente', 'info')}>
+        <a href={certificateDownloadUrl(cert)} className="btn btn-primary btn-sm" style={{ flex: 1, justifyContent: 'center' }}>
           <Download size={13} /> Descargar PDF
-        </button>
-        <button className="btn btn-outline btn-sm"
-          onClick={() => showToast('Compartir disponible próximamente', 'info')}>
+        </a>
+        <a href={cert.fileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm" title="Ver en el navegador">
           <ExternalLink size={13} />
-        </button>
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function CertPendiente({ course, user }) {
+  return (
+    <div style={certCardStyle}>
+      <CertHeader title={course?.title} user={user} />
+      <div style={{ padding: '16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <Loader size={14} color="var(--violet-mid)" style={{ flexShrink: 0, marginTop: 2 }} />
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Tu certificado está en preparación</p>
+            <p style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.6 }}>
+              El equipo de Go Travel Academy te lo va a cargar acá. Te avisamos por mail cuando esté listo para descargar.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -241,7 +262,7 @@ export function Pagos() {
 
 // ── Perfil ────────────────────────────────────────────────────────────────────
 export function Perfil() {
-  const { user, showToast, region, selectRegion, enrollments, updateProfile, changePassword } = useApp();
+  const { user, showToast, region, selectRegion, enrollments, certificates, updateProfile, changePassword } = useApp();
   if (!user) return <Navigate to="/" />;
 
   const [name, setName] = useState(user.name);
@@ -301,7 +322,7 @@ export function Perfil() {
           {[
             { label: 'Cursos inscriptos',  val: enrolled },
             { label: 'Completados',        val: completed },
-            { label: 'Certificados',       val: completed },
+            { label: 'Certificados',       val: certificates.length },
           ].map(s => (
             <div key={s.label} className="perfil-stat-row">
               <span className="perfil-stat-label">{s.label}</span>

@@ -153,6 +153,21 @@ export const uploadsApi = {
   },
 };
 
+// ── Certificados (los carga el equipo, el alumno los descarga) ──
+export const certificatesApi = {
+  mine:      ()                                         => api.get('/certificates/me'),
+  adminList: ()                                         => api.get('/certificates/admin'),
+  save:      ({ userId, courseId, fileUrl, fileName })  => request('/certificates', { method: 'PUT', body: JSON.stringify({ userId, courseId, fileUrl, fileName }) }),
+  remove:    (id)                                       => api.delete(`/certificates/${id}`),
+};
+
+// Link de descarga directa de un certificado: Supabase Storage acepta
+// ?download=<nombre> para que el navegador baje el archivo en vez de abrirlo.
+export function certificateDownloadUrl(cert) {
+  const nombre = `Certificado - ${cert.course?.title ?? 'Go Travel Academy'}.pdf`;
+  return `${cert.fileUrl}${cert.fileUrl.includes('?') ? '&' : '?'}download=${encodeURIComponent(nombre)}`;
+}
+
 // ── Contacto ──────────────────────────────────────────────
 export const contactApi = {
   send: (data) => api.post('/contact', data),

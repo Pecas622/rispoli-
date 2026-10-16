@@ -61,7 +61,7 @@ async function montoRealDelPago(ids, intentos = 3, esperaMs = 2500) {
 }
 
 export default function Dashboard() {
-  const { user, logout, enrollments, enrollmentsLoading } = useApp();
+  const { user, logout, enrollments, enrollmentsLoading, certificates } = useApp();
   const [activeNav, setActiveNav]       = useState('/dashboard');
   const [searchParams, setSearchParams] = useSearchParams();
   const [allCourses, setAllCourses]     = useState([]);
@@ -228,7 +228,7 @@ export default function Dashboard() {
           {[
             { icon: BookOpen, val: enrolled.length,  label: 'Cursos inscriptos', color: '#6F95E8' },
             { icon: CheckCircle, val: completed,     label: 'Completados',        color: '#16A34A' },
-            { icon: Award, val: completed,           label: 'Certificados',       color: '#F59E0B' },
+            { icon: Award, val: certificates.length, label: 'Certificados',       color: '#F59E0B' },
             { icon: Play, val: `${totalHours}h`,     label: 'Horas aprendidas',   color: '#8B5CF6' },
           ].map(({ icon: Icon, val, label, color }) => (
             <div key={label} className="dash-stat-card">

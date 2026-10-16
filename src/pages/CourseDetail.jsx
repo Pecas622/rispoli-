@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Star, Clock, BookOpen, Play, CheckCircle, ChevronDown, ChevronLeft, ChevronRight, Award, Lock, Tag, Check } from 'lucide-react';
 import { courses as mockCourses, testimonials } from '../data/courses';
-import { coursesApi, progressApi, paymentsApi, reviewsApi } from '../services/api';
+import { coursesApi, progressApi, paymentsApi, reviewsApi, certificateDownloadUrl } from '../services/api';
 import { useApp } from '../context/AppContext';
 import { getRegionPrice, formatPrice, getCheckoutLabel } from '../utils/pricing';
 import { track } from '../lib/pixel';
@@ -917,8 +917,11 @@ export default function CourseDetail() {
 
 // ── Tarjeta de progreso (sidebar cuando el alumno está inscripto) ─────────────
 function ProgressCard({ course, prog, completedCount, totalTopics, nextTopic, onContinue }) {
+  const { certificates } = useApp();
   const remaining = totalTopics - completedCount;
   const isComplete = prog === 100;
+  // Certificado cargado por el equipo para este curso (si ya lo subieron)
+  const certificado = certificates.find(c => c.courseId === course.id);
 
   return (
     <div className="progress-card card card-elevated detail-checkout">
@@ -938,10 +941,21 @@ function ProgressCard({ course, prog, completedCount, totalTopics, nextTopic, on
               <Award size={32} color="var(--amber)" />
             </div>
             <div className="pc-complete-title">¡Curso completado!</div>
-            <p className="pc-complete-sub">Obtuviste tu certificado oficial.</p>
-            <Link to="/certificaciones" className="btn btn-primary" style={{width:'100%',justifyContent:'center',marginTop:16}}>
-              <Award size={14} /> Ver mi certificado
-            </Link>
+            {certificado ? (
+              <>
+                <p className="pc-complete-sub">Tu certificado ya está disponible.</p>
+                <a href={certificateDownloadUrl(certificado)} className="btn btn-primary" style={{width:'100%',justifyContent:'center',marginTop:16}}>
+                  <Award size={14} /> Descargar mi certificado
+                </a>
+              </>
+            ) : (
+              <>
+                <p className="pc-complete-sub">Estamos preparando tu certificado. Te avisamos por mail cuando esté listo.</p>
+                <Link to="/certificaciones" className="btn btn-primary" style={{width:'100%',justifyContent:'center',marginTop:16}}>
+                  <Award size={14} /> Ir a mis certificados
+                </Link>
+              </>
+            )}
             <Link to="/cursos" className="btn btn-outline" style={{width:'100%',justifyContent:'center',marginTop:10}}>
               Explorar más cursos
             </Link>
